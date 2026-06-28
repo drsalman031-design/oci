@@ -1,0 +1,6 @@
+{
+  "name": "Orthodontic Compensation Index (OCI)",
+  "description": "Quantify dentoalveolar compensation in skeletal Class II and Class III malocclusions to assist in orthodontic treatment planning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
