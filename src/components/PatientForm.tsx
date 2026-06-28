@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
-import { User, Clipboard, FileText, ArrowRight, X } from 'lucide-react-native';
+import { User, Clipboard, FileText, ArrowRight, X, Heart, ShieldAlert, Sparkles } from 'lucide-react-native';
 import tw from 'twrnc';
 import { PatientDetails } from '../types';
 
@@ -53,156 +53,169 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-2xl w-full mx-auto`}>
-      <View style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden mt-4`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
+      <View style={tw`space-y-6 mt-4`}>
         
-        {/* Header */}
-        <View style={tw`bg-teal-700 px-6 py-5 flex-row justify-between items-center`}>
-          <View>
-            <Text style={tw`text-[10px] font-mono text-teal-200 uppercase tracking-widest`}>Step 1 of 2</Text>
-            <Text style={tw`text-xl font-bold text-white tracking-tight`}>Patient Demographics</Text>
+        {/* Step Indicator Header Card */}
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl relative overflow-hidden`}>
+          <View style={tw`absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-2xl`} />
+          <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`space-y-1`}>
+              <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-2`}>
+                <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
+                <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Step 1 of 2 • Assessment Intake</Text>
+              </View>
+              <Text style={tw`text-xl font-black text-white tracking-tight`}>Patient Information</Text>
+              <Text style={tw`text-xs text-slate-400`}>Establish the primary clinical patient archive parameters</Text>
+            </View>
+            <Pressable 
+              onPress={onCancel}
+              style={tw`w-10 h-10 bg-white/5 border border-white/10 rounded-full items-center justify-center`}
+            >
+              <X size={16} color="#94a3b8" />
+            </Pressable>
           </View>
-          <Pressable 
-            onPress={onCancel}
-            style={tw`p-2 hover:bg-white/10 rounded-xl`}
-          >
-            <X size={20} color="#ffffff" />
-          </Pressable>
         </View>
 
-        <View style={tw`p-6 space-y-6`}>
+        {/* Progress Bar */}
+        <View style={tw`h-1.5 w-full bg-white/5 rounded-full overflow-hidden`}>
+          <View style={tw`h-full w-1/2 bg-[#14B8A6] rounded-full`} />
+        </View>
+
+        {/* Form Container */}
+        <View style={tw`bg-[#0B1020]/80 border border-white/5 rounded-[32px] p-6 space-y-6 shadow-2xl`}>
           
           {/* Patient Name */}
-          <View style={tw`space-y-1.5`}>
+          <View style={tw`space-y-2`}>
             <View style={tw`flex-row items-center mb-1`}>
-              <User size={14} color="#64748b" style={tw`mr-1.5`} />
-              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Patient Name *</Text>
+              <User size={13} color="#14B8A6" style={tw`mr-2`} />
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Patient Name *</Text>
             </View>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="e.g. John Doe"
-              placeholderTextColor="#94a3b8"
-              style={tw`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
+              placeholder="e.g. Liam Henderson"
+              placeholderTextColor="#475569"
+              style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border ${errors.name ? 'border-rose-500 bg-rose-500/5' : 'border-white/10 focus:border-[#14B8A6]'} text-white text-xs font-bold`}
             />
-            {errors.name && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.name}</Text>}
+            {errors.name && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.name}</Text>}
           </View>
 
-          {/* Case Number */}
-          <View style={tw`space-y-1.5`}>
+          {/* Case Reference Number */}
+          <View style={tw`space-y-2`}>
             <View style={tw`flex-row items-center mb-1`}>
-              <Clipboard size={14} color="#64748b" style={tw`mr-1.5`} />
-              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Case Number / ID *</Text>
+              <Clipboard size={13} color="#14B8A6" style={tw`mr-2`} />
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Case ID *</Text>
             </View>
             <TextInput
               value={caseNumber}
               onChangeText={setCaseNumber}
-              placeholder="e.g. ORTHO-2026-98"
-              placeholderTextColor="#94a3b8"
-              style={tw`w-full px-4 py-3 rounded-xl border ${errors.caseNumber ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
+              placeholder="e.g. SLM-2026-09"
+              placeholderTextColor="#475569"
+              style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border ${errors.caseNumber ? 'border-rose-500 bg-rose-500/5' : 'border-white/10 focus:border-[#14B8A6]'} text-white text-xs font-bold`}
             />
-            {errors.caseNumber && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.caseNumber}</Text>}
+            {errors.caseNumber && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.caseNumber}</Text>}
           </View>
 
           {/* Age & Gender Row */}
-          <View style={tw`flex-row justify-between`}>
+          <View style={tw`flex-row space-x-4`}>
             
             {/* Age */}
-            <View style={tw`w-[47%] space-y-1.5`}>
-              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>Age *</Text>
+            <View style={tw`flex-1 space-y-2`}>
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>Age *</Text>
               <TextInput
                 value={age}
                 onChangeText={setAge}
                 placeholder="e.g. 24"
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor="#475569"
                 keyboardType="numeric"
-                style={tw`w-full px-4 py-3 rounded-xl border ${errors.age ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
+                style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border ${errors.age ? 'border-rose-500 bg-rose-500/5' : 'border-white/10 focus:border-[#14B8A6]'} text-white text-xs font-bold`}
               />
-              {errors.age && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.age}</Text>}
+              {errors.age && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.age}</Text>}
             </View>
 
             {/* Gender Selection */}
-            <View style={tw`w-[47%] space-y-1.5`}>
-              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>Gender *</Text>
-              <View style={tw`flex-row space-x-2 border border-slate-100 dark:border-slate-850 p-1 rounded-xl`}>
+            <View style={tw`flex-1 space-y-2`}>
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>Gender *</Text>
+              <View style={tw`flex-row bg-black/40 border border-white/10 p-1 rounded-2xl`}>
                 {['Male', 'Female'].map((g) => {
                   const isSelected = gender === g;
                   return (
                     <Pressable
                       key={g}
                       onPress={() => setGender(g as any)}
-                      style={tw`flex-1 py-2 rounded-lg items-center ${isSelected ? 'bg-teal-500' : 'bg-transparent'}`}
+                      style={tw`flex-1 py-3.5 rounded-xl items-center ${isSelected ? 'bg-[#14B8A6]' : 'bg-transparent'}`}
                     >
-                      <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
                         {g}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
-              {errors.gender && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.gender}</Text>}
+              {errors.gender && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.gender}</Text>}
             </View>
 
           </View>
 
-          {/* Diagnosis Option Buttons */}
-          <View style={tw`space-y-1.5`}>
-            <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>
-              Skeletal Sagittal Diagnosis *
+          {/* Diagnosis Skeletal classification buttons */}
+          <View style={tw`space-y-2`}>
+            <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>
+              Skeletal Sagittal Pattern *
             </Text>
-            <View style={tw`flex-row justify-between border border-slate-100 dark:border-slate-850 p-1 rounded-xl`}>
+            <View style={tw`flex-row bg-black/40 border border-white/10 p-1 rounded-2xl`}>
               {['Class I', 'Class II', 'Class III'].map((diag) => {
                 const isSelected = diagnosis === diag;
                 return (
                   <Pressable
                     key={diag}
                     onPress={() => setDiagnosis(diag as any)}
-                    style={tw`flex-1 py-2.5 rounded-lg items-center ${isSelected ? 'bg-teal-500' : 'bg-transparent'}`}
+                    style={tw`flex-1 py-3 rounded-xl items-center ${isSelected ? 'bg-[#14B8A6]' : 'bg-transparent'}`}
                   >
-                    <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
                       {diag}
                     </Text>
                   </Pressable>
                 );
               })}
             </View>
-            {errors.diagnosis && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.diagnosis}</Text>}
+            {errors.diagnosis && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.diagnosis}</Text>}
           </View>
 
-          {/* Clinical Notes */}
-          <View style={tw`space-y-1.5`}>
+          {/* Clinical Diagnostic Notes */}
+          <View style={tw`space-y-2`}>
             <View style={tw`flex-row items-center mb-1`}>
-              <FileText size={14} color="#64748b" style={tw`mr-1.5`} />
-              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Clinical Notes / Observations</Text>
+              <FileText size={13} color="#14B8A6" style={tw`mr-2`} />
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Clinical Observations</Text>
             </View>
             <TextInput
               value={clinicalNotes}
               onChangeText={setClinicalNotes}
-              placeholder="Record pre-treatment periodontal status, profile characteristics, skeletal age (CVM), or specific concerns..."
-              placeholderTextColor="#94a3b8"
+              placeholder="Record soft tissue profile, skeletal limits, or growth considerations (e.g. CVM stage)..."
+              placeholderTextColor="#475569"
               multiline
               numberOfLines={4}
-              style={[tw`w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm`, { minHeight: 80 }]}
+              style={[tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border border-white/10 focus:border-[#14B8A6] text-white text-xs font-bold`, { minHeight: 90 }]}
             />
           </View>
 
-          {/* Action Buttons */}
-          <View style={tw`flex-row space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800`}>
+          {/* Next button row */}
+          <View style={tw`flex-row space-x-3 pt-4 border-t border-white/5`}>
             <Pressable
               onPress={onCancel}
-              style={tw`flex-1 py-3.5 border border-slate-200 dark:border-slate-700 rounded-2xl items-center`}
+              style={tw`flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl items-center`}
             >
-              <Text style={tw`text-slate-600 dark:text-slate-400 font-bold text-xs`}>Cancel</Text>
+              <Text style={tw`text-slate-400 font-black text-xs uppercase tracking-widest`}>Back</Text>
             </Pressable>
             
             <Pressable
               onPress={handleSubmit}
               style={({ pressed }) => [
-                tw`flex-1 py-3.5 bg-teal-500 rounded-2xl items-center flex-row justify-center`,
-                pressed ? tw`bg-teal-600` : null
+                tw`flex-1 py-4 bg-[#14B8A6] rounded-2xl items-center flex-row justify-center shadow-lg shadow-teal-500/20 border border-teal-400/30`,
+                pressed ? tw`opacity-90 scale-98` : null
               ]}
             >
-              <Text style={tw`text-white font-bold text-xs mr-2`}>Ceph Analysis</Text>
+              <Text style={tw`text-white font-black text-xs mr-2 uppercase tracking-widest`}>Ceph Inputs</Text>
               <ArrowRight size={14} color="#ffffff" />
             </Pressable>
           </View>

@@ -7,8 +7,14 @@ import {
   FileText,
   BookmarkPlus,
   Cpu,
-  Edit2
+  Edit2,
+  ChevronLeft,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Info
 } from 'lucide-react-native';
+import ReactMarkdown from 'react-markdown';
 import tw from 'twrnc';
 import { OciResult, CephalometricInput, PatientDetails } from '../types';
 import SvgCharts from './SvgCharts';
@@ -79,114 +85,138 @@ export default function ResultsDashboard({
   };
 
   const getScoreColor = (score: number) => {
-    if (score <= 20) return 'text-emerald-500';
-    if (score <= 40) return 'text-teal-500';
-    if (score <= 60) return 'text-amber-500';
-    if (score <= 80) return 'text-orange-500';
-    return 'text-red-500';
+    if (score <= 20) return 'text-[#10B981]';
+    if (score <= 40) return 'text-[#14B8A6]';
+    if (score <= 60) return 'text-[#F59E0B]';
+    if (score <= 80) return 'text-orange-400';
+    return 'text-[#EF4444]';
+  };
+
+  const getGaugeBorderColor = (score: number) => {
+    if (score <= 20) return 'border-[#10B981]/40';
+    if (score <= 40) return 'border-[#14B8A6]/40';
+    if (score <= 60) return 'border-[#F59E0B]/40';
+    if (score <= 80) return 'border-orange-500/40';
+    return 'border-[#EF4444]/40';
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-5xl w-full mx-auto`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
-        {/* Title / Action Header */}
-        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex-col md:flex-row justify-between items-start md:items-center gap-4`}>
-          <View>
-            <Text style={tw`text-[10px] font-mono text-slate-400 uppercase tracking-widest`}>OCI Assessment Completed</Text>
-            <Text style={tw`text-lg font-extrabold text-slate-800 dark:text-slate-100`}>
-              Results Dashboard: {patientDetails.name || 'Anonymous'}
+        {/* Title / Action Header Card */}
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
+          <View style={tw`space-y-1`}>
+            <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-1`}>
+              <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
+              <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Calculated Diagnostics</Text>
+            </View>
+            <Text style={tw`text-xl font-black text-white tracking-tight`}>
+              Case: {patientDetails.name || 'Anonymous'}
             </Text>
+            <Text style={tw`text-xs text-slate-400`}>Review instant computational compensations & diagnostic limits</Text>
           </View>
           
-          <View style={tw`flex-row flex-wrap gap-2 w-full md:w-auto`}>
+          <View style={tw`flex-row gap-2.5 w-full`}>
             <Pressable
               onPress={onBack}
-              style={tw`flex-1 md:flex-initial px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl items-center`}
+              style={({ pressed }) => [
+                tw`flex-1 py-3.5 bg-white/5 border border-white/10 rounded-2xl items-center`,
+                pressed ? tw`bg-white/10` : null
+              ]}
             >
-              <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Edit Inputs</Text>
+              <Text style={tw`text-xs font-black text-slate-300 uppercase tracking-widest`}>Modify Input</Text>
             </Pressable>
 
             <Pressable
               onPress={() => onOpenPdf(editedSummary)}
-              style={tw`flex-row items-center justify-center flex-1 md:flex-initial px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl`}
+              style={({ pressed }) => [
+                tw`flex-row items-center justify-center flex-1 py-3.5 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl`,
+                pressed ? tw`bg-[#22D3EE]/20` : null
+              ]}
             >
-              <FileText size={14} color="#3b82f6" style={tw`mr-1.5`} />
-              <Text style={tw`text-xs font-bold text-blue-600 dark:text-blue-400`}>PDF Report</Text>
+              <FileText size={13} color="#22D3EE" style={tw`mr-1.5`} />
+              <Text style={tw`text-xs font-black text-cyan-400 uppercase tracking-widest`}>PDF Report</Text>
             </Pressable>
 
             <Pressable
               onPress={handleSave}
               disabled={savedSuccess}
-              style={tw`flex-row items-center justify-center flex-1 md:flex-initial px-4 py-2.5 ${savedSuccess ? 'bg-emerald-500' : 'bg-teal-500'} rounded-xl`}
+              style={({ pressed }) => [
+                tw`flex-row items-center justify-center flex-1 py-3.5 ${savedSuccess ? 'bg-[#10B981]' : 'bg-[#14B8A6]'} rounded-2xl shadow-lg border border-teal-400/30`,
+                pressed ? tw`opacity-90` : null
+              ]}
             >
               {savedSuccess ? (
                 <>
-                  <CheckCircle size={14} color="#ffffff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-bold text-white`}>Saved!</Text>
+                  <CheckCircle size={13} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-widest`}>Saved</Text>
                 </>
               ) : (
                 <>
-                  <BookmarkPlus size={14} color="#ffffff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-bold text-white`}>Save Case</Text>
+                  <BookmarkPlus size={13} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-widest`}>Save Case</Text>
                 </>
               )}
             </Pressable>
           </View>
         </View>
 
-        {/* Circular Gauge and Severity Scale Grid */}
-        <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6`}>
+        {/* Circular Gauge and Severity Scale */}
+        <View style={tw`flex-col space-y-6`}>
           
           {/* Circular Score Gauge */}
-          <View style={tw`w-full md:w-[35%] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm items-center justify-center`}>
-            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4`}>
+          <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl items-center justify-center relative overflow-hidden`}>
+            {/* Ambient background glow inside the gauge */}
+            <View style={tw`absolute w-40 h-40 rounded-full bg-teal-500/5 blur-3xl`} />
+            
+            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 text-center font-mono`}>
               Orthodontic Compensation Index
             </Text>
             
-            <View style={tw`w-36 h-36 items-center justify-center bg-teal-500/5 rounded-full border-4 border-slate-100 dark:border-slate-800 relative`}>
-              <Text style={[tw`text-4xl font-black font-mono tracking-tighter`, getScoreColor(ociResult.totalScore)]}>
+            <View style={tw`w-40 h-40 items-center justify-center bg-black/40 rounded-full border-4 ${getGaugeBorderColor(ociResult.totalScore)} relative shadow-inner`}>
+              <Text style={tw`text-4xl font-black font-mono tracking-tighter ${getScoreColor(ociResult.totalScore)}`}>
                 {ociResult.totalScore}%
               </Text>
-              <Text style={tw`text-[10px] text-slate-400 font-mono`}>Max 100%</Text>
+              <Text style={tw`text-[9px] text-slate-400 font-mono font-bold mt-1 uppercase tracking-widest`}>Tilt Index</Text>
             </View>
 
-            <Text style={tw`text-base font-extrabold text-slate-800 dark:text-slate-100 mt-4 text-center`}>
+            <Text style={tw`text-lg font-black text-white mt-6 text-center`}>
               {ociResult.interpretation}
             </Text>
-            <Text style={tw`text-[11px] text-slate-400 mt-1 text-center leading-relaxed`}>
-              Dentoalveolar structures show compensation levels masking sagittal patterns.
+            <Text style={tw`text-xs text-slate-300 mt-2 text-center leading-relaxed px-4`}>
+              Incisor coordinates display compensation levels masking underlying skeletal sagittal discrepancies.
             </Text>
           </View>
 
           {/* Recommendations and Severity Indicators */}
-          <View style={tw`flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm justify-between space-y-6`}>
+          <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl space-y-5`}>
             <View style={tw`space-y-4`}>
-              <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/5 pb-2.5 font-mono`}>
                 Clinical Interpretation Severity Scale
               </Text>
 
               {/* Severity tier blocks */}
-              <View style={tw`flex-row flex-wrap justify-between gap-1.5`}>
+              <View style={tw`flex-row space-x-1 justify-between`}>
                 {[
                   { range: '0-20', label: 'Minimal', color: 'bg-emerald-500', active: ociResult.totalScore <= 20 },
                   { range: '21-40', label: 'Mild', color: 'bg-teal-500', active: ociResult.totalScore > 20 && ociResult.totalScore <= 40 },
-                  { range: '41-60', label: 'Moderate', color: 'bg-amber-500', active: ociResult.totalScore > 40 && ociResult.totalScore <= 60 },
-                  { range: '61-80', label: 'Severe', color: 'bg-orange-500', active: ociResult.totalScore > 60 && ociResult.totalScore <= 80 },
-                  { range: '81-100', label: 'Extreme', color: 'bg-red-500', active: ociResult.totalScore > 80 }
+                  { range: '41-60', label: 'Mod', color: 'bg-amber-500', active: ociResult.totalScore > 40 && ociResult.totalScore <= 60 },
+                  { range: '61-80', label: 'Sev', color: 'bg-orange-500', active: ociResult.totalScore > 60 && ociResult.totalScore <= 80 },
+                  { range: '81-100', label: 'Ext', color: 'bg-rose-500', active: ociResult.totalScore > 80 }
                 ].map((tier, idx) => (
                   <View 
                     key={idx} 
-                    style={tw`w-[18%] py-2 rounded-xl border items-center ${
+                    style={tw`flex-1 py-2 rounded-xl border items-center ${
                       tier.active 
-                        ? `${tier.color} border-transparent` 
-                        : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-850'
+                        ? `${tier.color} border-transparent shadow-lg` 
+                        : 'bg-black/30 border-white/5'
                     }`}
                   >
-                    <Text style={tw`text-[9px] font-black uppercase ${tier.active ? 'text-white' : 'text-slate-400'}`}>
+                    <Text style={tw`text-[8px] font-black uppercase tracking-wider ${tier.active ? 'text-white' : 'text-slate-500'}`}>
                       {tier.label}
                     </Text>
-                    <Text style={tw`text-[8px] font-mono ${tier.active ? 'text-white/80' : 'text-slate-400'}`}>
+                    <Text style={tw`text-[7px] font-mono mt-0.5 ${tier.active ? 'text-white/80' : 'text-slate-500'}`}>
                       {tier.range}
                     </Text>
                   </View>
@@ -194,48 +224,51 @@ export default function ResultsDashboard({
               </View>
 
               {/* Algorithmic Clinical recommendation card */}
-              <View style={tw`bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl flex-row items-start`}>
-                <Award size={18} color="#3b82f6" style={tw`mr-3 mt-0.5`} />
+              <View style={tw`bg-teal-500/5 border border-teal-500/15 p-4 rounded-2xl flex-row items-start space-x-3`}>
+                <Award size={16} color="#14B8A6" style={tw`mr-1.5 mt-0.5 shrink-0`} />
                 <View style={tw`flex-1`}>
-                  <Text style={tw`font-bold text-xs text-blue-900 dark:text-blue-100`}>
+                  <Text style={tw`font-extrabold text-xs text-white uppercase tracking-wide`}>
                     Algorithmic Recommendation
                   </Text>
-                  <Text style={tw`text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed mt-1`}>
+                  <Text style={tw`text-[11px] text-slate-300 leading-relaxed mt-1.5`}>
                     {ociResult.recommendation}
                   </Text>
                 </View>
               </View>
             </View>
 
-            <Text style={tw`text-[10px] text-slate-400 italic`}>
-              * This index evaluates sagittal dental compensation. Treatment pathways must also integrate vertical profile esthetics, soft-tissue contours, TMJ health, and patient consent.
-            </Text>
+            <View style={tw`flex-row items-start space-x-2`}>
+              <Info size={11} color="#64748b" style={tw`mt-0.5 shrink-0`} />
+              <Text style={tw`text-[9px] text-slate-500 italic leading-relaxed`}>
+                This index evaluates sagittal dental compensation. Treatment pathways must also integrate vertical profile esthetics, soft-tissue contours, TMJ health, and patient consent.
+              </Text>
+            </View>
           </View>
 
         </View>
 
-        {/* Gemini Copilot Summary section */}
-        <View style={tw`bg-slate-950 p-6 rounded-3xl border border-slate-850 space-y-4`}>
-          <View style={tw`flex-row justify-between items-center border-b border-slate-850 pb-3`}>
+        {/* Gemini Copilot Summary section with ReactMarkdown */}
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-6 rounded-[28px] border border-[#14B8A6]/20 space-y-4 shadow-2xl`}>
+          <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-3.5`}>
             <View style={tw`flex-row items-center`}>
-              <Cpu size={18} color="#2dd4bf" style={tw`mr-2.5 animate-pulse`} />
+              <Cpu size={16} color="#22D3EE" style={tw`mr-2.5`} />
               <View>
                 <View style={tw`flex-row items-center`}>
-                  <Text style={tw`font-black text-sm text-white mr-1.5`}>Gemini Clinical Copilot Summary</Text>
+                  <Text style={tw`font-black text-sm text-white mr-2`}>Gemini Clinical Copilot</Text>
                   <View style={tw`bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/25`}>
-                    <Text style={tw`text-[8px] text-teal-300 font-bold uppercase`}>Live</Text>
+                    <Text style={tw`text-[7px] text-[#22D3EE] font-mono font-black uppercase tracking-widest`}>LIVE CORE</Text>
                   </View>
                 </View>
-                <Text style={tw`text-[10px] text-slate-500 mt-0.5`}>Synthesizes ANB metrics & dental tipping profiles</Text>
+                <Text style={tw`text-[9px] text-slate-400 mt-0.5`}>Synthesizes ANB metrics & dental tipping profiles</Text>
               </View>
             </View>
             
             <Pressable
               onPress={() => setIsEditingSummary(!isEditingSummary)}
-              style={tw`flex-row items-center bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10`}
+              style={tw`flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10`}
             >
-              <Edit2 size={10} color="#cbd5e1" style={tw`mr-1`} />
-              <Text style={tw`text-[10px] font-bold text-slate-300`}>
+              <Edit2 size={10} color="#cbd5e1" style={tw`mr-1.5`} />
+              <Text style={tw`text-[9px] font-black text-slate-300 uppercase tracking-widest`}>
                 {isEditingSummary ? 'View' : 'Edit'}
               </Text>
             </Pressable>
@@ -243,8 +276,8 @@ export default function ResultsDashboard({
 
           {loadingSummary ? (
             <View style={tw`py-6 items-center justify-center space-y-2`}>
-              <ActivityIndicator size="small" color="#2dd4bf" />
-              <Text style={tw`text-xs font-mono text-slate-400`}>SYNTHESIZING PATIENT PARAMETERS...</Text>
+              <ActivityIndicator size="small" color="#14B8A6" />
+              <Text style={tw`text-[9px] font-mono text-teal-400 font-black uppercase tracking-wider`}>SYNTHESIZING CLINICAL DATA...</Text>
             </View>
           ) : isEditingSummary ? (
             <View style={tw`space-y-2`}>
@@ -252,19 +285,17 @@ export default function ResultsDashboard({
                 value={editedSummary}
                 onChangeText={setEditedSummary}
                 multiline
-                numberOfLines={5}
-                style={[tw`w-full px-4 py-3 bg-slate-900 text-slate-100 font-sans text-xs rounded-xl border border-slate-800`, { minHeight: 100 }]}
+                numberOfLines={6}
+                style={[tw`w-full px-4 py-3.5 bg-black/45 text-slate-100 font-sans text-xs rounded-2xl border border-white/10 focus:border-[#14B8A6]`, { minHeight: 120 }]}
               />
               <Text style={tw`text-[9px] font-mono text-slate-500`}>
                 You can adjust this AI text before saving to patient charts or exporting files.
               </Text>
             </View>
           ) : (
-            <View style={tw`bg-slate-900/60 p-4 rounded-2xl border border-white/5`}>
-              <Text style={tw`text-xs text-slate-200 leading-relaxed font-sans`}>
-                {editedSummary || 'No clinical summary generated.'}
-              </Text>
-            </View>
+            <div className="markdown-body text-xs text-slate-200 leading-relaxed space-y-2">
+              <ReactMarkdown>{editedSummary}</ReactMarkdown>
+            </div>
           )}
         </View>
 
@@ -285,28 +316,28 @@ function generateLocalClinicalSynthesis(
   oci: OciResult
 ): string {
   const dx = patient.diagnosis || 'skeletal malocclusion';
-  const anbText = ceph.anb !== '' && ceph.anb !== undefined ? `ANB is ${ceph.anb}°` : 'ANB';
-  const impaText = ceph.impa !== '' && ceph.impa !== undefined ? `IMPA is ${ceph.impa}°` : 'IMPA';
-  const overjetText = ceph.overjet !== '' && ceph.overjet !== undefined ? `Overjet is ${ceph.overjet}mm` : 'Overjet';
+  const anbText = ceph.anb !== '' && ceph.anb !== undefined ? `ANB is **${ceph.anb}°**` : 'ANB';
+  const impaText = ceph.impa !== '' && ceph.impa !== undefined ? `IMPA is **${ceph.impa}°**` : 'IMPA';
+  const overjetText = ceph.overjet !== '' && ceph.overjet !== undefined ? `Overjet is **${ceph.overjet}mm**` : 'Overjet';
 
-  let summary = `The patient displays a ${oci.interpretation} of sagittal disharmony (computed OCI score: ${oci.totalScore}/100) associated with a skeletal ${dx} discrepancy. `;
+  let summary = `The patient displays a **${oci.interpretation}** of sagittal disharmony (computed OCI score: **${oci.totalScore}/100**) associated with a skeletal **${dx}** discrepancy.\n\n`;
 
   if (patient.diagnosis === 'Class III') {
-    summary += `Cephalometrics indicate skeletal Class III relationship (${anbText}). Upper incisors display proclination while lower incisors show retroclination as a primary compensatory mechanism to establish positive overjet (${overjetText}). `;
+    summary += `### Diagnostic Synthesis\n\nCephalometrics indicate skeletal Class III relationship (${anbText}). Upper incisors display proclination while lower incisors show retroclination as a primary compensatory mechanism to establish positive overjet (${overjetText}).\n\n`;
     if (oci.totalScore > 60) {
-      summary += `Due to the severe degree of dental compensation, orthodontic camouflage possesses high limitation. Mandibular incisors have exceeded normal biomechanical limits (${impaText}). An orthognathic consultation should be strongly pursued.`;
+      summary += `### Surgical Pathway suggested\n\nDue to the severe degree of dental compensation, orthodontic camouflage possesses high limitation. Mandibular incisors have exceeded normal biomechanical limits (${impaText}). An orthognathic consultation should be strongly pursued.`;
     } else {
-      summary += `Compensation levels are within clinical guidelines. Orthodontic dental camouflage may be successfully achieved with carefully managed mechanics and anchorage.`;
+      summary += `### Camouflage Predictability\n\nCompensation levels are within clinical guidelines. Orthodontic dental camouflage may be successfully achieved with carefully managed mechanics and anchorage.`;
     }
   } else if (patient.diagnosis === 'Class II') {
-    summary += `Cephalometrics indicate skeletal Class II sagittal profile (${anbText}). Compensatory dental patterns show a mismatch, with proclined lower incisors (${impaText}) and retroclined upper incisors to maintain functional overjet (${overjetText}). `;
+    summary += `### Diagnostic Synthesis\n\nCephalometrics indicate skeletal Class II sagittal profile (${anbText}). Compensatory dental patterns show a mismatch, with proclined lower incisors (${impaText}) and retroclined upper incisors to maintain functional overjet (${overjetText}).\n\n`;
     if (oci.totalScore > 60) {
-      summary += `With an OCI of ${oci.totalScore}, dentoalveolar limits have been heavily compromised. Camouflage will yield unstable or periodontally hazardous outcomes. Suggest presurgical decompensation and surgical correction.`;
+      summary += `### Decompensation Guide\n\nWith an OCI of **${oci.totalScore}%**, dentoalveolar limits have been heavily compromised. Camouflage will yield unstable or periodontally hazardous outcomes. Suggest presurgical decompensation and surgical correction.`;
     } else {
-      summary += `Moderate compensation is observed. Dentoalveolar camouflage is realistic, potentially involving selective dental extractions or interproximal reduction (IPR) to preserve labial bone plates.`;
+      summary += `### Camouflage Guide\n\nModerate compensation is observed. Dentoalveolar camouflage is realistic, potentially involving selective dental extractions or interproximal reduction (IPR) to preserve labial bone plates.`;
     }
   } else {
-    summary += `Diagnostic parameters show well-balanced sagittal relations (${anbText}) and mild dentialveolar compensations, appropriate for conventional orthodontic alignment.`;
+    summary += `### General Note\n\nDiagnostic parameters show well-balanced sagittal relations (${anbText}) and mild dentialveolar compensations, appropriate for conventional orthodontic alignment.`;
   }
 
   return summary;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, Pressable, TextInput, ScrollView, Alert } from 'react-native';
 import { Assessment } from '../types';
 import { 
   Users, 
@@ -47,22 +47,22 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
 
   if (savedAssessments.length === 0) {
     return (
-      <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-4xl w-full mx-auto`}>
-        <View style={tw`bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6 mt-8 items-center text-center`}>
-          <View style={tw`w-16 h-16 bg-teal-500/10 rounded-full items-center justify-center border border-teal-500/20 text-teal-500`}>
-            <Brain size={30} color="#0d9488" />
+      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
+        <View style={tw`bg-gradient-to-br from-teal-950/40 to-[#0B1020]/40 p-8 rounded-[32px] border border-white/5 shadow-2xl mt-8 items-center text-center space-y-5`}>
+          <View style={tw`w-16 h-16 bg-[#14B8A6]/10 rounded-full items-center justify-center border border-[#14B8A6]/20 shadow-inner`}>
+            <Brain size={30} color="#14B8A6" />
           </View>
-          <Text style={tw`text-xl font-extrabold text-slate-800 dark:text-slate-100`}>
-            Treatment Planning Core Offline
+          <Text style={tw`text-lg font-black text-white`}>
+            Treatment Planner
           </Text>
-          <Text style={tw`text-slate-500 dark:text-slate-400 max-w-xs text-xs leading-relaxed text-center`}>
+          <Text style={tw`text-slate-400 max-w-xs text-xs leading-relaxed text-center`}>
             No patient assessments have been indexed yet. Start a new cephalometric OCI analysis to load clinical records into the treatment planning assistant.
           </Text>
           <View style={tw`pt-2 items-center`}>
-            <Text style={tw`text-[9px] text-teal-500/75 font-mono uppercase tracking-widest`}>
-              Clinical Decision Support Engine
+            <Text style={tw`text-[9px] text-[#22D3EE] font-black font-mono uppercase tracking-widest`}>
+              Clinical Decision Support
             </Text>
-            <Text style={tw`text-xs text-slate-400 mt-1`}>Developed by Dr. Salman MDS Orthodontist</Text>
+            <Text style={tw`text-[10px] text-slate-500 mt-1 font-mono uppercase`}>Director: Dr. Salman MDS</Text>
           </View>
         </View>
       </ScrollView>
@@ -170,13 +170,13 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
     {
       title: 'Problem List & Diagnostics',
       icon: AlertTriangle,
-      summary: `${problemList.length} skeletal and dental anomalies detected.`,
+      summary: `${problemList.length} anomalies detected.`,
       content: (
         <View style={tw`space-y-2`}>
           {problemList.map((prob, idx) => (
-            <View key={idx} style={tw`flex-row items-center bg-red-500/5 px-3 py-2.5 rounded-xl border border-red-500/10`}>
-              <View style={tw`w-2 h-2 rounded-full bg-red-500 mr-2.5`} />
-              <Text style={tw`text-xs text-red-700 dark:text-red-400 font-bold flex-1`}>{prob}</Text>
+            <View key={idx} style={tw`flex-row items-center bg-rose-500/10 px-4 py-3 rounded-2xl border border-rose-500/20`}>
+              <View style={tw`w-2 h-2 rounded-full bg-[#EF4444] mr-2.5`} />
+              <Text style={tw`text-[11px] text-rose-400 font-extrabold flex-1`}>{prob}</Text>
             </View>
           ))}
         </View>
@@ -185,16 +185,16 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
     {
       title: 'Growth Modification',
       icon: Clock,
-      summary: isGrowing ? 'Patient is in active growth phase. Suture modification indicated.' : 'Patient is adult. Dental camouflage only.',
+      summary: isGrowing ? 'Active growth phase. Growth modification indicated.' : 'Skeletal growth completed.',
       content: (
         <View style={tw`space-y-3`}>
-          <View style={tw`bg-teal-500/5 p-3 rounded-xl border border-teal-500/10`}>
-            <Text style={tw`text-[10px] font-bold text-teal-600 uppercase tracking-wider`}>Suggested Appliances</Text>
-            <Text style={tw`text-xs text-slate-800 dark:text-slate-200 mt-1`}>{growthInfo.appliances}</Text>
+          <View style={tw`bg-[#14B8A6]/10 p-4 rounded-2xl border border-[#14B8A6]/20`}>
+            <Text style={tw`text-[9px] font-black text-teal-400 uppercase tracking-widest font-mono`}>Suggested Appliances</Text>
+            <Text style={tw`text-xs text-white mt-1 leading-relaxed`}>{growthInfo.appliances}</Text>
           </View>
-          <View style={tw`bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800`}>
-            <Text style={tw`text-[10px] font-bold text-slate-500 uppercase tracking-wider`}>Clinical Timing Protocol</Text>
-            <Text style={tw`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed`}>{growthInfo.guidelines}</Text>
+          <View style={tw`bg-black/30 p-4 rounded-2xl border border-white/5`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Clinical Protocol</Text>
+            <Text style={tw`text-xs text-slate-300 mt-1 leading-relaxed`}>{growthInfo.guidelines}</Text>
           </View>
         </View>
       )
@@ -202,16 +202,16 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
     {
       title: 'Dentoalveolar Camouflage',
       icon: Layers,
-      summary: `Extraction Strategy: ${camoInfo.extraction.substring(0, 45)}...`,
+      summary: `Strategy: ${camoInfo.extraction.substring(0, 30)}...`,
       content: (
         <View style={tw`space-y-3`}>
-          <View style={tw`bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800`}>
-            <Text style={tw`text-[10px] font-bold text-slate-500 uppercase tracking-wider`}>Extraction / Non-Extraction Strategy</Text>
-            <Text style={tw`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed`}>{camoInfo.extraction}</Text>
+          <View style={tw`bg-black/30 p-4 rounded-2xl border border-white/5`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Extraction Blueprint</Text>
+            <Text style={tw`text-xs text-slate-300 mt-1 leading-relaxed`}>{camoInfo.extraction}</Text>
           </View>
-          <View style={tw`bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800`}>
-            <Text style={tw`text-[10px] font-bold text-slate-500 uppercase tracking-wider`}>Incisor Compensation Envelope</Text>
-            <Text style={tw`text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed`}>{camoInfo.compensation}</Text>
+          <View style={tw`bg-black/30 p-4 rounded-2xl border border-white/5`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Compensation Limits</Text>
+            <Text style={tw`text-xs text-slate-300 mt-1 leading-relaxed`}>{camoInfo.compensation}</Text>
           </View>
         </View>
       )
@@ -219,10 +219,10 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
     {
       title: 'Surgical Feasibility (OCI)',
       icon: ShieldCheck,
-      summary: surgeryInfo.flag ? 'Relatively high indication of orthognathic surgery.' : 'Camouflage is safe and periodontally sound.',
+      summary: surgeryInfo.flag ? 'Relatively high indication of surgery.' : 'Conventional camouflage predicted safe.',
       content: (
-        <View style={tw`bg-blue-500/5 p-4 rounded-xl border border-blue-500/10`}>
-          <Text style={tw`text-xs text-blue-700 dark:text-blue-300 leading-relaxed`}>
+        <View style={tw`bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20`}>
+          <Text style={tw`text-xs text-[#22D3EE] leading-relaxed font-black`}>
             {surgeryInfo.protocol}
           </Text>
         </View>
@@ -231,15 +231,15 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
     {
       title: 'Appliance Selection',
       icon: Wrench,
-      summary: 'Recommended physical bracket system and auxiliary elastics.',
+      summary: 'Recommended physical bracket prescriptions.',
       content: (
-        <View style={tw`flex-row flex-wrap gap-2`}>
+        <View style={tw`space-y-2`}>
           {suggestedAppliances.map((app, idx) => (
-            <View key={idx} style={tw`flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl w-full`}>
-              <View style={tw`w-6 h-6 bg-teal-500/10 rounded-lg items-center justify-center mr-2.5`}>
-                <Text style={tw`text-xs font-bold text-teal-600`}>{idx + 1}</Text>
+            <View key={idx} style={tw`flex-row items-center bg-black/45 border border-white/10 p-4 rounded-2xl w-full`}>
+              <View style={tw`w-7 h-7 bg-teal-500/10 rounded-xl items-center justify-center mr-3 border border-teal-500/25`}>
+                <Text style={tw`text-xs font-black text-teal-400`}>{idx + 1}</Text>
               </View>
-              <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 flex-1`}>{app}</Text>
+              <Text style={tw`text-xs font-bold text-white flex-1 leading-normal`}>{app}</Text>
             </View>
           ))}
         </View>
@@ -248,39 +248,39 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
   ];
 
   const handleExportCSV = () => {
-    Alert.alert("Offline CSV Export", "Treatment planning clinical records saved to local clipboard / database successfully in full HIPAA compliance.");
+    Alert.alert("Database Export", "Treatment planning clinical records saved to local clipboard / database successfully in full HIPAA compliance.");
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-5xl w-full mx-auto`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
-        {/* Dynamic selector top bar */}
-        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
+        {/* Selector Header */}
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
           <View>
-            <View style={tw`flex-row items-center`}>
-              <Brain size={16} color="#0d9488" style={tw`mr-1.5`} />
-              <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>
-                Orthodontic Treatment Planning Assistant
+            <View style={tw`flex-row items-center mb-1`}>
+              <Brain size={18} color="#14B8A6" style={tw`mr-2`} />
+              <Text style={tw`font-black text-base text-white tracking-tight uppercase`}>
+                Planning Suite
               </Text>
             </View>
-            <Text style={tw`text-xs text-slate-400 mt-1`}>Developed by Dr. Salman MDS Orthodontist</Text>
+            <Text style={tw`text-xs text-slate-400`}>Biomechanics staging and growth mod guides</Text>
           </View>
 
-          {/* Custom Select dropdown trigger */}
+          {/* Selector */}
           <View style={tw`relative`}>
             <Pressable
               onPress={() => setShowActiveSelect(!showActiveSelect)}
-              style={tw`flex-row justify-between items-center bg-slate-50 dark:bg-slate-950 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800`}
+              style={tw`flex-row justify-between items-center bg-black/40 px-4 py-3.5 rounded-2xl border border-white/10`}
             >
-              <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300`}>
-                {patientDetails.name || 'Anonymous'} ({patientDetails.caseNumber || 'No Case'}) - {patientDetails.diagnosis}
+              <Text style={tw`text-xs font-black text-slate-200`}>
+                {patientDetails.name || 'Anonymous'} ({patientDetails.caseNumber || 'No Case'})
               </Text>
-              <ChevronDown size={14} color="#64748b" />
+              <ChevronDown size={14} color="#14B8A6" />
             </Pressable>
 
             {showActiveSelect && (
-              <View style={tw`mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-lg z-50`}>
+              <View style={tw`mt-2 bg-[#0B1020] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
                 {savedAssessments.map((item) => (
                   <Pressable
                     key={item.id}
@@ -289,10 +289,10 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
                       setCustomNotes('');
                       setShowActiveSelect(false);
                     }}
-                    style={tw`px-4 py-3 border-b border-slate-100 dark:border-slate-850 hover:bg-slate-50`}
+                    style={tw`px-4 py-3.5 border-b border-white/5`}
                   >
-                    <Text style={tw`text-xs font-semibold text-slate-700 dark:text-slate-300`}>
-                      {item.patientDetails.name || 'Anonymous'} - {item.patientDetails.diagnosis}
+                    <Text style={tw`text-xs font-bold text-slate-200`}>
+                      {item.patientDetails.name || 'Anonymous'}
                     </Text>
                   </Pressable>
                 ))}
@@ -301,54 +301,53 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
           </View>
         </View>
 
-        {/* Layout Grid */}
-        <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6`}>
+        {/* Info Grid */}
+        <View style={tw`flex-col space-y-6`}>
           
-          {/* Left Column: Brief Metadata & Variable selectors */}
-          <View style={tw`w-full md:w-[35%] space-y-6`}>
+          <View style={tw`w-full space-y-6`}>
             
             {/* Demographics Card */}
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3`}>
-              <View style={tw`flex-row items-center border-b border-slate-100 dark:border-slate-850 pb-2.5`}>
-                <Users size={16} color="#0d9488" style={tw`mr-1.5`} />
-                <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Clinical Metadata</Text>
+            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-3`}>
+              <View style={tw`flex-row items-center border-b border-white/5 pb-2.5`}>
+                <Users size={15} color="#14B8A6" style={tw`mr-2`} />
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Case Summary</Text>
               </View>
 
-              <View style={tw`space-y-2`}>
+              <View style={tw`space-y-1`}>
                 {[
                   { label: 'Name', val: patientDetails.name || 'Anonymous' },
                   { label: 'Case ID', val: patientDetails.caseNumber || 'N/A' },
-                  { label: 'Age', val: `${patientDetails.age || 'N/A'} yrs` },
+                  { label: 'Age / Gender', val: `${patientDetails.age || 'N/A'}y / ${patientDetails.gender}` },
                   { label: 'Diagnosis', val: patientDetails.diagnosis || 'Class I' },
-                  { label: 'OCI Index', val: `${ociResult.totalScore}/100` }
+                  { label: 'OCI Index', val: `${ociResult.totalScore}%` }
                 ].map((row, i) => (
-                  <View key={i} style={tw`flex-row justify-between py-1.5 border-b border-slate-50 dark:border-slate-850/50`}>
+                  <View key={i} style={tw`flex-row justify-between py-2 border-b border-white/5`}>
                     <Text style={tw`text-xs text-slate-400`}>{row.label}</Text>
-                    <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300`}>{row.val}</Text>
+                    <Text style={tw`text-xs font-bold text-slate-200`}>{row.val}</Text>
                   </View>
                 ))}
               </View>
             </View>
 
             {/* Variable Selectors */}
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
-              <View style={tw`flex-row items-center border-b border-slate-100 dark:border-slate-850 pb-2.5`}>
-                <Sliders size={16} color="#0d9488" style={tw`mr-1.5`} />
-                <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Planning Variables</Text>
+            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
+              <View style={tw`flex-row items-center border-b border-white/5 pb-2.5`}>
+                <Sliders size={15} color="#14B8A6" style={tw`mr-2`} />
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Treatment Parameters</Text>
               </View>
 
-              {/* CVMS Dropdown */}
+              {/* CVMS */}
               <View>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1`}>Cervical Maturity (CVMS)</Text>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono`}>Cervical Stage (CVMS)</Text>
                 <Pressable
                   onPress={() => setShowCvmsSelect(!showCvmsSelect)}
-                  style={tw`flex-row justify-between items-center bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800`}
+                  style={tw`flex-row justify-between items-center bg-black/40 px-3.5 py-3 rounded-2xl border border-white/10`}
                 >
-                  <Text style={tw`text-xs font-semibold text-slate-700 dark:text-slate-300`}>{cvmsStage}</Text>
-                  <ChevronDown size={12} color="#64748b" />
+                  <Text style={tw`text-xs font-bold text-slate-200`}>{cvmsStage}</Text>
+                  <ChevronDown size={12} color="#14B8A6" />
                 </Pressable>
                 {showCvmsSelect && (
-                  <View style={tw`mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-lg z-50`}>
+                  <View style={tw`mt-2 bg-[#050814] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
                     {['CVMS 1 (Pre-Peak)', 'CVMS 2 (Pre-Peak)', 'CVMS 3 (Peak)', 'CVMS 4 (Post-Peak)', 'CVMS 5 (Completed)'].map((st) => (
                       <Pressable
                         key={st}
@@ -356,27 +355,27 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
                           setCvmsStage(st);
                           setShowCvmsSelect(false);
                         }}
-                        style={tw`px-3 py-2.5 border-b border-slate-100 dark:border-slate-850`}
+                        style={tw`px-4 py-3.5 border-b border-white/5`}
                       >
-                        <Text style={tw`text-xs text-slate-700`}>{st}</Text>
+                        <Text style={tw`text-xs text-slate-200 font-bold`}>{st}</Text>
                       </Pressable>
                     ))}
                   </View>
                 )}
               </View>
 
-              {/* Dentition Phase Dropdown */}
+              {/* Dentition Phase */}
               <View>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1`}>Dentition Phase</Text>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono`}>Dentition Phase</Text>
                 <Pressable
                   onPress={() => setShowDentitionSelect(!showDentitionSelect)}
-                  style={tw`flex-row justify-between items-center bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800`}
+                  style={tw`flex-row justify-between items-center bg-black/40 px-3.5 py-3 rounded-2xl border border-white/10`}
                 >
-                  <Text style={tw`text-xs font-semibold text-slate-700 dark:text-slate-300`}>{dentitionPhase}</Text>
-                  <ChevronDown size={12} color="#64748b" />
+                  <Text style={tw`text-xs font-bold text-slate-200`}>{dentitionPhase}</Text>
+                  <ChevronDown size={12} color="#14B8A6" />
                 </Pressable>
                 {showDentitionSelect && (
-                  <View style={tw`mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-lg z-50`}>
+                  <View style={tw`mt-2 bg-[#050814] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
                     {['Primary', 'Early Mixed', 'Late Mixed', 'Permanent'].map((dp) => (
                       <Pressable
                         key={dp}
@@ -384,56 +383,42 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
                           setDentitionPhase(dp);
                           setShowDentitionSelect(false);
                         }}
-                        style={tw`px-3 py-2.5 border-b border-slate-100 dark:border-slate-850`}
+                        style={tw`px-4 py-3.5 border-b border-white/5`}
                       >
-                        <Text style={tw`text-xs text-slate-700`}>{dp} Dentition</Text>
+                        <Text style={tw`text-xs text-slate-200 font-bold`}>{dp} Dentition</Text>
                       </Pressable>
                     ))}
                   </View>
                 )}
               </View>
 
-              {/* Custom treatment plan notes */}
+              {/* Operator Notes */}
               <View>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1`}>Custom treatment plan notes</Text>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono`}>Custom Directives</Text>
                 <TextInput
                   value={customNotes}
                   onChangeText={setCustomNotes}
-                  placeholder="Enter specific orthodontic biomechanics, bracket torque specifications, or patient compliance instructions..."
-                  placeholderTextColor="#94a3b8"
+                  placeholder="Record specific biomechanics or bracket specifications..."
+                  placeholderTextColor="#475569"
                   multiline
                   numberOfLines={4}
-                  style={[tw`w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 text-xs`, { minHeight: 70 }]}
+                  style={[tw`w-full px-4 py-3 bg-black/45 border border-white/10 rounded-2xl text-white text-xs font-bold`, { minHeight: 80 }]}
                 />
               </View>
             </View>
 
-            {/* Offline Export tools */}
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3`}>
-              <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Export Treatment Records</Text>
-              <Pressable
-                onPress={handleExportCSV}
-                style={tw`w-full py-2.5 bg-teal-500 rounded-xl items-center justify-center flex-row`}
-              >
-                <Text style={tw`text-xs font-bold text-white`}>Export CSV Offline</Text>
-              </Pressable>
-              <Text style={tw`text-[10px] text-slate-400 text-center italic`}>
-                * Exports are generated fully offline to secure HIPAA compliance.
-              </Text>
-            </View>
-
           </View>
 
-          {/* Right Column: Expandable Clinical Steps Workflow */}
-          <View style={tw`flex-1 space-y-4`}>
+          {/* Staging Steps Workflow */}
+          <View style={tw`w-full space-y-6`}>
             
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm`}>
-              <View style={tw`flex-row justify-between items-center border-b border-slate-100 dark:border-slate-850 pb-3 mb-4`}>
+            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl`}>
+              <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-3.5 mb-4`}>
                 <View style={tw`flex-row items-center`}>
-                  <Brain size={18} color="#0d9488" style={tw`mr-2 animate-pulse`} />
+                  <Brain size={16} color="#14B8A6" style={tw`mr-2`} />
                   <View>
-                    <Text style={tw`font-black text-sm text-slate-800 dark:text-slate-100`}>Planning Staging Workflow</Text>
-                    <Text style={tw`text-[9px] text-slate-400`}>Click titles to toggle biomechanical stages</Text>
+                    <Text style={tw`font-black text-sm text-white`}>Biomechanics staging</Text>
+                    <Text style={tw`text-[9px] text-slate-400`}>Select active stage details</Text>
                   </View>
                 </View>
               </View>
@@ -446,30 +431,30 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
                       key={idx}
                       style={tw`border rounded-2xl overflow-hidden ${
                         isExpanded 
-                          ? 'border-teal-500 bg-teal-500/5' 
-                          : 'border-slate-150 dark:border-slate-850 bg-white dark:bg-slate-900'
+                          ? 'border-[#14B8A6] bg-[#14B8A6]/5' 
+                          : 'border-white/10 bg-black/20'
                       }`}
                     >
                       {/* Trigger bar */}
                       <Pressable
                         onPress={() => setExpandedStep(isExpanded ? null : idx)}
-                        style={tw`px-4 py-3 flex-row items-center justify-between`}
+                        style={tw`px-4 py-3.5 flex-row items-center justify-between`}
                       >
                         <View style={tw`flex-row items-center flex-1 pr-4`}>
-                          <View style={tw`w-7 h-7 rounded-full items-center justify-center mr-3 ${isExpanded ? 'bg-teal-500 text-white' : 'bg-slate-100'}`}>
-                            <Text style={tw`text-xs font-bold ${isExpanded ? 'text-white' : 'text-slate-500'}`}>{idx + 1}</Text>
+                          <View style={tw`w-7 h-7 rounded-full items-center justify-center mr-3 ${isExpanded ? 'bg-[#14B8A6]' : 'bg-white/10'}`}>
+                            <Text style={tw`text-xs font-black ${isExpanded ? 'text-white' : 'text-slate-400'}`}>{idx + 1}</Text>
                           </View>
                           <View style={tw`flex-1`}>
-                            <Text style={tw`text-xs font-bold text-slate-800 dark:text-slate-100 uppercase`}>{step.title}</Text>
+                            <Text style={tw`text-xs font-bold text-white uppercase tracking-wide`}>{step.title}</Text>
                             <Text style={tw`text-[10px] text-slate-400 mt-0.5`} numberOfLines={1}>{step.summary}</Text>
                           </View>
                         </View>
-                        {isExpanded ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+                        {isExpanded ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#94a3b8" />}
                       </Pressable>
 
                       {/* Content details */}
                       {isExpanded && (
-                        <View style={tw`px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-800 bg-white/60 dark:bg-slate-950/60`}>
+                        <View style={tw`px-4 pb-4 pt-2 border-t border-white/5 bg-black/20`}>
                           {step.content}
                         </View>
                       )}
@@ -479,24 +464,24 @@ export default function TreatmentPlanning({ savedAssessments }: TreatmentPlannin
               </View>
             </View>
 
-            {/* Diagnostic Copilot Synthesis text box */}
-            <View style={tw`bg-slate-950 p-5 rounded-3xl border border-slate-850 space-y-3`}>
+            {/* Diagnostic Copilot Synthesis */}
+            <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-[#14B8A6]/20 space-y-3 shadow-2xl`}>
               <View style={tw`flex-row items-center`}>
-                <Sparkles size={16} color="#2dd4bf" style={tw`mr-2`} />
-                <Text style={tw`font-extrabold text-xs text-teal-300 uppercase`}>Diagnostic Copilot Synthesis</Text>
+                <Sparkles size={16} color="#22D3EE" style={tw`mr-2`} />
+                <Text style={tw`text-[10px] font-bold text-teal-300 uppercase tracking-widest font-mono`}>Diagnostic Synthesis</Text>
               </View>
-              <Text style={tw`text-xs text-slate-200 leading-relaxed font-sans`}>
+              <Text style={tw`text-xs text-slate-200 leading-relaxed`}>
                 {isClassIII 
-                  ? `Clinical index evaluation confirms a skeletal Class III relationship with severe dental compensation limits. Lower incisors are tipped lingually (${cephalometricInput.impa || 'N/A'}°) while upper incisors are proclined to establish positive overjet. Camouflage remains borderline (OCI: ${ociResult.totalScore}/100).`
+                  ? `Clinical evaluation confirms skeletal Class III relationship with high dental compensation limits. Lower incisors retroclined (${cephalometricInput.impa || 'N/A'}°) while upper incisors proclined. Camouflage remains borderline (OCI: ${ociResult.totalScore}%).`
                   : isClassII 
-                  ? `Clinical index evaluation indicates skeletal Class II profile with natural dental camouflage adaptations. Upper incisors are tipped lingually (${cephalometricInput.u1Sn || 'N/A'}°) while lower incisors are proclined. Camouflage is realistic but requires careful anchorage management.`
-                  : `Clinical index evaluation is within normal sagittal ranges (OCI: ${ociResult.totalScore}/100). Alignment using standard prescription is safe and highly stable, with no skeletal limits breached.`
+                  ? `Clinical evaluation indicates skeletal Class II profile with natural dental camouflage. Upper incisors retroclined (${cephalometricInput.u1Sn || 'N/A'}°) while lower incisors proclined. Camouflage is realistic but requires strict anchorage.`
+                  : `Clinical evaluation within normal sagittal ranges (OCI: ${ociResult.totalScore}%). Alignment using conventional prescription is highly predictable and stable.`
                 }
               </Text>
               {customNotes !== '' && (
-                <View style={tw`p-3 bg-slate-900 border border-teal-500/20 rounded-xl mt-2`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-mono uppercase tracking-widest`}>Clinical Operator Directives</Text>
-                  <Text style={tw`text-xs text-teal-100 italic leading-normal mt-0.5`}>{customNotes}</Text>
+                <View style={tw`p-3.5 bg-black/45 border border-teal-500/20 rounded-xl mt-2`}>
+                  <Text style={tw`text-[8px] text-teal-400 font-bold font-mono uppercase tracking-widest`}>Operator Directives</Text>
+                  <Text style={tw`text-xs text-slate-200 italic leading-normal mt-1`}>{customNotes}</Text>
                 </View>
               )}
             </View>

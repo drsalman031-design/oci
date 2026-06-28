@@ -6,7 +6,12 @@ import {
   ArrowLeft, 
   Sparkles, 
   RotateCcw,
-  BookOpen
+  BookOpen,
+  ChevronRight,
+  Cpu,
+  BookmarkCheck,
+  CheckCircle2,
+  Trash2
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -89,21 +94,21 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
     onCalculate(form);
   };
 
-  const getDevColor = (field: keyof CephalometricInput, val: any) => {
-    if (val === '' || val === undefined) return 'text-slate-400';
+  const getDevColorClass = (field: keyof CephalometricInput, val: any) => {
+    if (val === '' || val === undefined) return 'text-slate-500';
     const num = Number(val);
     const norm = Norms[field as string];
-    if (!norm) return 'text-slate-700 dark:text-slate-300';
-    if (num < norm.min || num > norm.max) return 'text-amber-600 font-bold';
-    return 'text-teal-600 font-bold';
+    if (!norm) return 'text-slate-300';
+    if (num < norm.min || num > norm.max) return 'text-amber-400 font-extrabold';
+    return 'text-emerald-400 font-extrabold';
   };
 
   const renderRangeGuide = (field: string) => {
     const norm = Norms[field];
     if (!norm) return null;
     return (
-      <Text style={tw`text-[10px] text-slate-400 font-mono mt-0.5`}>
-        Normal: {norm.min} to {norm.max}{norm.unit} (Mean: {norm.mean})
+      <Text style={tw`text-[9px] text-slate-500 font-mono mt-1.5`}>
+        Ideal range: {norm.min} to {norm.max}{norm.unit} (mean: {norm.mean})
       </Text>
     );
   };
@@ -111,20 +116,20 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   const renderInputField = (field: keyof CephalometricInput, label: string) => {
     const currentVal = form[field];
     return (
-      <View style={tw`space-y-1 mb-4 w-full`}>
-        <View style={tw`flex-row justify-between mb-1`}>
-          <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide`}>{label}</Text>
-          <Text style={tw`text-xs ${getDevColor(field, currentVal)}`}>
-            {currentVal !== '' && currentVal !== undefined ? `${currentVal}` : 'Empty'}
+      <View style={tw`space-y-2 mb-5 w-full`}>
+        <View style={tw`flex-row justify-between items-center mb-1`}>
+          <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>{label}</Text>
+          <Text style={tw`text-xs ${getDevColorClass(field, currentVal)}`}>
+            {currentVal !== '' && currentVal !== undefined ? `${currentVal}${Norms[field as string]?.unit || ''}` : 'No value'}
           </Text>
         </View>
         <TextInput
           value={currentVal === '' || currentVal === undefined ? '' : String(currentVal)}
           onChangeText={(txt) => handleFieldChange(field, txt)}
           keyboardType="numeric"
-          placeholder="e.g. 0.0"
-          placeholderTextColor="#94a3b8"
-          style={tw`w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm`}
+          placeholder="0.0"
+          placeholderTextColor="#475569"
+          style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border border-white/10 focus:border-[#14B8A6] text-white text-xs font-bold`}
         />
         {renderRangeGuide(field as string)}
       </View>
@@ -134,18 +139,18 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   const renderSelectField = (field: keyof CephalometricInput, label: string, options: string[]) => {
     const currentVal = form[field];
     return (
-      <View style={tw`space-y-1.5 mb-4`}>
-        <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1`}>{label}</Text>
-        <View style={tw`flex-row flex-wrap gap-1.5`}>
+      <View style={tw`space-y-3 mb-5`}>
+        <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>{label}</Text>
+        <View style={tw`flex-row flex-wrap gap-2`}>
           {options.map((opt) => {
             const isSelected = currentVal === opt;
             return (
               <Pressable
                 key={opt}
                 onPress={() => setForm(prev => ({ ...prev, [field]: opt }))}
-                style={tw`px-3 py-2 rounded-xl border ${isSelected ? 'bg-teal-500 border-teal-500' : 'bg-transparent border-slate-200 dark:border-slate-700'}`}
+                style={tw`px-4 py-3 rounded-2xl border ${isSelected ? 'bg-[#14B8A6] border-teal-400/30' : 'bg-black/45 border-white/10'}`}
               >
-                <Text style={tw`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
                   {opt}
                 </Text>
               </Pressable>
@@ -157,87 +162,98 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-4xl w-full mx-auto`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
         {/* Presets and top controls */}
-        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
+        <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
           <View>
             <View style={tw`flex-row items-center mb-1`}>
-              <Sparkles size={16} color="#0d9488" style={tw`mr-1.5`} />
-              <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>Clinical Presets</Text>
+              <Sparkles size={16} color="#14B8A6" style={tw`mr-2`} />
+              <Text style={tw`font-extrabold text-sm text-white tracking-wide uppercase`}>Clinical Preset Templates</Text>
             </View>
-            <Text style={tw`text-xs text-slate-400`}>Quickly prefill diagnostic archetypes to evaluate scoring</Text>
+            <Text style={tw`text-xs text-slate-400`}>Quickly prefill diagnostic index cases for study and preview</Text>
           </View>
+          
           <View style={tw`flex-row flex-wrap gap-2`}>
             <Pressable
               onPress={() => applyPreset('class1Normal')}
-              style={tw`px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700`}
+              style={tw`px-3 py-2 bg-white/5 rounded-xl border border-white/10`}
             >
-              <Text style={tw`text-[11px] font-bold text-slate-700 dark:text-slate-300`}>Normal Class I</Text>
+              <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-wider`}>Class I Normal</Text>
             </Pressable>
             
             <Pressable
               onPress={() => applyPreset('class2Compensated')}
-              style={tw`px-3 py-1.5 bg-teal-500/10 rounded-lg border border-teal-500/20`}
+              style={tw`px-3 py-2 bg-teal-500/10 rounded-xl border border-teal-500/20`}
             >
-              <Text style={tw`text-[11px] font-bold text-teal-600 dark:text-teal-400`}>Class II Compensated</Text>
+              <Text style={tw`text-[10px] font-black text-teal-400 uppercase tracking-wider`}>Class II Comp</Text>
             </Pressable>
             
             <Pressable
               onPress={() => applyPreset('class3Compensated')}
-              style={tw`px-3 py-1.5 bg-blue-500/10 rounded-lg border border-blue-500/20`}
+              style={tw`px-3 py-2 bg-[#22D3EE]/10 rounded-xl border border-[#22D3EE]/20`}
             >
-              <Text style={tw`text-[11px] font-bold text-blue-600 dark:text-blue-400`}>Class III Compensated</Text>
+              <Text style={tw`text-[10px] font-black text-[#22D3EE] uppercase tracking-wider`}>Class III Comp</Text>
             </Pressable>
 
             <Pressable
               onPress={clearForm}
-              style={tw`p-2 bg-red-500/10 rounded-lg border border-red-500/20`}
+              style={tw`p-2.5 bg-rose-500/10 rounded-xl border border-rose-500/20 items-center justify-center`}
             >
-              <RotateCcw size={14} color="#f87171" />
+              <Trash2 size={13} color="#F43F5E" />
             </Pressable>
           </View>
         </View>
 
+        {/* Progress Bar */}
+        <View style={tw`h-1.5 w-full bg-white/5 rounded-full overflow-hidden`}>
+          <View style={tw`h-full w-full bg-[#14B8A6] rounded-full`} />
+        </View>
+
         {/* Form panel */}
-        <View style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden`}>
+        <View style={tw`bg-[#0B1020]/90 rounded-[28px] border border-white/5 shadow-2xl overflow-hidden`}>
+          
           {/* Header */}
-          <View style={tw`bg-slate-950 p-6 flex-row justify-between items-center`}>
-            <View>
-              <Text style={tw`text-[10px] font-mono text-teal-400 uppercase tracking-widest`}>Step 2 of 2</Text>
-              <Text style={tw`text-lg font-bold text-white`}>Cephalometric Parameters</Text>
+          <View style={tw`bg-black/30 p-5 flex-row justify-between items-center border-b border-white/5`}>
+            <View style={tw`space-y-1`}>
+              <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-1`}>
+                <BookmarkCheck size={11} color="#22D3EE" style={tw`mr-1.5`} />
+                <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Step 2 of 2 • Parameter Intake</Text>
+              </View>
+              <Text style={tw`text-lg font-black text-white`}>Measurements</Text>
               {diagnosis ? (
-                <Text style={tw`text-[10px] text-teal-300 font-semibold bg-teal-500/10 px-2 py-0.5 rounded-full mt-1.5 self-start border border-teal-500/20`}>
-                  Diagnosis: {diagnosis}
+                <Text style={tw`text-[10px] text-teal-400 font-mono font-bold uppercase tracking-wider`}>
+                  Pattern: Skeletal {diagnosis}
                 </Text>
               ) : null}
             </View>
+            
             <Pressable 
               onPress={onBack}
-              style={tw`flex-row items-center bg-white/10 px-3 py-1.5 rounded-xl border border-white/10`}
+              style={tw`flex-row items-center bg-white/5 px-3.5 py-2 rounded-xl border border-white/10`}
             >
-              <ArrowLeft size={14} color="#ffffff" style={tw`mr-1`} />
-              <Text style={tw`text-xs font-bold text-white`}>Back</Text>
+              <ArrowLeft size={13} color="#ffffff" style={tw`mr-1.5`} />
+              <Text style={tw`text-xs font-bold text-white uppercase tracking-wider`}>Back</Text>
             </Pressable>
           </View>
 
           {/* Tab buttons */}
-          <View style={tw`flex-row bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 overflow-x-auto`}>
+          <View style={tw`flex-row bg-[#050814]/45 border-b border-white/5`}>
             {[
-              { id: 'skeletal', label: '1. Skeletal' },
-              { id: 'dental', label: '2. Dental' },
-              { id: 'soft', label: '3. Soft' },
-              { id: 'clinical', label: '4. Clinical' }
+              { id: 'skeletal', label: 'Skeletal' },
+              { id: 'dental', label: 'Dental' },
+              { id: 'soft', label: 'Soft Tissue' },
+              { id: 'clinical', label: 'Dentition' }
             ].map((tab) => {
               const isSelected = activeTab === tab.id;
               return (
                 <Pressable
                   key={tab.id}
                   onPress={() => setActiveTab(tab.id as any)}
-                  style={tw`flex-1 py-3 items-center border-b-2 ${isSelected ? 'border-teal-500 bg-white dark:bg-slate-900' : 'border-transparent'}`}
+                  style={tw`flex-1 py-4 items-center border-b-2 ${isSelected ? 'border-[#14B8A6] bg-white/5' : 'border-transparent'}`}
                 >
-                  <Text style={tw`text-xs font-extrabold ${isSelected ? 'text-teal-500' : 'text-slate-400'}`}>
+                  <Text style={tw`text-xs font-black uppercase tracking-wider ${isSelected ? 'text-teal-400' : 'text-slate-400'}`}>
                     {tab.label}
                   </Text>
                 </Pressable>
@@ -246,13 +262,13 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
           </View>
 
           {/* Tab content */}
-          <View style={tw`p-6 min-h-[350px]`}>
+          <View style={tw`p-6 min-h-[380px]`}>
             {activeTab === 'skeletal' && (
               <View style={tw`space-y-4`}>
-                <View style={tw`bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex-row items-start mb-2`}>
-                  <BookOpen size={16} color="#0d9488" style={tw`mr-2 mt-0.5 shrink-0`} />
-                  <Text style={tw`text-xs text-slate-500 leading-relaxed flex-1`}>
-                    Skeletal assessment evaluates the basic sagittal & vertical bony relations. Under-compensated Class II/III skeletal patterns carry significant pre-treatment therapeutic camouflage challenges.
+                <View style={tw`bg-teal-500/5 p-4 rounded-2xl border border-teal-500/10 flex-row items-start mb-4`}>
+                  <BookOpen size={14} color="#14B8A6" style={tw`mr-2.5 mt-0.5 shrink-0`} />
+                  <Text style={tw`text-[11px] text-slate-300 leading-relaxed flex-1`}>
+                    Skeletal factors outline the underlying bone configuration of the maxilla and mandible. Natural tooth tilt compensation masks this true discrepancy.
                   </Text>
                 </View>
 
@@ -261,7 +277,7 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
                 {renderInputField('snb', 'SNB Angle (°)')}
                 {renderInputField('wits', 'Wits Appraisal (mm)')}
                 {renderInputField('snMp', 'SN-MP Angle (°)')}
-                {renderInputField('fma', 'FMA (Y-Axis/Tweed) (°)')}
+                {renderInputField('fma', 'FMA Angle (°)')}
               </View>
             )}
 
@@ -269,10 +285,10 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
               <View style={tw`space-y-4`}>
                 {renderInputField('u1Sn', 'U1-SN Angle (°) *')}
                 {renderInputField('u1NaDeg', 'U1-NA Angle (°)')}
-                {renderInputField('u1NaMm', 'U1-NA Distance (mm)')}
+                {renderInputField('u1NaMm', 'U1-NA Dist (mm)')}
                 {renderInputField('impa', 'L1-MP Angle (IMPA) (°) *')}
                 {renderInputField('l1NbDeg', 'L1-NB Angle (°)')}
-                {renderInputField('l1NbMm', 'L1-NB Distance (mm)')}
+                {renderInputField('l1NbMm', 'L1-NB Dist (mm)')}
                 {renderInputField('interincisalAngle', 'Interincisal Angle (°) *')}
                 {renderInputField('overjet', 'Overjet (mm) *')}
                 {renderInputField('overbite', 'Overbite (mm)')}
@@ -305,29 +321,33 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
           </View>
 
           {/* Footer Actions */}
-          <View style={tw`bg-slate-50 dark:bg-slate-950 p-6 border-t border-slate-200 dark:border-slate-800 flex-row justify-between items-center`}>
+          <View style={tw`bg-black/30 p-5 border-t border-white/5 flex-row justify-between items-center`}>
             <View style={tw`flex-row space-x-1.5`}>
               {['skeletal', 'dental', 'soft', 'clinical'].map((tab) => (
                 <View 
                   key={tab} 
-                  style={tw`w-2 h-2 rounded-full ${activeTab === tab ? 'bg-teal-500' : 'bg-slate-200 dark:bg-slate-800'}`} 
+                  style={tw`w-2 h-2 rounded-full ${activeTab === tab ? 'bg-teal-400' : 'bg-slate-700'}`} 
                 />
               ))}
             </View>
             
-            <View style={tw`flex-row space-x-3`}>
+            <View style={tw`flex-row space-x-2.5`}>
               <Pressable
                 onPress={onBack}
-                style={tw`px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl`}
+                style={tw`px-4 py-3 bg-white/5 border border-white/10 rounded-2xl items-center`}
               >
-                <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Back</Text>
+                <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>Back</Text>
               </Pressable>
               
               <Pressable
                 onPress={handleCalculate}
-                style={tw`px-5 py-2.5 bg-teal-500 rounded-xl shadow-md`}
+                style={({ pressed }) => [
+                  tw`px-5 py-3 bg-[#14B8A6] rounded-2xl flex-row items-center justify-center shadow-lg shadow-teal-500/20 border border-teal-400/30`,
+                  pressed ? tw`opacity-90 scale-98` : null
+                ]}
               >
-                <Text style={tw`text-xs font-bold text-white`}>Calculate OCI</Text>
+                <Text style={tw`text-white font-black text-xs uppercase tracking-widest mr-1.5`}>Solve OCI</Text>
+                <CheckCircle2 size={14} color="#ffffff" />
               </Pressable>
             </View>
           </View>

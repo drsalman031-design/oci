@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Animated, StyleSheet } from 'react-native';
-import { Activity, Cpu, Smartphone } from 'lucide-react-native';
+import { View, Text, ActivityIndicator, Animated, StyleSheet } from 'react-native';
+import { Sparkles, Brain, Cpu, ShieldCheck } from 'lucide-react-native';
 import tw from 'twrnc';
 
 interface SplashProps {
@@ -11,103 +11,117 @@ const AnimatedView = Animated.View as any;
 
 export default function Splash({ onFinish }: SplashProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in animation
+    // Elegant entrance fade & subtle scale up
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 1000,
         useNativeDriver: true,
       }),
       Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 1000,
         useNativeDriver: true,
-      })
+      }),
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 8000,
+          useNativeDriver: true,
+        })
+      )
     ]).start();
 
     const timer = setTimeout(() => {
       onFinish();
-    }, 3200);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [onFinish]);
 
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
   return (
-    <View style={[tw`flex-1 bg-slate-950 items-center justify-center p-6`, StyleSheet.absoluteFill]}>
-      {/* Decorative vertical grid lines / design backdrop */}
-      <View style={[tw`absolute inset-0 opacity-10`, { backgroundColor: '#022c22' }]} />
+    <View style={[tw`flex-1 bg-[#050814] items-center justify-center p-6`, StyleSheet.absoluteFill]}>
+      {/* Absolute high-end glowing background lights */}
+      <View style={tw`absolute w-96 h-96 rounded-full bg-teal-500/10 blur-3xl`} />
+      <View style={tw`absolute w-80 h-80 rounded-full bg-indigo-500/5 blur-3xl -top-20 -left-10`} />
       
       <AnimatedView style={[
         tw`max-w-md w-full items-center z-10`,
         { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
       ]}>
         
-        {/* Futuristic Outer Shell */}
-        <View style={tw`w-36 h-36 mb-8 bg-slate-900 rounded-3xl items-center justify-center border border-teal-500/30 relative overflow-hidden shadow-lg`}>
-          <View style={tw`absolute inset-2 border border-teal-500/10 rounded-2xl bg-slate-950/40`} />
-          <Cpu size={56} color="#2dd4bf" style={tw`opacity-90`} />
-          <Activity size={20} color="#34d399" style={tw`absolute bottom-4 right-4`} />
+        {/* Floating Futuristic Core Icon */}
+        <View style={tw`w-36 h-36 mb-8 relative items-center justify-center`}>
+          {/* Animated spinning background ring */}
+          <Animated.View style={[
+            tw`absolute w-36 h-36 border-2 border-dashed border-[#14B8A6]/20 rounded-full`,
+            { transform: [{ rotate: spin }] }
+          ]} />
+          
+          {/* Main glass capsule */}
+          <View style={tw`w-28 h-28 bg-gradient-to-br from-white/10 to-white/5 rounded-[38px] items-center justify-center border border-[#14B8A6]/30 shadow-2xl relative overflow-hidden`}>
+            <View style={tw`absolute inset-1 border border-white/10 rounded-[34px] bg-black/45`} />
+            <Brain size={48} color="#22D3EE" style={tw`opacity-95`} />
+            
+            {/* Corner status pulse */}
+            <View style={tw`absolute top-4 right-4 w-2.5 h-2.5 bg-teal-400 rounded-full border border-black`}>
+              <View style={tw`w-full h-full bg-teal-400 rounded-full animate-ping opacity-75`} />
+            </View>
+          </View>
         </View>
-
-        {/* Title & Badge */}
-        <View style={tw`items-center space-y-2 mb-6`}>
-          <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full mb-3`}>
-            <Cpu size={12} color="#2dd4bf" style={tw`mr-1.5`} />
-            <Text style={tw`text-teal-400 text-[10px] font-bold uppercase tracking-widest`}>
-              AI-Driven Diagnostic Core
+  
+        {/* Title & Premium Badging */}
+        <View style={tw`items-center mb-6`}>
+          <View style={tw`flex-row items-center bg-white/5 border border-white/10 px-4 py-1.5 rounded-full mb-4 shadow-inner`}>
+            <Sparkles size={11} color="#22D3EE" style={tw`mr-2`} />
+            <Text style={tw`text-[#22D3EE] text-[9px] font-black uppercase tracking-widest font-mono`}>
+              Autonomous Clinical Modeling
             </Text>
           </View>
           
-          <Text style={tw`text-3xl font-extrabold tracking-tight text-center text-teal-400`}>
-            OCI ANALYZER
+          <Text style={tw`text-4xl font-black tracking-tighter text-center text-white`}>
+            OCI CLINIC
           </Text>
           
-          <Text style={tw`text-slate-400 font-mono text-[10px] uppercase tracking-widest text-center`}>
+          <Text style={tw`text-teal-400 font-mono text-[9px] uppercase tracking-widest text-center font-black mt-1.5`}>
             Orthodontic Compensation Index
           </Text>
         </View>
-
-        {/* Clinical Summary */}
-        <Text style={tw`text-xs text-slate-300 text-center px-6 leading-relaxed mb-8`}>
-          Expert-mode cephalometric index calculator and patient diagnostic archiver.
+  
+        {/* Purpose / Philosophy */}
+        <Text style={tw`text-xs text-slate-400 text-center px-8 leading-relaxed mb-10`}>
+          Quantifying sagittal dentoalveolar masking through advanced diagnostic automation. Engineered to reveal boundaries of camouflage versus orthognathic surgical planning.
         </Text>
-
-        {/* Loading Indicator */}
-        <View style={tw`flex-row items-center justify-center mb-8`}>
-          <ActivityIndicator size="small" color="#2dd4bf" style={tw`mr-2`} />
-          <Text style={tw`text-xs text-slate-500 font-mono`}>INITIALIZING CORE...</Text>
-        </View>
-
-        {/* Fast Action Skip */}
-        <Pressable
-          onPress={onFinish}
-          style={({ pressed }) => [
-            tw`px-6 py-3 bg-teal-500/15 border border-teal-500/30 rounded-2xl flex-row items-center justify-center transition-all`,
-            pressed ? tw`bg-teal-500/30` : null
-          ]}
-        >
-          <Text style={tw`text-teal-300 font-bold text-xs tracking-wider mr-2`}>
-            Skip Diagnostics
-          </Text>
-          <Activity size={14} color="#2dd4bf" style={tw`animate-pulse`} />
-        </Pressable>
-
-        {/* Branding Footer */}
-        <View style={tw`mt-12 items-center space-y-1`}>
-          <View style={tw`flex-row items-center`}>
-            <Smartphone size={12} color="#64748b" style={tw`mr-1`} />
-            <Text style={tw`text-[10px] text-slate-500 font-mono uppercase tracking-wider`}>
-              v1.2.0 • Standalone Mobile • Offline
+  
+        {/* Sleek Loader */}
+        <View style={tw`items-center mb-8`}>
+          <View style={tw`flex-row items-center justify-center`}>
+            <ActivityIndicator size="small" color="#14B8A6" style={tw`mr-2.5`} />
+            <Text style={tw`text-[10px] text-teal-400 font-mono font-black uppercase tracking-wider`}>
+              Booting OrthoPilot Core v2.0
             </Text>
           </View>
-          <Text style={tw`text-[11px] text-teal-400/80 font-semibold tracking-wide mt-1`}>
-            Developed by Dr. Salman MDS Orthodontist
-          </Text>
         </View>
-
+  
+        {/* Developer Seal */}
+        <View style={tw`mt-6 items-center`}>
+          <View style={tw`flex-row items-center bg-white/5 border border-white/5 px-3.5 py-1.5 rounded-2xl`}>
+            <ShieldCheck size={12} color="#10B981" style={tw`mr-1.5`} />
+            <Text style={tw`text-[9px] text-slate-400 font-mono uppercase tracking-widest`}>
+              Director: Dr. Salman MDS Orthodontist
+            </Text>
+          </View>
+        </View>
+  
       </AnimatedView>
     </View>
   );

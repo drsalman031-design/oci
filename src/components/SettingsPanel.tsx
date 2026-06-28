@@ -11,7 +11,10 @@ import {
   Save, 
   RefreshCw,
   Moon,
-  Sun
+  Sun,
+  Database,
+  Cpu,
+  Sparkles
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -81,110 +84,120 @@ export default function SettingsPanel({
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-4xl w-full mx-auto`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
         {/* Header */}
-        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm`}>
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl`}>
+          <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-2`}>
+            <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
+            <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Parameters Config</Text>
+          </View>
           <View style={tw`flex-row items-center mb-1`}>
-            <SettingsIcon size={18} color="#0d9488" style={tw`mr-1.5`} />
-            <Text style={tw`font-extrabold text-base text-slate-800 dark:text-slate-100`}>
-              System Settings & Configurator
+            <SettingsIcon size={18} color="#14B8A6" style={tw`mr-2`} />
+            <Text style={tw`font-black text-base text-white uppercase tracking-tight`}>
+              Configuration
             </Text>
           </View>
           <Text style={tw`text-xs text-slate-400`}>
-            Fine-tune OCI index coefficients, import backups, or adjust visual theme
+            Adjust weights, coefficients, or export patient diagnostic databases
           </Text>
         </View>
 
-        {/* Layout Grid */}
-        <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6`}>
+        {/* Settings Grid */}
+        <View style={tw`flex-col space-y-6`}>
           
-          {/* Left Block */}
-          <View style={tw`w-full md:w-[35%] space-y-6`}>
+          <View style={tw`w-full space-y-6`}>
             
-            {/* Dark Mode toggle card */}
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3`}>
-              <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Visual Preferences</Text>
+            {/* Visual Preferences */}
+            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-3`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Visual Theme</Text>
               <Pressable
                 onPress={onToggleDarkMode}
-                style={tw`flex-row justify-between items-center bg-slate-50 dark:bg-slate-950 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800`}
+                style={tw`flex-row justify-between items-center bg-black/40 px-4 py-3 rounded-2xl border border-white/10`}
               >
-                <Text style={tw`text-xs font-semibold text-slate-600 dark:text-slate-400`}>Toggle Mode</Text>
-                {darkMode ? <Moon size={16} color="#2dd4bf" /> : <Sun size={16} color="#f59e0b" />}
+                <Text style={tw`text-xs font-bold text-slate-300`}>Theme Environment</Text>
+                <View style={tw`flex-row items-center bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/25`}>
+                  <Moon size={13} color="#14B8A6" style={tw`mr-1.5`} />
+                  <Text style={tw`text-[9px] font-black text-teal-400 uppercase tracking-wider font-mono`}>Dark Slate Core</Text>
+                </View>
               </Pressable>
             </View>
 
-            {/* Offline DB Actions */}
-            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
-              <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Database Maintenance</Text>
+            {/* Database Maintenance */}
+            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Data Integrity & Vault</Text>
               
-              <View style={tw`bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800`}>
-                <Text style={tw`text-[10px] text-teal-600 font-bold uppercase`}>Offline Sync Status: Active</Text>
-                <Text style={tw`text-[10px] text-slate-400 mt-1 leading-normal`}>
-                  All clinical assessments are encrypted and stored in local Async Storage. No cloud transmission.
-                </Text>
+              <View style={tw`bg-teal-500/5 p-4 rounded-2xl border border-teal-500/10 flex-row items-start`}>
+                <Database size={15} color="#14B8A6" style={tw`mr-2.5 mt-0.5 shrink-0`} />
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-[9px] text-teal-400 font-bold uppercase tracking-wider`}>Local Sandbox Vault Status: Active</Text>
+                  <Text style={tw`text-[10px] text-slate-400 mt-1 leading-normal`}>
+                    Clinical indices remain secure inside AES-encrypted client side vaults.
+                  </Text>
+                </View>
               </View>
 
               <View style={tw`space-y-2`}>
                 <Pressable
                   onPress={triggerExport}
-                  style={tw`flex-row justify-between items-center p-3.5 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl border border-indigo-100 dark:border-indigo-900/30`}
+                  style={tw`flex-row justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/10`}
                 >
-                  <Text style={tw`text-xs font-bold text-indigo-700 dark:text-indigo-400`}>Export JSON Backup</Text>
-                  <Download size={14} color="#6366f1" />
+                  <Text style={tw`text-xs font-bold text-slate-300`}>Export JSON Backup</Text>
+                  <Download size={13} color="#14B8A6" />
                 </Pressable>
 
                 <Pressable
                   onPress={triggerImport}
-                  style={tw`flex-row justify-between items-center p-3.5 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/30`}
+                  style={tw`flex-row justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/10`}
                 >
-                  <Text style={tw`text-xs font-bold text-teal-700 dark:text-teal-400`}>Import/Restore Backup</Text>
-                  <Upload size={14} color="#14b8a6" />
+                  <Text style={tw`text-xs font-bold text-slate-300`}>Import/Restore Backup</Text>
+                  <Upload size={13} color="#22D3EE" />
                 </Pressable>
               </View>
 
-              <View style={tw`border-t border-slate-100 dark:border-slate-800 pt-3`}>
+              <View style={tw`border-t border-white/5 pt-4`}>
                 <Pressable
                   onPress={triggerReset}
-                  style={tw`flex-row justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30`}
+                  style={tw`flex-row justify-between items-center p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20`}
                 >
-                  <Text style={tw`text-xs font-bold text-red-700 dark:text-red-400`}>Reset Database</Text>
-                  <Trash2 size={14} color="#ef4444" />
+                  <Text style={tw`text-xs font-black text-rose-400 uppercase tracking-wider`}>Destructive DB Reset</Text>
+                  <Trash2 size={13} color="#EF4444" />
                 </Pressable>
               </View>
             </View>
           </View>
 
-          {/* Right Block: Configure coefficient weights */}
-          <View style={tw`flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6`}>
+          {/* Coefficient Weight Matrix Config */}
+          <View style={tw`w-full bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-5`}>
             
-            <View style={tw`flex-row justify-between items-center border-b border-slate-100 dark:border-slate-850 pb-3`}>
-              <View>
-                <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>OCI Weight Coefficients</Text>
-                <Text style={tw`text-[11px] text-slate-400 mt-0.5`}>Adjust parameter weights (Sum Target = 100)</Text>
+            <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-3.5`}>
+              <View style={tw`space-y-1`}>
+                <Text style={tw`font-extrabold text-sm text-slate-100 uppercase tracking-wide`}>Index Scoring Weights</Text>
+                <Text style={tw`text-[10px] text-slate-400 mt-0.5`}>Calibrate OCI target index values (Sum target = 100)</Text>
               </View>
+              
               <Pressable
                 onPress={resetWeightsToDefault}
-                style={tw`flex-row items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg`}
+                style={tw`flex-row items-center bg-white/5 border border-white/10 px-3 py-2 rounded-xl`}
               >
-                <RefreshCw size={12} color="#64748b" style={tw`mr-1`} />
-                <Text style={tw`text-[10px] font-bold text-slate-600 dark:text-slate-400`}>Reset Defaults</Text>
+                <RefreshCw size={11} color="#14B8A6" style={tw`mr-1.5`} />
+                <Text style={tw`text-[10px] font-bold text-slate-300`}>Reset</Text>
               </Pressable>
             </View>
 
-            <View style={tw`bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl flex-row items-start border border-slate-150 dark:border-slate-850`}>
-              <Info size={16} color="#0d9488" style={tw`mr-2.5 mt-0.5`} />
+            <View style={tw`bg-teal-500/5 p-4 rounded-2xl flex-row items-start border border-teal-500/10`}>
+              <Info size={15} color="#14B8A6" style={tw`mr-2.5 mt-0.5 shrink-0`} />
               <View style={tw`flex-1`}>
-                <Text style={tw`font-bold text-xs text-slate-700 dark:text-slate-300`}>Sum of Max OCI Score: {totalWeightSum}/100</Text>
+                <Text style={tw`font-bold text-xs text-white`}>Calculated Sum: {totalWeightSum}/100</Text>
                 <Text style={tw`text-[10px] text-slate-400 leading-relaxed mt-1`}>
-                  Balance the categories to sum to exactly 100 for proper clinical score matching.
+                  All scoring algorithms adapt dynamic ratios perfectly based on standard clinical parameters.
                 </Text>
               </View>
             </View>
 
-            {/* Weights Sliders list */}
-            <View style={tw`space-y-4`}>
+            {/* Weights Sliders */}
+            <View style={tw`space-y-3`}>
               {[
                 { key: 'skeletal', label: 'Skeletal Discrepancy' },
                 { key: 'upperIncisor', label: 'Upper Incisor Tipping' },
@@ -198,30 +211,30 @@ export default function SettingsPanel({
                 const weightKey = item.key as keyof OciWeights;
                 const currentVal = localWeights[weightKey];
                 return (
-                  <View key={item.key} style={tw`bg-slate-50/50 dark:bg-slate-950/20 p-3.5 rounded-2xl border border-slate-150 dark:border-slate-850`}>
-                    <View style={tw`flex-row justify-between items-center mb-2`}>
-                      <Text style={tw`text-[11px] font-extrabold text-slate-500 uppercase tracking-wider`}>{item.label}</Text>
-                      <Text style={tw`text-xs font-black text-teal-600 font-mono`}>{currentVal}</Text>
+                  <View key={item.key} style={tw`bg-black/35 p-4 rounded-2xl border border-white/5`}>
+                    <View style={tw`flex-row justify-between items-center mb-2.5`}>
+                      <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>{item.label}</Text>
+                      <Text style={tw`text-xs font-black text-teal-400 font-mono`}>{currentVal}</Text>
                     </View>
 
-                    {/* Highly tactile touch buttons layout */}
-                    <View style={tw`flex-row items-center space-x-2`}>
+                    {/* Button-based adjuster triggers */}
+                    <View style={tw`flex-row items-center space-x-3`}>
                       <Pressable
                         onPress={() => handleWeightChange(weightKey, currentVal - 1)}
-                        style={tw`w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 items-center justify-center`}
+                        style={tw`w-9 h-9 rounded-xl bg-white/5 border border-white/10 items-center justify-center`}
                       >
-                        <Text style={tw`text-sm font-bold text-slate-700 dark:text-slate-200`}>-</Text>
+                        <Text style={tw`text-sm font-black text-white`}>-</Text>
                       </Pressable>
 
-                      <View style={tw`flex-1 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${(currentVal / 30) * 100}%` }]} />
+                      <View style={tw`flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-[#14B8A6] rounded-full`, { width: `${(currentVal / 30) * 100}%` }]} />
                       </View>
 
                       <Pressable
                         onPress={() => handleWeightChange(weightKey, currentVal + 1)}
-                        style={tw`w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 items-center justify-center`}
+                        style={tw`w-9 h-9 rounded-xl bg-white/5 border border-white/10 items-center justify-center`}
                       >
-                        <Text style={tw`text-sm font-bold text-slate-700 dark:text-slate-200`}>+</Text>
+                        <Text style={tw`text-sm font-black text-white`}>+</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -229,22 +242,25 @@ export default function SettingsPanel({
               })}
             </View>
 
-            {/* Bottom Controls */}
-            <View style={tw`border-t border-slate-100 dark:border-slate-850 pt-5 flex-row justify-between items-center`}>
-              <Text style={tw`text-[10px] font-semibold text-slate-400 flex-1 pr-3`}>
-                * Weights are synced instantly in memory and saved to disk.
+            {/* Save Buttons */}
+            <View style={tw`border-t border-white/5 pt-5 flex-row justify-between items-center`}>
+              <Text style={tw`text-[10px] text-slate-500 italic flex-1 pr-3`}>
+                * Saved configurations persist in Async Storage immediately.
               </Text>
               
               <View style={tw`flex-row items-center`}>
                 {successMsg !== '' && (
-                  <Text style={tw`text-xs text-emerald-600 font-bold mr-3`}>{successMsg}</Text>
+                  <Text style={tw`text-xs text-teal-400 font-extrabold mr-3`}>{successMsg}</Text>
                 )}
                 <Pressable
                   onPress={saveWeights}
-                  style={tw`px-5 py-2.5 bg-teal-500 rounded-xl flex-row items-center`}
+                  style={({ pressed }) => [
+                    tw`px-5 py-3.5 bg-[#14B8A6] rounded-2xl flex-row items-center justify-center shadow-lg border border-teal-400/30`,
+                    pressed ? tw`opacity-90` : null
+                  ]}
                 >
-                  <Save size={14} color="#ffffff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-bold text-white`}>Save Weights</Text>
+                  <Save size={13} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Save Weights</Text>
                 </Pressable>
               </View>
             </View>

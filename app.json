@@ -24,6 +24,12 @@
       },
       "package": "com.dr.salman.oci"
     },
+    "sdkVersion": "52.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "4a279d27-8cc6-4c8f-9d09-54390a3d34bd"
+      }
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     }

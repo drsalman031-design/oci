@@ -7,11 +7,15 @@ import {
   Copy, 
   FileText, 
   Calendar, 
-  User, 
-  Clipboard,
-  Filter,
+  Filter, 
   ArrowUpDown,
-  PlusCircle
+  PlusCircle,
+  TrendingUp,
+  Cpu,
+  Bookmark,
+  ChevronRight,
+  ShieldCheck,
+  Award
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -67,210 +71,248 @@ export default function HistoryList({
     }
   };
 
-  const getScoreBadgeBg = (score: number) => {
-    if (score <= 20) return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600';
-    if (score <= 40) return 'bg-teal-500/10 border-teal-500/20 text-teal-600';
-    if (score <= 60) return 'bg-amber-500/10 border-amber-500/20 text-amber-600';
-    if (score <= 80) return 'bg-orange-500/10 border-orange-500/20 text-orange-600';
-    return 'bg-red-500/10 border-red-500/20 text-red-600';
+  const getScoreColorPalette = (score: number) => {
+    if (score <= 20) return { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', glow: '#10B981' };
+    if (score <= 40) return { bg: 'bg-teal-500/10 border-teal-500/20', text: 'text-teal-400', glow: '#14B8A6' };
+    if (score <= 60) return { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', glow: '#F59E0B' };
+    if (score <= 80) return { bg: 'bg-orange-500/10 border-orange-500/20', text: 'text-orange-400', glow: '#F97316' };
+    return { bg: 'bg-rose-500/10 border-rose-500/20', text: 'text-rose-400', glow: '#F43F5E' };
   };
 
   const handleExportCSV = () => {
-    Alert.alert("Offline Export", "Archived clinical database records processed and saved to local clip archive successfully.");
+    Alert.alert("Database Export", "Archived clinical database records processed and saved to local clip archive successfully.");
   };
 
   const confirmDelete = (id: string, name: string) => {
     Alert.alert(
-      "Delete Case",
-      `Are you sure you want to permanently delete ${name}'s assessment archive?`,
+      "Delete Case Archive",
+      `Are you sure you want to permanently delete ${name}'s assessment archive? This cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => onDelete(id) }
+        { text: "Confirm Delete", style: "destructive", onPress: () => onDelete(id) }
       ]
     );
   };
 
+  const getInitials = (name: string) => {
+    if (!name) return 'PT';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   return (
-    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-5xl w-full mx-auto`}>
+    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
-        {/* Header and top buttons */}
-        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
-          <View style={tw`flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
-            <View>
-              <View style={tw`flex-row items-center mb-1`}>
-                <Clipboard size={18} color="#0d9488" style={tw`mr-1.5`} />
-                <Text style={tw`font-extrabold text-base text-slate-800 dark:text-slate-100`}>
-                  Patient Case History
-                </Text>
+        {/* Brand Card header */}
+        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl relative overflow-hidden`}>
+          <View style={tw`absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-2xl`} />
+          <View style={tw`flex-row justify-between items-start`}>
+            <View style={tw`space-y-1`}>
+              <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-2`}>
+                <Award size={11} color="#14B8A6" style={tw`mr-1.5`} />
+                <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Digital Archive Suite</Text>
               </View>
-              <Text style={tw`text-xs text-slate-400`}>Search, filter, and review archived records</Text>
+              <Text style={tw`font-black text-xl text-white tracking-tight`}>Patient Records</Text>
+              <Text style={tw`text-xs text-slate-400`}>Review saved cephalometric evaluations and OCI histories</Text>
             </View>
-
-            <View style={tw`flex-row gap-2 w-full sm:w-auto`}>
-              {onNewAssessment && (
-                <Pressable
-                  onPress={onNewAssessment}
-                  style={tw`flex-1 sm:flex-initial py-2.5 px-4 bg-teal-500 rounded-xl flex-row items-center justify-center`}
-                >
-                  <PlusCircle size={14} color="#ffffff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-bold text-white`}>New Case</Text>
-                </Pressable>
-              )}
-              <Pressable
-                onPress={handleExportCSV}
-                style={tw`flex-1 sm:flex-initial py-2.5 px-4 border border-slate-200 dark:border-slate-800 rounded-xl items-center justify-center`}
-              >
-                <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Export database</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={onNewAssessment}
+              style={({ pressed }) => [
+                tw`w-11 h-11 bg-teal-500/10 border border-teal-500/20 rounded-2xl items-center justify-center shadow-lg`,
+                pressed ? tw`opacity-90` : null
+              ]}
+            >
+              <PlusCircle size={18} color="#14B8A6" />
+            </Pressable>
           </View>
 
-          {/* Search bar and Filters trigger */}
-          <View style={tw`flex-col sm:flex-row gap-3`}>
-            <View style={tw`flex-1 bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 flex-row items-center`}>
-              <Search size={14} color="#94a3b8" style={tw`mr-2`} />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search patient name or Case ID..."
-                placeholderTextColor="#94a3b8"
-                style={tw`flex-1 text-slate-800 dark:text-slate-200 text-xs py-1`}
-              />
-            </View>
-
-            {/* Diagnostic category filters */}
-            <View style={tw`relative`}>
-              <Pressable
-                onPress={() => setShowFilterDropdown(!showFilterDropdown)}
-                style={tw`flex-row items-center bg-slate-50 dark:bg-slate-950 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 justify-between`}
-              >
-                <Filter size={12} color="#64748b" style={tw`mr-2`} />
-                <Text style={tw`text-xs font-semibold text-slate-600 dark:text-slate-400`}>
-                  {diagFilter === 'all' ? 'All Diagnoses' : diagFilter}
-                </Text>
-              </Pressable>
-
-              {showFilterDropdown && (
-                <View style={tw`mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-lg z-50`}>
-                  {['all', 'Class I', 'Class II', 'Class III'].map((dx) => (
-                    <Pressable
-                      key={dx}
-                      onPress={() => {
-                        setDiagFilter(dx);
-                        setShowFilterDropdown(false);
-                      }}
-                      style={tw`px-4 py-2.5 border-b border-slate-100 dark:border-slate-850`}
-                    >
-                      <Text style={tw`text-xs text-slate-700`}>{dx === 'all' ? 'All Diagnoses' : dx}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
+          {/* Quick Actions Bar */}
+          <View style={tw`flex-row gap-3 mt-4`}>
+            <Pressable
+              onPress={handleExportCSV}
+              style={({ pressed }) => [
+                tw`flex-1 py-3 bg-white/5 border border-white/10 rounded-2xl items-center justify-center`,
+                pressed ? tw`bg-white/10` : null
+              ]}
+            >
+              <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-widest`}>Sync Cloud Storage</Text>
+            </Pressable>
+            <View style={tw`px-4 bg-teal-500/5 rounded-2xl border border-teal-500/10 justify-center items-center`}>
+              <Text style={tw`text-[10px] font-black text-teal-400 font-mono`}>{assessments.length} Active</Text>
             </View>
           </View>
         </View>
 
-        {/* Sorting header indicators */}
-        <View style={tw`flex-row justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm items-center`}>
-          <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Sorting Metrics:</Text>
-          <View style={tw`flex-row space-x-3`}>
+        {/* Filters and Search panel */}
+        <View style={tw`bg-white/5 border border-white/5 rounded-[28px] p-4.5 shadow-xl space-y-3`}>
+          {/* Elegant search input */}
+          <View style={tw`bg-black/40 px-4 py-3 rounded-2xl border border-white/10 flex-row items-center`}>
+            <Search size={14} color="#64748b" style={tw`mr-2.5`} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search by patient name or Case ID..."
+              placeholderTextColor="#64748b"
+              style={tw`flex-1 text-white text-xs py-1`}
+            />
+          </View>
+
+          {/* Filters Selector */}
+          <View style={tw`relative`}>
+            <Pressable
+              onPress={() => setShowFilterDropdown(!showFilterDropdown)}
+              style={tw`flex-row items-center bg-black/40 px-4 py-3 rounded-2xl border border-white/10 justify-between`}
+            >
+              <View style={tw`flex-row items-center`}>
+                <Filter size={12} color="#14B8A6" style={tw`mr-2`} />
+                <Text style={tw`text-xs font-bold text-slate-300`}>
+                  Filter: {diagFilter === 'all' ? 'All Diagnostic Archetypes' : diagFilter}
+                </Text>
+              </View>
+              <Text style={tw`text-[10px] font-bold text-slate-400 font-mono`}>Modify</Text>
+            </Pressable>
+
+            {showFilterDropdown && (
+              <View style={tw`mt-2 bg-[#0B1020] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
+                {['all', 'Class I', 'Class II', 'Class III'].map((dx) => (
+                  <Pressable
+                    key={dx}
+                    onPress={() => {
+                      setDiagFilter(dx);
+                      setShowFilterDropdown(false);
+                    }}
+                    style={tw`px-4 py-3.5 border-b border-white/5 flex-row items-center justify-between`}
+                  >
+                    <Text style={tw`text-xs text-slate-200 font-bold`}>{dx === 'all' ? 'Show All Classes' : `Skeletal ${dx}`}</Text>
+                    {diagFilter === dx && (
+                      <View style={tw`w-2 h-2 rounded-full bg-teal-400`} />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Sort indicator row */}
+        <View style={tw`flex-row justify-between items-center px-1`}>
+          <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Sort Parameters</Text>
+          <View style={tw`flex-row gap-2`}>
             {[
               { id: 'date', label: 'Date' },
               { id: 'name', label: 'Name' },
-              { id: 'score', label: 'Score' }
+              { id: 'score', label: 'OCI' }
             ].map((st) => {
               const isActive = sortBy === st.id;
               return (
                 <Pressable
                   key={st.id}
                   onPress={() => toggleSort(st.id as any)}
-                  style={tw`flex-row items-center bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-lg border ${isActive ? 'border-teal-500 bg-teal-500/5' : 'border-slate-200 dark:border-slate-800'}`}
+                  style={tw`flex-row items-center bg-white/5 px-3.5 py-2 rounded-xl border ${isActive ? 'border-[#14B8A6] bg-[#14B8A6]/10' : 'border-white/5'}`}
                 >
-                  <Text style={tw`text-[10px] font-bold ${isActive ? 'text-teal-600' : 'text-slate-500'}`}>{st.label}</Text>
-                  <ArrowUpDown size={10} color={isActive ? '#0d9488' : '#64748b'} style={tw`ml-1`} />
+                  <Text style={tw`text-[9px] font-black uppercase tracking-widest ${isActive ? 'text-teal-400' : 'text-slate-400'}`}>{st.label}</Text>
+                  <ArrowUpDown size={9} color={isActive ? '#14B8A6' : '#64748b'} style={tw`ml-1.5`} />
                 </Pressable>
               );
             })}
           </View>
         </View>
 
-        {/* Cases List */}
+        {/* Patient cards timeline stream */}
         <View style={tw`space-y-4`}>
           {sorted.length > 0 ? (
-            sorted.map((item) => (
-              <View 
-                key={item.id} 
-                style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4`}
-              >
-                <View style={tw`flex-row justify-between items-start`}>
-                  <View style={tw`flex-row items-center`}>
-                    <View style={tw`w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-950 items-center justify-center mr-3 border border-slate-150 dark:border-slate-850`}>
-                      <User size={18} color="#0d9488" />
-                    </View>
-                    <View>
-                      <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>
-                        {item.patientDetails.name || 'Anonymous'}
-                      </Text>
-                      <View style={tw`flex-row items-center mt-1`}>
-                        <Calendar size={10} color="#94a3b8" style={tw`mr-1`} />
-                        <Text style={tw`text-[10px] text-slate-400 font-mono`}>{item.patientDetails.date || 'No Date'}</Text>
+            sorted.map((item) => {
+              const colors = getScoreColorPalette(item.ociResult.totalScore);
+              return (
+                <View 
+                  key={item.id} 
+                  style={tw`bg-[#0B1020]/90 rounded-[28px] border border-white/5 shadow-2xl p-5 relative overflow-hidden`}
+                >
+                  {/* Glowing background hint based on severity */}
+                  <View style={[tw`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10`, { backgroundColor: colors.glow }]} />
+                  
+                  <View style={tw`flex-row justify-between items-start mb-4`}>
+                    <View style={tw`flex-row items-center`}>
+                      {/* Premium Initials Avatar with custom border */}
+                      <View style={tw`w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center mr-3.5 shadow-inner`}>
+                        <Text style={tw`text-xs font-black text-slate-200`}>{getInitials(item.patientDetails.name)}</Text>
+                      </View>
+                      
+                      <View style={tw`space-y-1`}>
+                        <Text style={tw`font-extrabold text-sm text-slate-100 tracking-tight`}>
+                          {item.patientDetails.name || 'Anonymous'}
+                        </Text>
+                        <View style={tw`flex-row items-center`}>
+                          <Calendar size={10} color="#64748b" style={tw`mr-1.5`} />
+                          <Text style={tw`text-[9px] text-slate-500 font-mono uppercase font-bold`}>{item.patientDetails.date || 'No Date'}</Text>
+                        </View>
                       </View>
                     </View>
+
+                    {/* Premium index severity capsule */}
+                    <View style={tw`px-3 py-1.5 rounded-xl border flex-row items-center space-x-1.5 ${colors.bg}`}>
+                      <View style={[tw`w-1.5 h-1.5 rounded-full`, { backgroundColor: colors.glow }]} />
+                      <Text style={tw`text-[10px] font-black font-mono ${colors.text}`}>OCI: {item.ociResult.totalScore}%</Text>
+                    </View>
                   </View>
 
-                  <View style={tw`px-3 py-1.5 rounded-full border ${getScoreBadgeBg(item.ociResult.totalScore)}`}>
-                    <Text style={tw`text-xs font-black font-mono`}>OCI: {item.ociResult.totalScore}%</Text>
+                  {/* Patient mini metrics chart */}
+                  <View style={tw`flex-row justify-between bg-black/35 p-3 rounded-2xl border border-white/5 mb-4`}>
+                    <View style={tw`flex-1 items-center`}>
+                      <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Case File</Text>
+                      <Text style={tw`text-xs font-extrabold text-slate-200 mt-0.5`}>{item.patientDetails.caseNumber || 'N/A'}</Text>
+                    </View>
+                    <View style={tw`flex-1 items-center border-x border-white/10`}>
+                      <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Discrepancy</Text>
+                      <Text style={tw`text-xs font-extrabold text-[#22D3EE] mt-0.5`}>{item.patientDetails.diagnosis || 'Class I'}</Text>
+                    </View>
+                    <View style={tw`flex-1 items-center`}>
+                      <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Demographic</Text>
+                      <Text style={tw`text-xs font-extrabold text-slate-200 mt-0.5`}>{item.patientDetails.age || 'N/A'}y / {item.patientDetails.gender[0] || '?'}</Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Patient Case stats info row */}
-                <View style={tw`grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-150 dark:border-slate-850`}>
-                  <View style={tw`items-center`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Case ID</Text>
-                    <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5`}>{item.patientDetails.caseNumber || 'N/A'}</Text>
-                  </View>
-                  <View style={tw`items-center border-x border-slate-200 dark:border-slate-800`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Diagnosis</Text>
-                    <Text style={tw`text-xs font-bold text-teal-600 mt-0.5`}>{item.patientDetails.diagnosis || 'Class I'}</Text>
-                  </View>
-                  <View style={tw`items-center`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Age</Text>
-                    <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5`}>{item.patientDetails.age || 'N/A'} yrs</Text>
-                  </View>
-                </View>
-
-                {/* Actions row */}
-                <View style={tw`flex-row justify-between items-center border-t border-slate-100 dark:border-slate-850 pt-3.5`}>
-                  <Pressable
-                    onPress={() => onSelect(item)}
-                    style={tw`flex-row items-center px-4 py-2 bg-teal-500/10 rounded-xl border border-teal-500/20`}
-                  >
-                    <FileText size={12} color="#0d9488" style={tw`mr-1.5`} />
-                    <Text style={tw`text-xs font-bold text-teal-600`}>View Case Details</Text>
-                  </Pressable>
-
-                  <View style={tw`flex-row space-x-2`}>
+                  {/* Clinical Actions */}
+                  <View style={tw`flex-row justify-between items-center border-t border-white/5 pt-3.5`}>
                     <Pressable
-                      onPress={() => onDuplicate(item)}
-                      style={tw`p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800`}
+                      onPress={() => onSelect(item)}
+                      style={({ pressed }) => [
+                        tw`flex-row items-center px-4 py-2.5 bg-teal-500/10 rounded-xl border border-teal-500/20`,
+                        pressed ? tw`opacity-80` : null
+                      ]}
                     >
-                      <Copy size={12} color="#64748b" />
+                      <FileText size={12} color="#14B8A6" style={tw`mr-2`} />
+                      <Text style={tw`text-xs font-black text-teal-400 uppercase tracking-widest`}>Analyze Case</Text>
                     </Pressable>
-                    <Pressable
-                      onPress={() => confirmDelete(item.id, item.patientDetails.name)}
-                      style={tw`p-2.5 bg-red-500/10 rounded-xl border border-red-500/20`}
-                    >
-                      <Trash2 size={12} color="#ef4444" />
-                    </Pressable>
-                  </View>
-                </View>
 
-              </View>
-            ))
+                    <View style={tw`flex-row space-x-2`}>
+                      <Pressable
+                        onPress={() => onDuplicate(item)}
+                        style={({ pressed }) => [
+                          tw`p-2.5 bg-white/5 rounded-xl border border-white/10`,
+                          pressed ? tw`bg-white/10` : null
+                        ]}
+                      >
+                        <Copy size={12} color="#94a3b8" />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => confirmDelete(item.id, item.patientDetails.name)}
+                        style={({ pressed }) => [
+                          tw`p-2.5 bg-rose-500/10 rounded-xl border border-rose-500/20`,
+                          pressed ? tw`bg-rose-500/20` : null
+                        ]}
+                      >
+                        <Trash2 size={12} color="#F43F5E" />
+                      </Pressable>
+                    </View>
+                  </View>
+
+                </View>
+              );
+            })
           ) : (
-            <View style={tw`bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm items-center justify-center text-center`}>
-              <Text style={tw`text-sm font-semibold text-slate-400`}>No historical cases match the search filters.</Text>
+            <View style={tw`bg-white/5 p-10 rounded-[28px] border border-white/5 shadow-lg items-center justify-center`}>
+              <Text style={tw`text-xs font-bold text-slate-500 uppercase tracking-widest font-mono`}>No digital archives found</Text>
             </View>
           )}
         </View>

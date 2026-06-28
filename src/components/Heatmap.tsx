@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Svg, { Path, Circle, Line, G, Text as SvgText } from 'react-native-svg';
-import { Sparkles, Info } from 'lucide-react-native';
+import { Sparkles, Info, Cpu } from 'lucide-react-native';
 import tw from 'twrnc';
 import { OciResult, CephalometricInput } from '../types';
 
@@ -88,50 +88,50 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
 
   const getBGEffectClass = (colorKey: 'green' | 'yellow' | 'orange' | 'red') => {
     switch (colorKey) {
-      case 'green': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
-      case 'yellow': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
-      case 'orange': return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20';
-      case 'red': return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
-      default: return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+      case 'green': return 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30';
+      case 'yellow': return 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30';
+      case 'orange': return 'bg-orange-500/15 text-orange-400 border-orange-500/30';
+      case 'red': return 'bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30';
+      default: return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
     }
   };
 
   return (
-    <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6`}>
+    <View style={tw`bg-white/5 p-5 rounded-[32px] border border-white/10 shadow-2xl space-y-6`}>
       
       {/* Header */}
-      <View style={tw`border-b border-slate-100 dark:border-slate-850 pb-4`}>
+      <View style={tw`border-b border-white/5 pb-4`}>
         <View style={tw`flex-row items-center mb-1`}>
-          <Sparkles size={18} color="#0d9488" style={tw`mr-1.5`} />
-          <Text style={tw`font-extrabold text-base text-slate-800 dark:text-slate-100`}>
+          <Sparkles size={18} color="#14B8A6" style={tw`mr-2`} />
+          <Text style={tw`font-black text-base text-white tracking-tight`}>
             Interactive Severity Heatmap
           </Text>
         </View>
         <Text style={tw`text-xs text-slate-400`}>
-          Tap highlighted skeletal or dental zones on the profile to inspect parameters
+          Tap highlighted profile nodes to verify dentofacial compensation metrics
         </Text>
       </View>
 
       {/* Grid Layout */}
-      <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6 items-center`}>
+      <View style={tw`flex-col space-y-4 items-center w-full`}>
         
         {/* SVG Schematic Face Profile */}
-        <View style={tw`flex-row justify-center p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-850 w-full md:w-1/2`}>
-          <Svg width="220" height="250" viewBox="0 0 200 240" style={tw`overflow-visible`}>
+        <View style={tw`flex-row justify-center p-5 bg-black/40 rounded-[24px] border border-white/5 w-full`}>
+          <Svg width="220" height="240" viewBox="0 0 200 240" style={tw`overflow-visible`}>
             {/* Outline of human profile */}
             <Path
-              d="M 20,10 C 60,8 100,20 120,40 C 128,48 135,55 132,65 C 128,78 115,82 118,92 C 122,102 142,108 140,118 C 138,128 118,128 122,138 C 124,142 135,148 132,156 C 128,168 112,168 112,174 C 112,182 128,190 122,202 C 118,210 98,214 78,218 C 58,222 20,222 20,220"
+              d="M 20,10 C 60,8 100,20 120,40 C 128,48 135,55 132,65 C 128,78 115,82 118,92 Q 135,100 140,118 C 138,128 118,128 122,138 C 124,142 135,148 132,156 Q 112,168 112,174 C 112,182 128,190 122,202 Q 118,210 98,214 Q 58,222 20,220"
               fill="none"
-              stroke="#cbd5e1"
-              strokeWidth="2.5"
+              stroke="rgba(255,255,255,0.15)"
+              strokeWidth="2"
             />
 
             {/* Nose Accent */}
-            <Path d="M 118,92 Q 135,100 140,118" fill="none" stroke="#94a3b8" strokeWidth="1" />
+            <Path d="M 118,92 Q 135,100 140,118" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
 
             {/* Dentition Maxilla */}
-            <Path d="M 80,120 Q 95,120 105,125" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-            <Path d="M 80,155 Q 95,155 102,150" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+            <Path d="M 80,120 Q 95,120 105,125" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+            <Path d="M 80,155 Q 95,155 102,150" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
 
             {/* Hotspot Zones with touch handlers */}
             
@@ -141,8 +141,8 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
                 d="M 132,65 Q 118,92 118,92 Q 142,108 140,118 Q 118,128 122,138 Q 135,148 132,156 Q 112,168 112,174 Q 128,190 122,202"
                 fill="none"
                 stroke={getHexColor(severityMap.softTissue)}
-                strokeWidth={selectedZone === 'softTissue' ? 7 : 4}
-                opacity={0.85}
+                strokeWidth={selectedZone === 'softTissue' ? 6 : 3.5}
+                opacity={0.9}
               />
               <Circle cx="132" cy="118" r="5" fill={getHexColor(severityMap.softTissue)} stroke="#ffffff" strokeWidth="1" />
             </G>
@@ -152,7 +152,7 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
               <Line
                 x1="105" y1="125" x2="114" y2="137"
                 stroke={getHexColor(severityMap.upperIncisors)}
-                strokeWidth={selectedZone === 'upperIncisors' ? 9 : 5}
+                strokeWidth={selectedZone === 'upperIncisors' ? 8 : 4.5}
                 strokeLinecap="round"
               />
               <Circle cx="109" cy="131" r="5" fill={getHexColor(severityMap.upperIncisors)} stroke="#ffffff" strokeWidth="1" />
@@ -163,7 +163,7 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
               <Line
                 x1="102" y1="150" x2="111" y2="138"
                 stroke={getHexColor(severityMap.lowerIncisors)}
-                strokeWidth={selectedZone === 'lowerIncisors' ? 9 : 5}
+                strokeWidth={selectedZone === 'lowerIncisors' ? 8 : 4.5}
                 strokeLinecap="round"
               />
               <Circle cx="106" cy="144" r="5" fill={getHexColor(severityMap.lowerIncisors)} stroke="#ffffff" strokeWidth="1" />
@@ -175,7 +175,7 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
                 d="M 85,134 L 102,134 Q 106,134 108,137"
                 fill="none"
                 stroke={getHexColor(severityMap.occlusion)}
-                strokeWidth={selectedZone === 'occlusion' ? 6 : 4}
+                strokeWidth={selectedZone === 'occlusion' ? 5 : 3.5}
               />
               <Circle cx="94" cy="134" r="5" fill={getHexColor(severityMap.occlusion)} stroke="#ffffff" strokeWidth="1" />
             </G>
@@ -186,59 +186,59 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
                 d="M 60,110 Q 75,120 70,160"
                 fill="none"
                 stroke={getHexColor(severityMap.transverse)}
-                strokeWidth={selectedZone === 'transverse' ? 6 : 3}
+                strokeWidth={selectedZone === 'transverse' ? 5 : 2.5}
                 strokeDasharray="4,3"
               />
               <Circle cx="68" cy="135" r="5" fill={getHexColor(severityMap.transverse)} stroke="#ffffff" strokeWidth="1" />
             </G>
 
-            <SvgText x="35" y="105" fill="#94a3b8" fontSize="8" fontFamily="monospace">Skeletal Base</SvgText>
-            <SvgText x="145" y="75" fill="#94a3b8" fontSize="8" fontFamily="monospace">E-Line</SvgText>
+            <SvgText x="30" y="105" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Skeletal Profile</SvgText>
+            <SvgText x="145" y="75" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Ricketts E-Line</SvgText>
           </Svg>
         </View>
 
         {/* Selected Zone Info Panel */}
-        <View style={tw`w-full md:w-1/2`}>
+        <View style={tw`w-full`}>
           {selectedZone ? (
-            <View style={tw`bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4`}>
-              <View style={tw`flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2`}>
-                <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>
+            <View style={tw`bg-black/30 p-5 rounded-[24px] border border-white/10 space-y-4`}>
+              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
+                <Text style={tw`font-extrabold text-sm text-white`}>
                   {zoneMetadata[selectedZone].title}
                 </Text>
-                <View style={tw`px-2 py-0.5 rounded-full border ${getBGEffectClass(severityMap[selectedZone])}`}>
-                  <Text style={tw`text-[9px] font-black uppercase`}>
+                <View style={tw`px-3 py-1 rounded-full border ${getBGEffectClass(severityMap[selectedZone])}`}>
+                  <Text style={tw`text-[9px] font-black uppercase tracking-wider`}>
                     {severityMap[selectedZone]}
                   </Text>
                 </View>
               </View>
               
-              <Text style={tw`text-xs text-slate-500 leading-relaxed`}>
+              <Text style={tw`text-xs text-slate-300 leading-relaxed`}>
                 {zoneMetadata[selectedZone].description}
               </Text>
 
               <View style={tw`space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Metrics In Focus</Text>
+                <Text style={tw`text-[10px] font-bold text-[#14B8A6] uppercase tracking-widest font-mono`}>Metrics In Focus</Text>
                 <View style={tw`space-y-1.5`}>
                   {zoneMetadata[selectedZone].metrics.map((met, idx) => (
-                    <View key={idx} style={tw`flex-row items-center bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-150 dark:border-slate-850`}>
-                      <View style={tw`w-1.5 h-1.5 rounded-full bg-teal-500 mr-2`} />
-                      <Text style={tw`text-xs font-mono text-slate-700 dark:text-slate-300`}>{met}</Text>
+                    <View key={idx} style={tw`flex-row items-center bg-white/5 px-3.5 py-2.5 rounded-xl border border-white/5`}>
+                      <View style={tw`w-1.5 h-1.5 rounded-full bg-teal-400 mr-2.5`} />
+                      <Text style={tw`text-xs font-mono text-slate-300`}>{met}</Text>
                     </View>
                   ))}
                 </View>
               </View>
 
-              <View style={tw`border-t border-slate-200 dark:border-slate-800 pt-3`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinical Guidance</Text>
-                <Text style={tw`text-xs text-slate-600 dark:text-slate-300 italic mt-1 leading-relaxed`}>
+              <View style={tw`border-t border-white/5 pt-3.5`}>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Clinical Guidance</Text>
+                <Text style={tw`text-xs text-teal-300 italic mt-1.5 leading-relaxed`}>
                   {zoneMetadata[selectedZone].clinicalSignificance}
                 </Text>
               </View>
             </View>
           ) : (
-            <View style={tw`bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-850 items-center justify-center min-h-[220px]`}>
+            <View style={tw`bg-black/30 p-6 rounded-[24px] border border-white/5 items-center justify-center min-h-[200px]`}>
               <Info size={24} color="#94a3b8" />
-              <Text style={tw`text-sm font-semibold text-slate-400 mt-2`}>Tap on any hotspot to show diagnostics</Text>
+              <Text style={tw`text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider`}>Tap profile nodes to view parameters</Text>
             </View>
           )}
         </View>
