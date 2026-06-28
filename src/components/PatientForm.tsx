@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { User, Clipboard, FileText, ArrowRight, X } from 'lucide-react-native';
+import tw from 'twrnc';
 import { PatientDetails } from '../types';
-import { User, Clipboard, Calendar, FileText, ArrowRight, X } from 'lucide-react';
 
 interface PatientFormProps {
   initialDetails?: PatientDetails;
@@ -10,19 +12,24 @@ interface PatientFormProps {
 
 export default function PatientForm({ initialDetails, onNext, onCancel }: PatientFormProps) {
   const [name, setName] = useState(initialDetails?.name || '');
-  const [age, setAge] = useState<number | ''>(initialDetails?.age || '');
+  const [age, setAge] = useState<string>(initialDetails?.age ? String(initialDetails.age) : '');
   const [gender, setGender] = useState<PatientDetails['gender']>(initialDetails?.gender || '');
   const [caseNumber, setCaseNumber] = useState(initialDetails?.caseNumber || '');
   const [diagnosis, setDiagnosis] = useState<PatientDetails['diagnosis']>(initialDetails?.diagnosis || '');
   const [clinicalNotes, setClinicalNotes] = useState(initialDetails?.clinicalNotes || '');
-  const [date, setDate] = useState(initialDetails?.date || new Date().toISOString().split('T')[0]);
+  const [date] = useState(initialDetails?.date || new Date().toISOString().split('T')[0]);
   
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (): boolean => {
     const tempErrors: Record<string, string> = {};
     if (!name.trim()) tempErrors.name = 'Patient Name is required';
-    if (age === '' || age <= 0 || age > 120) tempErrors.age = 'Enter a valid age (1-120)';
+    
+    const parsedAge = Number(age);
+    if (!age || isNaN(parsedAge) || parsedAge <= 0 || parsedAge > 120) {
+      tempErrors.age = 'Enter a valid age (1-120)';
+    }
+    
     if (!gender) tempErrors.gender = 'Gender selection is required';
     if (!caseNumber.trim()) tempErrors.caseNumber = 'Case number is required';
     if (!diagnosis) tempErrors.diagnosis = 'Skeletal diagnosis is required';
@@ -31,8 +38,7 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
     return Object.keys(tempErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (validate()) {
       onNext({
         name,
@@ -47,168 +53,163 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-700 to-teal-600 px-8 py-6 text-white flex justify-between items-center">
-        <div>
-          <span className="text-xs uppercase tracking-widest text-teal-200 font-mono">Step 1 of 2</span>
-          <h2 className="text-2xl font-bold tracking-tight">Patient Demographics</h2>
-        </div>
-        <button 
-          onClick={onCancel}
-          className="p-2 hover:bg-white/10 rounded-xl text-white/80 hover:text-white transition cursor-pointer"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-2xl w-full mx-auto`}>
+      <View style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden mt-4`}>
+        
+        {/* Header */}
+        <View style={tw`bg-teal-700 px-6 py-5 flex-row justify-between items-center`}>
+          <View>
+            <Text style={tw`text-[10px] font-mono text-teal-200 uppercase tracking-widest`}>Step 1 of 2</Text>
+            <Text style={tw`text-xl font-bold text-white tracking-tight`}>Patient Demographics</Text>
+          </View>
+          <Pressable 
+            onPress={onCancel}
+            style={tw`p-2 hover:bg-white/10 rounded-xl`}
+          >
+            <X size={20} color="#ffffff" />
+          </Pressable>
+        </View>
 
-      <form onSubmit={handleSubmit} className="p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <View style={tw`p-6 space-y-6`}>
           
           {/* Patient Name */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-              <User className="w-4 h-4 text-slate-400" />
-              <span>Patient Name *</span>
-            </label>
-            <input
-              type="text"
+          <View style={tw`space-y-1.5`}>
+            <View style={tw`flex-row items-center mb-1`}>
+              <User size={14} color="#64748b" style={tw`mr-1.5`} />
+              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Patient Name *</Text>
+            </View>
+            <TextInput
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChangeText={setName}
               placeholder="e.g. John Doe"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-red-500 bg-red-50/20' : 'border-slate-200 dark:border-slate-700'} bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              placeholderTextColor="#94a3b8"
+              style={tw`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
             />
-            {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-          </div>
+            {errors.name && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.name}</Text>}
+          </View>
 
           {/* Case Number */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-              <Clipboard className="w-4 h-4 text-slate-400" />
-              <span>Case Number / ID *</span>
-            </label>
-            <input
-              type="text"
+          <View style={tw`space-y-1.5`}>
+            <View style={tw`flex-row items-center mb-1`}>
+              <Clipboard size={14} color="#64748b" style={tw`mr-1.5`} />
+              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Case Number / ID *</Text>
+            </View>
+            <TextInput
               value={caseNumber}
-              onChange={(e) => setCaseNumber(e.target.value)}
+              onChangeText={setCaseNumber}
               placeholder="e.g. ORTHO-2026-98"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.caseNumber ? 'border-red-500 bg-red-50/20' : 'border-slate-200 dark:border-slate-700'} bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              placeholderTextColor="#94a3b8"
+              style={tw`w-full px-4 py-3 rounded-xl border ${errors.caseNumber ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
             />
-            {errors.caseNumber && <p className="text-xs text-red-500">{errors.caseNumber}</p>}
-          </div>
+            {errors.caseNumber && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.caseNumber}</Text>}
+          </View>
 
-          {/* Age */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Age *
-            </label>
-            <input
-              type="number"
-              value={age}
-              onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="e.g. 24"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.age ? 'border-red-500 bg-red-50/20' : 'border-slate-200 dark:border-slate-700'} bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+          {/* Age & Gender Row */}
+          <View style={tw`flex-row justify-between`}>
+            
+            {/* Age */}
+            <View style={tw`w-[47%] space-y-1.5`}>
+              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>Age *</Text>
+              <TextInput
+                value={age}
+                onChangeText={setAge}
+                placeholder="e.g. 24"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                style={tw`w-full px-4 py-3 rounded-xl border ${errors.age ? 'border-red-500 bg-red-50/5' : 'border-slate-200 dark:border-slate-700'} text-slate-800 dark:text-slate-200 text-sm`}
+              />
+              {errors.age && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.age}</Text>}
+            </View>
+
+            {/* Gender Selection */}
+            <View style={tw`w-[47%] space-y-1.5`}>
+              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>Gender *</Text>
+              <View style={tw`flex-row space-x-2 border border-slate-100 dark:border-slate-850 p-1 rounded-xl`}>
+                {['Male', 'Female'].map((g) => {
+                  const isSelected = gender === g;
+                  return (
+                    <Pressable
+                      key={g}
+                      onPress={() => setGender(g as any)}
+                      style={tw`flex-1 py-2 rounded-lg items-center ${isSelected ? 'bg-teal-500' : 'bg-transparent'}`}
+                    >
+                      <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {g}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {errors.gender && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.gender}</Text>}
+            </View>
+
+          </View>
+
+          {/* Diagnosis Option Buttons */}
+          <View style={tw`space-y-1.5`}>
+            <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1`}>
+              Skeletal Sagittal Diagnosis *
+            </Text>
+            <View style={tw`flex-row justify-between border border-slate-100 dark:border-slate-850 p-1 rounded-xl`}>
+              {['Class I', 'Class II', 'Class III'].map((diag) => {
+                const isSelected = diagnosis === diag;
+                return (
+                  <Pressable
+                    key={diag}
+                    onPress={() => setDiagnosis(diag as any)}
+                    style={tw`flex-1 py-2.5 rounded-lg items-center ${isSelected ? 'bg-teal-500' : 'bg-transparent'}`}
+                  >
+                    <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {diag}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {errors.diagnosis && <Text style={tw`text-xs text-red-500 mt-1`}>{errors.diagnosis}</Text>}
+          </View>
+
+          {/* Clinical Notes */}
+          <View style={tw`space-y-1.5`}>
+            <View style={tw`flex-row items-center mb-1`}>
+              <FileText size={14} color="#64748b" style={tw`mr-1.5`} />
+              <Text style={tw`text-sm font-semibold text-slate-700 dark:text-slate-300`}>Clinical Notes / Observations</Text>
+            </View>
+            <TextInput
+              value={clinicalNotes}
+              onChangeText={setClinicalNotes}
+              placeholder="Record pre-treatment periodontal status, profile characteristics, skeletal age (CVM), or specific concerns..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              numberOfLines={4}
+              style={[tw`w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm`, { minHeight: 80 }]}
             />
-            {errors.age && <p className="text-xs text-red-500">{errors.age}</p>}
-          </div>
+          </View>
 
-          {/* Gender */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Gender *
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(['Male', 'Female', 'Other'] as const).map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGender(g)}
-                  className={`py-3 rounded-xl border text-sm font-medium transition cursor-pointer ${
-                    gender === g 
-                      ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 text-blue-600 dark:text-blue-300' 
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-            {errors.gender && <p className="text-xs text-red-500">{errors.gender}</p>}
-          </div>
+          {/* Action Buttons */}
+          <View style={tw`flex-row space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800`}>
+            <Pressable
+              onPress={onCancel}
+              style={tw`flex-1 py-3.5 border border-slate-200 dark:border-slate-700 rounded-2xl items-center`}
+            >
+              <Text style={tw`text-slate-600 dark:text-slate-400 font-bold text-xs`}>Cancel</Text>
+            </Pressable>
+            
+            <Pressable
+              onPress={handleSubmit}
+              style={({ pressed }) => [
+                tw`flex-1 py-3.5 bg-teal-500 rounded-2xl items-center flex-row justify-center`,
+                pressed ? tw`bg-teal-600` : null
+              ]}
+            >
+              <Text style={tw`text-white font-bold text-xs mr-2`}>Ceph Analysis</Text>
+              <ArrowRight size={14} color="#ffffff" />
+            </Pressable>
+          </View>
 
-          {/* Diagnosis */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Primary Skeletal Sagittal Diagnosis *
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(['Class I', 'Class II', 'Class III'] as const).map((diag) => (
-                <button
-                  key={diag}
-                  type="button"
-                  onClick={() => setDiagnosis(diag)}
-                  className={`py-3 rounded-xl border text-sm font-medium transition cursor-pointer ${
-                    diagnosis === diag 
-                      ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-300' 
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {diag}
-                </button>
-              ))}
-            </div>
-            {errors.diagnosis && <p className="text-xs text-red-500">{errors.diagnosis}</p>}
-          </div>
+        </View>
 
-          {/* Assessment Date */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              <span>Assessment Date</span>
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-          </div>
-
-        </div>
-
-        {/* Clinical Notes */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-            <FileText className="w-4 h-4 text-slate-400" />
-            <span>Clinical Notes / Medical History</span>
-          </label>
-          <textarea
-            value={clinicalNotes}
-            onChange={(e) => setClinicalNotes(e.target.value)}
-            placeholder="e.g., Patient displays macrognathia, high angle profile, severe crowding in lower arch..."
-            rows={4}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
-          />
-        </div>
-
-        {/* Navigation Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl font-medium transition cursor-pointer text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition cursor-pointer flex items-center space-x-2 text-sm shadow-md shadow-blue-500/10"
-          >
-            <span>Proceed to Cephalometrics</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </form>
-    </div>
+      </View>
+    </ScrollView>
   );
 }

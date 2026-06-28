@@ -9,6 +9,9 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        'react-native': 'react-native-web',
+        'react-native-svg': path.resolve(__dirname, 'src/lib/mockReactNativeSvg.tsx'),
+        'lucide-react-native': 'lucide-react',
       },
     },
     server: {

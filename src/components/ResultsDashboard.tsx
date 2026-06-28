@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react';
-import { OciResult, CephalometricInput, PatientDetails } from '../types';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { 
   Award, 
   Sparkles, 
-  ArrowRight, 
-  RotateCcw, 
-  FileText, 
   CheckCircle,
-  AlertTriangle,
-  FileSpreadsheet,
-  Edit,
+  FileText,
+  BookmarkPlus,
   Cpu,
-  BookmarkPlus
-} from 'lucide-react';
+  Edit2
+} from 'lucide-react-native';
+import tw from 'twrnc';
+import { OciResult, CephalometricInput, PatientDetails } from '../types';
 import SvgCharts from './SvgCharts';
 import Heatmap from './Heatmap';
 
@@ -39,7 +37,7 @@ export default function ResultsDashboard({
   const [editedSummary, setEditedSummary] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Fetch AI Clinical Summary on Mount
+  // Fetch AI Clinical Summary on mount (fallback to local synthesis)
   useEffect(() => {
     async function fetchAiSummary() {
       setLoadingSummary(true);
@@ -62,8 +60,7 @@ export default function ResultsDashboard({
           throw new Error('Failed to generate summary');
         }
       } catch (err) {
-        console.warn('AI API disconnected, using local clinical synthesis engine:', err);
-        // Fallback clinical intelligence algorithm
+        console.warn('AI API offline or restricted, using local synthesis:', err);
         const localSynthesis = generateLocalClinicalSynthesis(patientDetails, cephalometricInput, ociResult);
         setAiSummary(localSynthesis);
         setEditedSummary(localSynthesis);
@@ -75,237 +72,222 @@ export default function ResultsDashboard({
     fetchAiSummary();
   }, [patientDetails, cephalometricInput, ociResult]);
 
-  // Handle saving assessment record
   const handleSave = () => {
     onSaveAssessment(editedSummary);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const scorePercentage = ociResult.totalScore / 100;
-  const strokeDasharray = 2 * Math.PI * 45; // Radius of 45
-  const strokeDashoffset = strokeDasharray - (scorePercentage * strokeDasharray);
-
-  // Determine score color classes
   const getScoreColor = (score: number) => {
-    if (score <= 20) return 'text-emerald-500 stroke-emerald-500';
-    if (score <= 40) return 'text-teal-500 stroke-teal-500';
-    if (score <= 60) return 'text-amber-500 stroke-amber-500';
-    if (score <= 80) return 'text-orange-500 stroke-orange-500';
-    return 'text-red-500 stroke-red-500';
+    if (score <= 20) return 'text-emerald-500';
+    if (score <= 40) return 'text-teal-500';
+    if (score <= 60) return 'text-amber-500';
+    if (score <= 80) return 'text-orange-500';
+    return 'text-red-500';
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-12">
-      
-      {/* Top action row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center glass-panel p-6 rounded-2xl shadow-sm gap-4">
-        <div>
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-mono">Assessment Completed</span>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-display">
-            Results Dashboard: {patientDetails.name || 'Anonymous'}
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-2.5 w-full sm:w-auto">
-          <button
-            onClick={onBack}
-            className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition cursor-pointer"
-          >
-            Edit Inputs
-          </button>
-          <button
-            onClick={() => onOpenPdf(editedSummary)}
-            className="flex-1 sm:flex-none px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-semibold text-xs rounded-xl transition cursor-pointer flex items-center justify-center space-x-1.5"
-          >
-            <FileText className="w-4 h-4" />
-            <span>Generate PDF</span>
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={savedSuccess}
-            className={`flex-1 sm:flex-none px-5 py-2 text-white font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm ${
-              savedSuccess ? 'bg-emerald-600' : 'bg-teal-600 hover:bg-teal-700'
-            }`}
-          >
-            {savedSuccess ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                <span>Saved to Local DB!</span>
-              </>
-            ) : (
-              <>
-                <BookmarkPlus className="w-4 h-4" />
-                <span>Save Assessment</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Main Stats Block */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-5xl w-full mx-auto`}>
+      <View style={tw`space-y-6 mt-4`}>
         
-        {/* Left Circular Gauge */}
-        <div className="glass-panel p-8 rounded-3xl shadow-sm flex flex-col items-center justify-center text-center space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Orthodontic Compensation Index</h3>
+        {/* Title / Action Header */}
+        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex-col md:flex-row justify-between items-start md:items-center gap-4`}>
+          <View>
+            <Text style={tw`text-[10px] font-mono text-slate-400 uppercase tracking-widest`}>OCI Assessment Completed</Text>
+            <Text style={tw`text-lg font-extrabold text-slate-800 dark:text-slate-100`}>
+              Results Dashboard: {patientDetails.name || 'Anonymous'}
+            </Text>
+          </View>
           
-          <div className="relative w-44 h-44 flex items-center justify-center">
-            <svg className="w-full h-full rotate-[-90deg]">
-              {/* Outer grey circle */}
-              <circle
-                cx="88"
-                cy="88"
-                r="45"
-                fill="transparent"
-                stroke="#e2e8f0"
-                strokeWidth="10"
-                className="dark:stroke-slate-800"
-                transform="translate(0, 0)"
-              />
-              {/* Animated Progress circle */}
-              <circle
-                cx="88"
-                cy="88"
-                r="45"
-                fill="transparent"
-                strokeWidth="10"
-                strokeDasharray={`${strokeDasharray}`}
-                strokeDashoffset={`${strokeDashoffset}`}
-                strokeLinecap="round"
-                className={`transition-all duration-1000 ease-out ${getScoreColor(ociResult.totalScore)}`}
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-4xl font-extrabold text-slate-800 dark:text-slate-100 font-mono tracking-tight">
-                {ociResult.totalScore}
-              </span>
-              <span className="text-xs text-slate-400 font-mono">/ 100 max</span>
-            </div>
-          </div>
+          <View style={tw`flex-row flex-wrap gap-2 w-full md:w-auto`}>
+            <Pressable
+              onPress={onBack}
+              style={tw`flex-1 md:flex-initial px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl items-center`}
+            >
+              <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Edit Inputs</Text>
+            </Pressable>
 
-          <div className="space-y-1">
-            <p className="text-lg font-extrabold text-slate-800 dark:text-slate-200">
-              {ociResult.interpretation}
-            </p>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-[220px]">
-              Dentoalveolar structures show a substantial degree of masking for sagittal bone structures.
-            </p>
-          </div>
-        </div>
+            <Pressable
+              onPress={() => onOpenPdf(editedSummary)}
+              style={tw`flex-row items-center justify-center flex-1 md:flex-initial px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl`}
+            >
+              <FileText size={14} color="#3b82f6" style={tw`mr-1.5`} />
+              <Text style={tw`text-xs font-bold text-blue-600 dark:text-blue-400`}>PDF Report</Text>
+            </Pressable>
 
-        {/* Right Scale Interpretation & Recommendations */}
-        <div className="md:col-span-2 glass-panel p-8 rounded-3xl shadow-sm space-y-6 flex flex-col justify-between">
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
-              Clinical Interpretation & Severity Scale
-            </h3>
+            <Pressable
+              onPress={handleSave}
+              disabled={savedSuccess}
+              style={tw`flex-row items-center justify-center flex-1 md:flex-initial px-4 py-2.5 ${savedSuccess ? 'bg-emerald-500' : 'bg-teal-500'} rounded-xl`}
+            >
+              {savedSuccess ? (
+                <>
+                  <CheckCircle size={14} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-bold text-white`}>Saved!</Text>
+                </>
+              ) : (
+                <>
+                  <BookmarkPlus size={14} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-bold text-white`}>Save Case</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Circular Gauge and Severity Scale Grid */}
+        <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6`}>
+          
+          {/* Circular Score Gauge */}
+          <View style={tw`w-full md:w-[35%] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm items-center justify-center`}>
+            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4`}>
+              Orthodontic Compensation Index
+            </Text>
             
-            {/* Severity horizontal progress indicators */}
-            <div className="grid grid-cols-5 gap-1.5 pt-1">
-              {[
-                { range: '0-20', label: 'Minimal', color: 'bg-emerald-500', active: ociResult.totalScore <= 20 },
-                { range: '21-40', label: 'Mild', color: 'bg-teal-500', active: ociResult.totalScore > 20 && ociResult.totalScore <= 40 },
-                { range: '41-60', label: 'Moderate', color: 'bg-amber-500', active: ociResult.totalScore > 40 && ociResult.totalScore <= 60 },
-                { range: '61-80', label: 'Severe', color: 'bg-orange-500', active: ociResult.totalScore > 60 && ociResult.totalScore <= 80 },
-                { range: '81-100', label: 'Extreme', color: 'bg-red-500', active: ociResult.totalScore > 80 }
-              ].map((tier, idx) => (
-                <div 
-                  key={idx} 
-                  className={`p-2.5 rounded-xl border text-center transition ${
-                    tier.active 
-                      ? `${tier.color} text-white border-transparent font-bold ring-2 ring-offset-2 ring-slate-100 dark:ring-slate-950` 
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-400 border-slate-200/50 dark:border-slate-800/50'
-                  }`}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-wider">{tier.label}</p>
-                  <p className="text-[9px] font-mono opacity-80">{tier.range}</p>
-                </div>
-              ))}
-            </div>
+            <View style={tw`w-36 h-36 items-center justify-center bg-teal-500/5 rounded-full border-4 border-slate-100 dark:border-slate-800 relative`}>
+              <Text style={[tw`text-4xl font-black font-mono tracking-tighter`, getScoreColor(ociResult.totalScore)]}>
+                {ociResult.totalScore}%
+              </Text>
+              <Text style={tw`text-[10px] text-slate-400 font-mono`}>Max 100%</Text>
+            </View>
 
-            {/* Recommendation alert container */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-4 rounded-2xl flex items-start space-x-3">
-              <Award className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-              <div className="space-y-1 text-sm">
-                <p className="font-bold text-blue-900 dark:text-blue-100">Algorithmic Clinical Recommendation</p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                  {ociResult.recommendation}
-                </p>
-              </div>
-            </div>
-          </div>
+            <Text style={tw`text-base font-extrabold text-slate-800 dark:text-slate-100 mt-4 text-center`}>
+              {ociResult.interpretation}
+            </Text>
+            <Text style={tw`text-[11px] text-slate-400 mt-1 text-center leading-relaxed`}>
+              Dentoalveolar structures show compensation levels masking sagittal patterns.
+            </Text>
+          </View>
 
-          <div className="text-xs text-slate-400 italic">
-            * This index evaluates sagittal compensation limits. Treatment choice (camouflage vs. surgery) must integrate vertical mechanics, facial profile esthetics, joint wellness, and patient consent.
-          </div>
-        </div>
+          {/* Recommendations and Severity Indicators */}
+          <View style={tw`flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm justify-between space-y-6`}>
+            <View style={tw`space-y-4`}>
+              <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2`}>
+                Clinical Interpretation Severity Scale
+              </Text>
 
-      </div>
+              {/* Severity tier blocks */}
+              <View style={tw`flex-row flex-wrap justify-between gap-1.5`}>
+                {[
+                  { range: '0-20', label: 'Minimal', color: 'bg-emerald-500', active: ociResult.totalScore <= 20 },
+                  { range: '21-40', label: 'Mild', color: 'bg-teal-500', active: ociResult.totalScore > 20 && ociResult.totalScore <= 40 },
+                  { range: '41-60', label: 'Moderate', color: 'bg-amber-500', active: ociResult.totalScore > 40 && ociResult.totalScore <= 60 },
+                  { range: '61-80', label: 'Severe', color: 'bg-orange-500', active: ociResult.totalScore > 60 && ociResult.totalScore <= 80 },
+                  { range: '81-100', label: 'Extreme', color: 'bg-red-500', active: ociResult.totalScore > 80 }
+                ].map((tier, idx) => (
+                  <View 
+                    key={idx} 
+                    style={tw`w-[18%] py-2 rounded-xl border items-center ${
+                      tier.active 
+                        ? `${tier.color} border-transparent` 
+                        : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-850'
+                    }`}
+                  >
+                    <Text style={tw`text-[9px] font-black uppercase ${tier.active ? 'text-white' : 'text-slate-400'}`}>
+                      {tier.label}
+                    </Text>
+                    <Text style={tw`text-[8px] font-mono ${tier.active ? 'text-white/80' : 'text-slate-400'}`}>
+                      {tier.range}
+                    </Text>
+                  </View>
+                ))}
+              </View>
 
-      {/* AI Clinical Summary Section */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
-        <div className="flex justify-between items-center border-b border-white/10 pb-4">
-          <div className="flex items-center space-x-2.5">
-            <Cpu className="w-6 h-6 text-teal-400 animate-pulse" />
-            <div>
-              <h3 className="font-extrabold text-base tracking-tight text-white flex items-center space-x-2">
-                <span>Gemini Clinical Copilot Summary</span>
-                <span className="bg-teal-500/10 text-teal-300 text-[9px] px-2 py-0.5 rounded-full border border-teal-500/20 font-bold uppercase tracking-wide">Live</span>
-              </h3>
-              <p className="text-xs text-slate-400">Synthesizes ANB metrics and dentoalveolar tipping profiles automatically</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsEditingSummary(!isEditingSummary)}
-            className="flex items-center space-x-1 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold text-slate-300 hover:text-white border border-white/10 transition cursor-pointer"
-          >
-            <Edit className="w-3.5 h-3.5" />
-            <span>{isEditingSummary ? 'View summary' : 'Edit text'}</span>
-          </button>
-        </div>
+              {/* Algorithmic Clinical recommendation card */}
+              <View style={tw`bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl flex-row items-start`}>
+                <Award size={18} color="#3b82f6" style={tw`mr-3 mt-0.5`} />
+                <View style={tw`flex-1`}>
+                  <Text style={tw`font-bold text-xs text-blue-900 dark:text-blue-100`}>
+                    Algorithmic Recommendation
+                  </Text>
+                  <Text style={tw`text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed mt-1`}>
+                    {ociResult.recommendation}
+                  </Text>
+                </View>
+              </View>
+            </View>
 
-        {loadingSummary ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="w-12 h-12 border-2 border-teal-400 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-sm font-semibold text-slate-300">Synthesizing patient cephalometric and clinical data...</p>
-          </div>
-        ) : isEditingSummary ? (
-          <div className="space-y-3">
-            <textarea
-              value={editedSummary}
-              onChange={(e) => setEditedSummary(e.target.value)}
-              rows={4}
-              className="w-full px-4 py-3 bg-slate-900/60 border border-slate-700 rounded-xl text-slate-100 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition resize-none"
-            />
-            <p className="text-[10px] text-slate-500 font-mono">You can modify the AI output to tailor it precisely for your medical records before saving.</p>
-          </div>
-        ) : (
-          <div className="bg-slate-900/40 p-5 rounded-2xl border border-white/5 font-sans text-sm leading-relaxed text-slate-200">
-            {editedSummary || 'No summary generated.'}
-          </div>
-        )}
-      </div>
+            <Text style={tw`text-[10px] text-slate-400 italic`}>
+              * This index evaluates sagittal dental compensation. Treatment pathways must also integrate vertical profile esthetics, soft-tissue contours, TMJ health, and patient consent.
+            </Text>
+          </View>
 
-      {/* Heatmap & Graphics */}
-      <Heatmap severityMap={ociResult.severityMap} input={cephalometricInput} />
+        </View>
 
-      {/* Chart profiles */}
-      <SvgCharts categoryScores={ociResult.categoryScores} />
+        {/* Gemini Copilot Summary section */}
+        <View style={tw`bg-slate-950 p-6 rounded-3xl border border-slate-850 space-y-4`}>
+          <View style={tw`flex-row justify-between items-center border-b border-slate-850 pb-3`}>
+            <View style={tw`flex-row items-center`}>
+              <Cpu size={18} color="#2dd4bf" style={tw`mr-2.5 animate-pulse`} />
+              <View>
+                <View style={tw`flex-row items-center`}>
+                  <Text style={tw`font-black text-sm text-white mr-1.5`}>Gemini Clinical Copilot Summary</Text>
+                  <View style={tw`bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/25`}>
+                    <Text style={tw`text-[8px] text-teal-300 font-bold uppercase`}>Live</Text>
+                  </View>
+                </View>
+                <Text style={tw`text-[10px] text-slate-500 mt-0.5`}>Synthesizes ANB metrics & dental tipping profiles</Text>
+              </View>
+            </View>
+            
+            <Pressable
+              onPress={() => setIsEditingSummary(!isEditingSummary)}
+              style={tw`flex-row items-center bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10`}
+            >
+              <Edit2 size={10} color="#cbd5e1" style={tw`mr-1`} />
+              <Text style={tw`text-[10px] font-bold text-slate-300`}>
+                {isEditingSummary ? 'View' : 'Edit'}
+              </Text>
+            </Pressable>
+          </View>
 
-    </div>
+          {loadingSummary ? (
+            <View style={tw`py-6 items-center justify-center space-y-2`}>
+              <ActivityIndicator size="small" color="#2dd4bf" />
+              <Text style={tw`text-xs font-mono text-slate-400`}>SYNTHESIZING PATIENT PARAMETERS...</Text>
+            </View>
+          ) : isEditingSummary ? (
+            <View style={tw`space-y-2`}>
+              <TextInput
+                value={editedSummary}
+                onChangeText={setEditedSummary}
+                multiline
+                numberOfLines={5}
+                style={[tw`w-full px-4 py-3 bg-slate-900 text-slate-100 font-sans text-xs rounded-xl border border-slate-800`, { minHeight: 100 }]}
+              />
+              <Text style={tw`text-[9px] font-mono text-slate-500`}>
+                You can adjust this AI text before saving to patient charts or exporting files.
+              </Text>
+            </View>
+          ) : (
+            <View style={tw`bg-slate-900/60 p-4 rounded-2xl border border-white/5`}>
+              <Text style={tw`text-xs text-slate-200 leading-relaxed font-sans`}>
+                {editedSummary || 'No clinical summary generated.'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Heatmap visualizer */}
+        <Heatmap severityMap={ociResult.severityMap} input={cephalometricInput} />
+
+        {/* Charts */}
+        <SvgCharts categoryScores={ociResult.categoryScores} />
+
+      </View>
+    </ScrollView>
   );
 }
 
-// Client-side expert-system fallback report generator if Gemini API key is missing or offline
 function generateLocalClinicalSynthesis(
   patient: PatientDetails,
   ceph: CephalometricInput,
   oci: OciResult
 ): string {
   const dx = patient.diagnosis || 'skeletal malocclusion';
-  const anbText = ceph.anb !== '' ? `ANB is ${ceph.anb}°` : 'ANB';
-  const impaText = ceph.impa !== '' ? `IMPA is ${ceph.impa}°` : 'IMPA';
-  const overjetText = ceph.overjet !== '' ? `Overjet is ${ceph.overjet}mm` : 'Overjet';
+  const anbText = ceph.anb !== '' && ceph.anb !== undefined ? `ANB is ${ceph.anb}°` : 'ANB';
+  const impaText = ceph.impa !== '' && ceph.impa !== undefined ? `IMPA is ${ceph.impa}°` : 'IMPA';
+  const overjetText = ceph.overjet !== '' && ceph.overjet !== undefined ? `Overjet is ${ceph.overjet}mm` : 'Overjet';
 
   let summary = `The patient displays a ${oci.interpretation} of sagittal disharmony (computed OCI score: ${oci.totalScore}/100) associated with a skeletal ${dx} discrepancy. `;
 

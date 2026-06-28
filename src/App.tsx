@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { 
   PatientDetails, 
   CephalometricInput, 
@@ -9,7 +9,7 @@ import {
 } from './types';
 import { calculateOCI, DEFAULT_WEIGHTS } from './scoringEngine';
 
-// IndexedDB Helper
+// Async Storage DB Helpers
 import {
   dbGetAssessments,
   dbSaveAssessment,
@@ -40,25 +40,22 @@ import {
   PlusCircle, 
   FileText, 
   Settings as SettingsIcon, 
-  Info, 
-  ChevronRight,
-  Database,
-  Moon,
+  Moon, 
   Sun,
-  X,
-  Sparkles,
   Users,
-  Brain
-} from 'lucide-react';
+  Brain,
+  Award
+} from 'lucide-react-native';
+import tw from 'twrnc';
 
 export default function App() {
-  // Core Screen Navigation
+  // Core Navigation
   const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports'>('splash');
   
-  // Local persistent states
+  // Local states
   const [savedAssessments, setSavedAssessments] = useState<Assessment[]>([]);
   const [weights, setWeights] = useState<OciWeights>(DEFAULT_WEIGHTS);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   // Active Assessment State Flow
   const [activePatient, setActivePatient] = useState<PatientDetails | null>(null);
@@ -68,71 +65,33 @@ export default function App() {
   // PDF Overlay State
   const [pdfReportAssessment, setPdfReportAssessment] = useState<Assessment | null>(null);
 
-  // Load persistence on mount from IndexedDB (with fallback)
+  // Load persistence on mount from AsyncStorage
   useEffect(() => {
     async function loadIndexedData() {
       try {
-        // Load assessments
         const assessments = await dbGetAssessments();
         if (assessments && assessments.length > 0) {
           setSavedAssessments(assessments);
-        } else {
-          // fallback to localStorage if exist
-          const fallbackAssessments = localStorage.getItem('oci_assessments');
-          if (fallbackAssessments) {
-            const parsed = JSON.parse(fallbackAssessments) as Assessment[];
-            setSavedAssessments(parsed);
-            // Migrate to IndexedDB
-            for (const item of parsed) {
-              await dbSaveAssessment(item);
-            }
-          }
         }
 
-        // Load custom weights
         const storedWeights = await dbGetSetting<OciWeights>('oci_weights', DEFAULT_WEIGHTS);
         setWeights(storedWeights);
 
-        // Load dark mode
         const storedTheme = await dbGetSetting<boolean>('oci_dark_mode', false);
         setDarkMode(storedTheme);
-        if (storedTheme) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-
-        // Run automatic local backup on start
-        const allAssessments = assessments && assessments.length > 0 ? assessments : [];
-        if (allAssessments.length > 0) {
-          localStorage.setItem('oci_assessments_autobackup', JSON.stringify({
-            timestamp: new Date().toISOString(),
-            data: allAssessments
-          }));
-        }
       } catch (e) {
-        console.error('Error loading clinical IndexedDB database:', e);
+        console.error('Error loading clinical AsyncStorage database:', e);
       }
     }
     loadIndexedData();
   }, []);
 
-  // Update dark mode class
   const toggleDarkMode = async () => {
     const nextDark = !darkMode;
     setDarkMode(nextDark);
     await dbSaveSetting('oci_dark_mode', nextDark);
-    // Double persistent backup
-    localStorage.setItem('oci_dark_mode', String(nextDark));
-    
-    if (nextDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   };
 
-  // Step Navigations
   const handleStartNewAssessment = () => {
     setActivePatient(null);
     setActiveCeph(null);
@@ -152,12 +111,14 @@ export default function App() {
     setScreen('results');
   };
 
-  // Database mutations with dual-layer offline persistence
   const handleSaveAssessment = async (aiSummaryText: string) => {
     if (!activePatient || !activeCeph || !activeResult) return;
 
+    // Create a robust GUID
+    const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
     const newAssessment: Assessment = {
-      id: crypto.randomUUID(),
+      id: uuid,
       patientDetails: activePatient,
       cephalometricInput: activeCeph,
       ociResult: activeResult,
@@ -167,29 +128,15 @@ export default function App() {
 
     const nextAssessments = [newAssessment, ...savedAssessments];
     setSavedAssessments(nextAssessments);
-    
-    // Save to IndexedDB (Primary)
     await dbSaveAssessment(newAssessment);
     
-    // Auto backup to localStorage (Dual-layer persistent safety)
-    localStorage.setItem('oci_assessments', JSON.stringify(nextAssessments));
-    localStorage.setItem('oci_assessments_autobackup', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      data: nextAssessments
-    }));
+    Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally.");
   };
 
   const handleDeleteAssessment = async (id: string) => {
-    if (confirm('Delete this patient diagnostic record permanently?')) {
-      const nextAssessments = savedAssessments.filter(a => a.id !== id);
-      setSavedAssessments(nextAssessments);
-      
-      // Delete from IndexedDB
-      await dbDeleteAssessment(id);
-      
-      // Sync local backup
-      localStorage.setItem('oci_assessments', JSON.stringify(nextAssessments));
-    }
+    const nextAssessments = savedAssessments.filter(a => a.id !== id);
+    setSavedAssessments(nextAssessments);
+    await dbDeleteAssessment(id);
   };
 
   const handleDuplicateAssessment = (assessment: Assessment) => {
@@ -208,34 +155,15 @@ export default function App() {
   const handleUpdateWeights = async (newWeights: OciWeights) => {
     setWeights(newWeights);
     await dbSaveSetting('oci_weights', newWeights);
-    localStorage.setItem('oci_weights', JSON.stringify(newWeights));
   };
 
   const handleImportDatabase = async (jsonStr: string): Promise<boolean> => {
     try {
-      // Direct restoration using raw json backing or full json file
       const success = await dbImportBackup(jsonStr);
       if (success) {
         const loaded = await dbGetAssessments();
         setSavedAssessments(loaded);
         return true;
-      }
-      
-      // Traditional direct raw array parse fallback
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed)) {
-        const isValid = parsed.every(item => item.id && item.patientDetails && item.ociResult);
-        if (isValid) {
-          const combined = [...parsed, ...savedAssessments];
-          const unique = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-          
-          setSavedAssessments(unique);
-          for (const item of unique) {
-            await dbSaveAssessment(item);
-          }
-          localStorage.setItem('oci_assessments', JSON.stringify(unique));
-          return true;
-        }
       }
       return false;
     } catch (e) {
@@ -247,13 +175,7 @@ export default function App() {
   const handleExportDatabase = async () => {
     try {
       const backupJson = await dbExportBackup();
-      const blob = new Blob([backupJson], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `OCI_Clinical_Backup_${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      Alert.alert("Backup Exported", "Save this JSON backup secure key locally.");
     } catch (e) {
       console.error('Failed to export OCI index backup:', e);
     }
@@ -262,262 +184,196 @@ export default function App() {
   const handleResetDatabase = async () => {
     await dbClearAllData();
     setSavedAssessments([]);
-    localStorage.removeItem('oci_assessments');
-    localStorage.removeItem('oci_assessments_autobackup');
-    alert('IndexedDB and dual-layer local databases successfully wiped.');
+    Alert.alert("Database Reset", "All local clinical history has been successfully wiped.");
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex flex-col transition-colors duration-300">
-      
-      {/* 1. Splash Overlay Screen */}
-      <AnimatePresence>
-        {screen === 'splash' && (
-          <Splash onFinish={() => setScreen('home')} />
-        )}
-      </AnimatePresence>
+    <SafeAreaView style={tw`flex-1 bg-slate-50 dark:bg-slate-950`}>
+      <StatusBar barStyle={darkMode ? 'light-content' : 'dark-content'} />
+
+      {/* 1. Splash Screen Overlay */}
+      {screen === 'splash' && (
+        <Splash onFinish={() => setScreen('home')} />
+      )}
 
       {/* 2. Top Navigation Bar (Hidden during Splash) */}
       {screen !== 'splash' && (
-        <header className="sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-150 dark:border-slate-850 z-30 px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setScreen('home')}>
-            <div className="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white shadow-sm">
-              <Activity className="w-5.5 h-5.5 animate-pulse" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
+        <View style={tw`bg-white dark:bg-slate-900 border-b border-slate-150 dark:border-slate-800 px-4 py-3 flex-row items-center justify-between`}>
+          <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
+            <View style={tw`w-8 h-8 bg-teal-600 rounded-lg items-center justify-center mr-2 shadow-sm`}>
+              <Activity size={16} color="#ffffff" />
+            </View>
+            <View>
+              <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>
                 OCI ANALYZER
-              </h1>
-              <p className="text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Orthodontic Diagnostic Support</p>
-            </div>
-          </div>
+              </Text>
+              <Text style={tw`text-[8px] font-bold uppercase text-slate-400`}>Clinical Decision Support</Text>
+            </View>
+          </Pressable>
 
-          {/* Nav menu links for Desktop */}
-          <nav className="hidden md:flex items-center space-x-1.5 text-xs font-semibold">
-            {[
-              { id: 'home', label: 'Dashboard', icon: HomeIcon },
-              { id: 'history', label: 'Patients', icon: Users },
-              { id: 'patient-form', label: 'OCI Analysis', icon: Activity, action: handleStartNewAssessment },
-              { id: 'treatment-planning', label: 'Treatment Planning', icon: Brain },
-              { id: 'reports', label: 'Reports', icon: FileText },
-              { id: 'settings', label: 'Settings', icon: SettingsIcon }
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={item.action ? item.action : () => setScreen(item.id as any)}
-                className={`px-3 py-2 rounded-xl flex items-center space-x-1.5 transition cursor-pointer border ${
-                  screen === item.id || (item.id === 'patient-form' && (screen === 'patient-form' || screen === 'ceph-input' || screen === 'results'))
-                    ? 'bg-teal-50/60 dark:bg-teal-950/40 border-teal-100/40 text-teal-700 dark:text-teal-300 font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
-                }`}
-              >
-                <item.icon className="w-4.5 h-4.5" />
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Quick theme toggles */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-700 transition cursor-pointer"
-              title="Toggle Dark Mode"
+          <View style={tw`flex-row items-center space-x-2`}>
+            <Pressable
+              onPress={toggleDarkMode}
+              style={tw`p-2 rounded-lg bg-slate-50 dark:bg-slate-800`}
             >
-              {darkMode ? <Sun className="w-4.5 h-4.5 text-amber-500" /> : <Moon className="w-4.5 h-4.5 text-slate-600" />}
-            </button>
+              {darkMode ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#64748b" />}
+            </Pressable>
             
-            <button
-              onClick={handleStartNewAssessment}
-              className="md:hidden p-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition cursor-pointer"
-              title="Start New Assessment"
+            <Pressable
+              onPress={handleStartNewAssessment}
+              style={tw`p-2 bg-teal-600 rounded-lg flex-row items-center`}
             >
-              <PlusCircle className="w-4.5 h-4.5" />
-            </button>
-          </div>
-        </header>
+              <PlusCircle size={14} color="#ffffff" />
+            </Pressable>
+          </View>
+        </View>
       )}
 
-      {/* 3. Main Dashboard Body Container */}
+      {/* 3. Screen Switch Board */}
       {screen !== 'splash' && (
-        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-8 print:p-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={screen}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="h-full"
-            >
-              {screen === 'home' && (
-                <Home 
-                  onNewAssessment={handleStartNewAssessment}
-                  onViewHistory={() => setScreen('history')}
-                  onViewSettings={() => setScreen('settings')}
-                  onViewAbout={() => setScreen('about')}
-                  savedAssessments={savedAssessments}
-                />
-              )}
+        <View style={tw`flex-1`}>
+          
+          {screen === 'home' && (
+            <Home 
+              onNewAssessment={handleStartNewAssessment}
+              onViewHistory={() => setScreen('history')}
+              onViewSettings={() => setScreen('settings')}
+              onViewAbout={() => setScreen('about')}
+              savedAssessments={savedAssessments}
+            />
+          )}
 
-              {screen === 'patient-form' && (
-                <PatientForm
-                  initialDetails={activePatient || undefined}
-                  onNext={handlePatientSubmit}
-                  onCancel={() => setScreen('home')}
-                />
-              )}
+          {screen === 'patient-form' && (
+            <PatientForm
+              initialDetails={activePatient || undefined}
+              onNext={handlePatientSubmit}
+              onCancel={() => setScreen('home')}
+            />
+          )}
 
-              {screen === 'ceph-input' && activePatient && (
-                <CephInput
-                  initialInput={activeCeph || undefined}
-                  diagnosis={activePatient.diagnosis}
-                  onCalculate={handleCephSubmit}
-                  onBack={() => setScreen('patient-form')}
-                />
-              )}
+          {screen === 'ceph-input' && activePatient && (
+            <CephInput
+              initialInput={activeCeph || undefined}
+              diagnosis={activePatient.diagnosis}
+              onCalculate={handleCephSubmit}
+              onBack={() => setScreen('patient-form')}
+            />
+          )}
 
-              {screen === 'results' && activePatient && activeCeph && activeResult && (
-                <ResultsDashboard
-                  patientDetails={activePatient}
-                  cephalometricInput={activeCeph}
-                  ociResult={activeResult}
-                  onSaveAssessment={handleSaveAssessment}
-                  onOpenPdf={(editedSummaryText) => {
-                    setPdfReportAssessment({
-                      id: 'preview',
-                      patientDetails: activePatient,
-                      cephalometricInput: activeCeph,
-                      ociResult: activeResult,
-                      aiSummary: editedSummaryText,
-                      createdAt: new Date().toISOString()
-                    });
-                  }}
-                  onBack={() => setScreen('ceph-input')}
-                />
-              )}
+          {screen === 'results' && activePatient && activeCeph && activeResult && (
+            <ResultsDashboard
+              patientDetails={activePatient}
+              cephalometricInput={activeCeph}
+              ociResult={activeResult}
+              onSaveAssessment={handleSaveAssessment}
+              onOpenPdf={(editedSummaryText) => {
+                setPdfReportAssessment({
+                  id: 'preview',
+                  patientDetails: activePatient,
+                  cephalometricInput: activeCeph,
+                  ociResult: activeResult,
+                  aiSummary: editedSummaryText,
+                  createdAt: new Date().toISOString()
+                });
+              }}
+              onBack={() => setScreen('ceph-input')}
+            />
+          )}
 
-              {screen === 'history' && (
-                <HistoryList
-                  assessments={savedAssessments}
-                  onSelect={(item) => {
-                    setActivePatient(item.patientDetails);
-                    setActiveCeph(item.cephalometricInput);
-                    setActiveResult(item.ociResult);
-                    setScreen('results');
-                  }}
-                  onDuplicate={handleDuplicateAssessment}
-                  onDelete={handleDeleteAssessment}
-                  onNewAssessment={handleStartNewAssessment}
-                />
-              )}
+          {screen === 'history' && (
+            <HistoryList
+              assessments={savedAssessments}
+              onSelect={(item) => {
+                setActivePatient(item.patientDetails);
+                setActiveCeph(item.cephalometricInput);
+                setActiveResult(item.ociResult);
+                setScreen('results');
+              }}
+              onDuplicate={handleDuplicateAssessment}
+              onDelete={handleDeleteAssessment}
+              onNewAssessment={handleStartNewAssessment}
+            />
+          )}
 
-              {screen === 'settings' && (
-                <SettingsPanel
-                  weights={weights}
-                  onUpdateWeights={handleUpdateWeights}
-                  onImportData={handleImportDatabase}
-                  onExportData={handleExportDatabase}
-                  onResetDatabase={handleResetDatabase}
-                  darkMode={darkMode}
-                  onToggleDarkMode={toggleDarkMode}
-                />
-              )}
+          {screen === 'settings' && (
+            <SettingsPanel
+              weights={weights}
+              onUpdateWeights={handleUpdateWeights}
+              onImportData={handleImportDatabase}
+              onExportData={handleExportDatabase}
+              onResetDatabase={handleResetDatabase}
+              darkMode={darkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          )}
 
-              {screen === 'treatment-planning' && (
-                <TreatmentPlanning
-                  savedAssessments={savedAssessments}
-                />
-              )}
+          {screen === 'treatment-planning' && (
+            <TreatmentPlanning
+              savedAssessments={savedAssessments}
+            />
+          )}
 
-              {screen === 'reports' && (
-                <ReportsPanel
-                  savedAssessments={savedAssessments}
-                />
-              )}
+          {screen === 'reports' && (
+            <ReportsPanel
+              savedAssessments={savedAssessments}
+            />
+          )}
 
-              {screen === 'about' && (
-                <div className="max-w-4xl mx-auto space-y-8 pb-12">
-                  <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-6">
-                    <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                      Orthodontic Compensation Index (OCI) Guidelines
-                    </h2>
-                    
-                    <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      <p>
-                        Dentoalveolar compensation is the physiological system's natural reaction to skeletal sagittal discrepancies. In individuals with Class II or Class III jaw mismatches, teeth tip and glide to establish stable occlusal contacts, masking the true severity of the skeletal pattern.
-                      </p>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                        <div className="p-5 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-100/30">
-                          <h4 className="font-bold text-amber-900 dark:text-amber-300 mb-2">Class II Compensatory Archetype</h4>
-                          <ul className="list-disc list-inside space-y-1.5 text-xs">
-                            <li>Retroclined maxillary incisors (U1-SN tipped backward)</li>
-                            <li>Proclined mandibular incisors (IMPA flared forward)</li>
-                            <li>Increased Curve of Spee in lower arch</li>
-                            <li>Substantial masking of severe mandibular deficiency</li>
-                          </ul>
-                        </div>
+          {screen === 'about' && (
+            <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
+              <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
+                <Text style={tw`text-lg font-black text-slate-900 dark:text-white`}>
+                  Orthodontic Compensation Index (OCI) Guidelines
+                </Text>
+                
+                <Text style={tw`text-xs text-slate-600 dark:text-slate-300 leading-normal`}>
+                  Dentoalveolar compensation is the physiological system's natural reaction to skeletal sagittal discrepancies. In individuals with Class II or Class III jaw mismatches, teeth tip and glide to establish stable occlusal contacts, masking the true severity of the skeletal pattern.
+                </Text>
+                
+                <View style={tw`p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10`}>
+                  <Text style={tw`font-bold text-amber-700 dark:text-amber-300 text-xs`}>Class II Compensatory Archetype</Text>
+                  <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                    • Retroclined maxillary incisors (U1-SN tipped backward)
+                    {"\n"}• Proclined mandibular incisors (IMPA flared forward)
+                    {"\n"}• Increased Curve of Spee in lower arch
+                  </Text>
+                </View>
 
-                        <div className="p-5 bg-teal-50/50 dark:bg-teal-950/20 rounded-2xl border border-teal-100/30">
-                          <h4 className="font-bold text-teal-900 dark:text-teal-300 mb-2">Class III Compensatory Archetype</h4>
-                          <ul className="list-disc list-inside space-y-1.5 text-xs">
-                            <li>Proclined maxillary incisors (U1-SN flared forward)</li>
-                            <li>Retroclined mandibular incisors (IMPA uprighted/backward)</li>
-                            <li>Flattered lower Curve of Spee</li>
-                            <li>Narrowed maxilla compensated by transverse tooth flaring</li>
-                          </ul>
-                        </div>
-                      </div>
+                <View style={tw`p-4 bg-teal-500/5 rounded-2xl border border-teal-500/10`}>
+                  <Text style={tw`font-bold text-teal-700 dark:text-teal-300 text-xs`}>Class III Compensatory Archetype</Text>
+                  <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                    • Proclined maxillary incisors (U1-SN flared forward)
+                    {"\n"}• Retroclined mandibular incisors (IMPA uprighted/backward)
+                    {"\n"}• Flattened lower Curve of Spee
+                  </Text>
+                </View>
 
-                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg pt-4">Clinical Index Ranges</h3>
-                      <div className="space-y-2 text-xs">
-                        <p>**0–20: Minimal Compensation.** Teeth align naturally over bone centers. Excellent candidate for simple orthodontic alignment.</p>
-                        <p>**21–40: Mild Compensation.** Moderate tipping observed. Standard orthodontic camouflage is highly predictable.</p>
-                        <p>**41–60: Moderate Compensation (Borderline).** High tooth inclination. Dental limits are stretched. Careful examination of periodontal bone plates and soft-tissue profile is necessary before planning camouflage treatment.</p>
-                        <p>**61–80: Severe Compensation.** Extreme tipping. Camouflage carries substantial periodontal risks (dehiscence, instability) or profile compromise. Orthognathic surgery is advisable.</p>
-                        <p>**81–100: Extreme Compensation.** Critical limits breached. Orthognathic surgery with pre-surgical decompensation (purposefully reversing the tipping to expose true skeletal gap) is highly recommended.</p>
-                      </div>
+                <Text style={tw`font-bold text-slate-800 dark:text-slate-100 text-sm mt-2`}>Clinical Index Severity Ranges</Text>
+                <View style={tw`space-y-1.5`}>
+                  <Text style={tw`text-[11px] text-slate-500`}>• 0–20: Minimal Compensation. Teeth aligned naturally over skeletal base.</Text>
+                  <Text style={tw`text-[11px] text-slate-500`}>• 21–40: Mild Compensation. Camouflage orthodontic alignment is highly predictable.</Text>
+                  <Text style={tw`text-[11px] text-slate-500`}>• 41–60: Moderate Compensation. Dental limits are stretched. Careful examination of periodontal bone plate is required.</Text>
+                  <Text style={tw`text-[11px] text-slate-500`}>• 61–80: Severe Compensation. Camouflage carries substantial periodontal risks. Surgical options indicated.</Text>
+                  <Text style={tw`text-[11px] text-slate-500`}>• 81–100: Extreme Compensation. Surgical decompensation is highly recommended.</Text>
+                </View>
 
-                      <div className="mt-8 pt-6 border-t border-slate-150 dark:border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                          <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">Medical Clinical Lead</p>
-                          <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 font-display">Dr. Salman MDS Orthodontist</p>
-                        </div>
-                        <span className="px-3 py-1.5 bg-teal-50/60 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase rounded-xl tracking-wider border border-teal-100/20 dark:border-teal-900/20">
-                          Developed by Dr. Salman MDS Orthodontist
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+                <View style={tw`mt-4 pt-4 border-t border-slate-150 dark:border-slate-800 flex-row justify-between items-center`}>
+                  <View>
+                    <Text style={tw`text-[8px] text-slate-400 font-mono uppercase`}>Clinical Supervisor</Text>
+                    <Text style={tw`text-xs font-extrabold text-slate-800 dark:text-slate-100`}>Dr. Salman MDS Orthodontist</Text>
+                  </View>
+                  <View style={tw`px-2.5 py-1.5 bg-teal-500/10 rounded-xl`}>
+                    <Text style={tw`text-[9px] font-black text-teal-600 uppercase`}>Research Edition</Text>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          )}
+
+        </View>
       )}
 
-      {/* 3.5 Premium Clinical Footer */}
-      {screen !== 'splash' && (
-        <footer className="w-full text-center py-6 border-t border-slate-150 dark:border-slate-850 bg-white/40 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 text-xs mt-auto print:hidden">
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 gap-2">
-            <div>
-              <p className="font-mono text-[10px] tracking-widest uppercase text-slate-400/85 dark:text-slate-500/85">OCI ANALYZER • CLINICAL DECISION SUPPORT ENGINE</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-              </span>
-              <span className="text-xs font-semibold tracking-wide">
-                Developed by <span className="text-teal-600 dark:text-teal-400 font-bold">Dr. Salman MDS Orthodontist</span>
-              </span>
-            </div>
-          </div>
-        </footer>
-      )}
-
-      {/* 4. PDF Fullscreen Overlay Modal (Hidden unless selected) */}
+      {/* 4. PDF Fullscreen Overlay Modal */}
       {pdfReportAssessment && (
         <PdfReport
           assessment={pdfReportAssessment}
@@ -525,13 +381,13 @@ export default function App() {
         />
       )}
 
-      {/* 5. Floating Bottom Navigation for Mobile (Print Hidden) */}
+      {/* 5. Floating Bottom Navigation for Mobile Devices */}
       {screen !== 'splash' && (
-        <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-2xl shadow-xl shadow-teal-950/5 flex justify-around items-center py-2 px-1 print:hidden">
+        <View style={tw`bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex-row justify-around py-2`}>
           {[
-            { id: 'home', label: 'Dashboard', icon: HomeIcon },
-            { id: 'history', label: 'Patients', icon: Users },
-            { id: 'patient-form', label: 'OCI', icon: Activity, action: handleStartNewAssessment },
+            { id: 'home', label: 'Home', icon: HomeIcon },
+            { id: 'history', label: 'History', icon: Users },
+            { id: 'patient-form', label: 'Analysis', icon: Activity, action: handleStartNewAssessment },
             { id: 'treatment-planning', label: 'Planning', icon: Brain },
             { id: 'reports', label: 'Reports', icon: FileText },
             { id: 'settings', label: 'Settings', icon: SettingsIcon }
@@ -539,23 +395,21 @@ export default function App() {
             const isActive = screen === item.id || 
               (item.id === 'patient-form' && (screen === 'patient-form' || screen === 'ceph-input' || screen === 'results'));
             return (
-              <button
+              <Pressable
                 key={item.id}
-                onClick={item.action ? item.action : () => setScreen(item.id as any)}
-                className={`flex flex-col items-center justify-center space-y-0.5 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                  isActive 
-                    ? 'text-teal-600 dark:text-teal-400 font-bold bg-teal-500/10 scale-105' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
+                onPress={item.action ? item.action : () => setScreen(item.id as any)}
+                style={tw`items-center justify-center px-2 py-1`}
               >
-                <item.icon className="w-5 h-5 shrink-0" />
-                <span className="text-[9px] font-semibold tracking-tight">{item.label}</span>
-              </button>
+                <item.icon size={16} color={isActive ? '#0d9488' : '#94a3b8'} />
+                <Text style={tw`text-[8px] font-bold mt-1 ${isActive ? 'text-teal-600' : 'text-slate-400'}`}>
+                  {item.label}
+                </Text>
+              </Pressable>
             );
           })}
-        </div>
+        </View>
       )}
 
-    </div>
+    </SafeAreaView>
   );
 }

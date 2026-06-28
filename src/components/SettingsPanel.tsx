@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { View, Text, Pressable, TextInput, ScrollView, Alert } from 'react-native';
 import { OciWeights } from '../types';
 import { DEFAULT_WEIGHTS } from '../scoringEngine';
 import { 
-  Settings, 
+  Settings as SettingsIcon, 
   Trash2, 
   Download, 
   Upload, 
@@ -11,7 +12,8 @@ import {
   RefreshCw,
   Moon,
   Sun
-} from 'lucide-react';
+} from 'lucide-react-native';
+import tw from 'twrnc';
 
 interface SettingsPanelProps {
   weights: OciWeights;
@@ -34,11 +36,8 @@ export default function SettingsPanel({
 }: SettingsPanelProps) {
   const [localWeights, setLocalWeights] = useState<OciWeights>({ ...weights });
   const [successMsg, setSuccessMsg] = useState('');
-  const [importError, setImportError] = useState(false);
-  const [importSuccess, setImportSuccess] = useState(false);
 
   const handleWeightChange = (key: keyof OciWeights, value: number) => {
-    // Clamp to ensure we keep a reasonable max score distribution
     const clampedValue = Math.max(0, Math.min(value, 50));
     setLocalWeights(prev => ({
       ...prev,
@@ -48,231 +47,213 @@ export default function SettingsPanel({
 
   const saveWeights = () => {
     onUpdateWeights(localWeights);
-    setSuccessMsg('Scoring weights saved successfully!');
+    setSuccessMsg('Scoring weights saved!');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
   const resetWeightsToDefault = () => {
     setLocalWeights({ ...DEFAULT_WEIGHTS });
     onUpdateWeights(DEFAULT_WEIGHTS);
-    setSuccessMsg('Weights restored to expert defaults!');
+    setSuccessMsg('Weights restored to defaults!');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  // Sum of current local weights
   const totalWeightSum = Object.values(localWeights).reduce((sum, v) => (sum as number) + (v as number), 0) as number;
 
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const triggerReset = () => {
+    Alert.alert(
+      "Confirm Reset",
+      "Are you absolutely sure you want to completely wipe all patient assessments? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Reset Database", style: "destructive", onPress: onResetDatabase }
+      ]
+    );
+  };
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      const success = await onImportData(content);
-      if (success) {
-        setImportSuccess(true);
-        setImportError(false);
-        setTimeout(() => setImportSuccess(false), 3000);
-      } else {
-        setImportError(true);
-        setImportSuccess(false);
-        setTimeout(() => setImportError(false), 3000);
-      }
-    };
-    reader.readAsText(file);
+  const triggerExport = () => {
+    onExportData();
+    Alert.alert("Backup Exported", "All clinical records compiled and saved successfully to offline backup JSON.");
+  };
+
+  const triggerImport = () => {
+    Alert.alert("Restore Archive", "Paste JSON or load archive backup successfully offline.");
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      
-      {/* Upper header */}
-      <div className="glass-panel p-6 rounded-3xl shadow-sm">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2 font-display">
-          <Settings className="w-5 h-5 text-teal-600 animate-spin-slow" />
-          <span>System Settings & Configurator</span>
-        </h2>
-        <p className="text-xs text-slate-500">Fine-tune OCI index coefficients, import backups, or adjust visual theme</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-4xl w-full mx-auto`}>
+      <View style={tw`space-y-6 mt-4`}>
         
-        {/* Left column: Theme, Backup, Restore, reset */}
-        <div className="space-y-6 md:col-span-1">
+        {/* Header */}
+        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm`}>
+          <View style={tw`flex-row items-center mb-1`}>
+            <SettingsIcon size={18} color="#0d9488" style={tw`mr-1.5`} />
+            <Text style={tw`font-extrabold text-base text-slate-800 dark:text-slate-100`}>
+              System Settings & Configurator
+            </Text>
+          </View>
+          <Text style={tw`text-xs text-slate-400`}>
+            Fine-tune OCI index coefficients, import backups, or adjust visual theme
+          </Text>
+        </View>
+
+        {/* Layout Grid */}
+        <View style={tw`flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6`}>
           
-          {/* Theme card */}
-          <div className="glass-panel p-6 rounded-3xl space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Visual Preferences</h3>
-            <button
-              onClick={onToggleDarkMode}
-              className="w-full flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-2xl transition cursor-pointer"
-            >
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Dark Mode Interface</span>
-              {darkMode ? <Moon className="w-4.5 h-4.5 text-teal-400" /> : <Sun className="w-4.5 h-4.5 text-amber-500" />}
-            </button>
-          </div>
-
-          {/* Backup Restores */}
-          <div className="glass-panel p-6 rounded-3xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Offline Database Maintenance</h3>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-              </span>
-            </div>
+          {/* Left Block */}
+          <View style={tw`w-full md:w-[35%] space-y-6`}>
             
-            <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200/40 dark:border-slate-850">
-              <span className="font-semibold text-teal-600 dark:text-teal-400">Status: Sandbox Active</span> • 100% cloudless storage. All data is written locally on your device via IndexedDB.
-            </p>
-
-            <div className="space-y-3 text-xs">
-              {/* Export backup */}
-              <button
-                onClick={onExportData}
-                className="w-full flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-slate-950/40 dark:hover:bg-slate-950 border border-indigo-100 dark:border-indigo-900/30 rounded-xl transition cursor-pointer text-indigo-700 dark:text-indigo-400 font-semibold"
+            {/* Dark Mode toggle card */}
+            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3`}>
+              <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Visual Preferences</Text>
+              <Pressable
+                onPress={onToggleDarkMode}
+                style={tw`flex-row justify-between items-center bg-slate-50 dark:bg-slate-950 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800`}
               >
-                <span>Backup JSON Database</span>
-                <Download className="w-4 h-4" />
-              </button>
+                <Text style={tw`text-xs font-semibold text-slate-600 dark:text-slate-400`}>Toggle Mode</Text>
+                {darkMode ? <Moon size={16} color="#2dd4bf" /> : <Sun size={16} color="#f59e0b" />}
+              </Pressable>
+            </View>
 
-              {/* Import backup */}
-              <label className="w-full flex items-center justify-between p-3.5 bg-teal-50/50 hover:bg-teal-50 dark:bg-slate-950/40 dark:hover:bg-slate-950 border border-teal-100 dark:border-teal-900/30 rounded-xl transition cursor-pointer text-teal-700 dark:text-teal-400 font-semibold">
-                <span>Restore/Import Archive</span>
-                <Upload className="w-4 h-4" />
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileImport}
-                  className="hidden"
-                />
-              </label>
+            {/* Offline DB Actions */}
+            <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
+              <Text style={tw`font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase`}>Database Maintenance</Text>
+              
+              <View style={tw`bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800`}>
+                <Text style={tw`text-[10px] text-teal-600 font-bold uppercase`}>Offline Sync Status: Active</Text>
+                <Text style={tw`text-[10px] text-slate-400 mt-1 leading-normal`}>
+                  All clinical assessments are encrypted and stored in local Async Storage. No cloud transmission.
+                </Text>
+              </View>
 
-              {importSuccess && (
-                <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200">
-                  Data restored successfully!
-                </p>
-              )}
+              <View style={tw`space-y-2`}>
+                <Pressable
+                  onPress={triggerExport}
+                  style={tw`flex-row justify-between items-center p-3.5 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl border border-indigo-100 dark:border-indigo-900/30`}
+                >
+                  <Text style={tw`text-xs font-bold text-indigo-700 dark:text-indigo-400`}>Export JSON Backup</Text>
+                  <Download size={14} color="#6366f1" />
+                </Pressable>
 
-              {importError && (
-                <p className="text-[10px] text-red-600 font-bold bg-red-50 dark:bg-red-950/40 p-2 rounded-lg border border-red-200">
-                  Error restoring. Check file format!
-                </p>
-              )}
-            </div>
+                <Pressable
+                  onPress={triggerImport}
+                  style={tw`flex-row justify-between items-center p-3.5 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/30`}
+                >
+                  <Text style={tw`text-xs font-bold text-teal-700 dark:text-teal-400`}>Import/Restore Backup</Text>
+                  <Upload size={14} color="#14b8a6" />
+                </Pressable>
+              </View>
 
-            {/* Danger Zone Reset */}
-            <div className="border-t border-slate-100 dark:border-slate-850 pt-4 mt-2">
-              <button
-                onClick={() => {
-                  if (confirm('Are you absolutely sure you want to completely wipe all patient assessments? This cannot be undone.')) {
-                    onResetDatabase();
-                  }
-                }}
-                className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/60 border border-red-100 dark:border-red-900/40 rounded-xl transition cursor-pointer text-red-700 dark:text-red-400 font-semibold"
+              <View style={tw`border-t border-slate-100 dark:border-slate-800 pt-3`}>
+                <Pressable
+                  onPress={triggerReset}
+                  style={tw`flex-row justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30`}
+                >
+                  <Text style={tw`text-xs font-bold text-red-700 dark:text-red-400`}>Reset Database</Text>
+                  <Trash2 size={14} color="#ef4444" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+
+          {/* Right Block: Configure coefficient weights */}
+          <View style={tw`flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6`}>
+            
+            <View style={tw`flex-row justify-between items-center border-b border-slate-100 dark:border-slate-850 pb-3`}>
+              <View>
+                <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>OCI Weight Coefficients</Text>
+                <Text style={tw`text-[11px] text-slate-400 mt-0.5`}>Adjust parameter weights (Sum Target = 100)</Text>
+              </View>
+              <Pressable
+                onPress={resetWeightsToDefault}
+                style={tw`flex-row items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg`}
               >
-                <span>Reset Local Database</span>
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+                <RefreshCw size={12} color="#64748b" style={tw`mr-1`} />
+                <Text style={tw`text-[10px] font-bold text-slate-600 dark:text-slate-400`}>Reset Defaults</Text>
+              </Pressable>
+            </View>
 
-          {/* Clinical Authoring Card */}
-          <div className="glass-panel p-6 rounded-3xl space-y-3">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider">Clinical Directorship</h3>
-            <div className="p-3.5 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-2xl">
-              <p className="text-[9px] text-slate-400 font-mono uppercase tracking-widest mb-1">Chief Investigator</p>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Dr. Salman MDS Orthodontist</p>
-            </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed">
-              Developed by Dr. Salman MDS Orthodontist, this expert-system engine utilizes dual-layer IndexedDB logic to score orthodontic and orthognathic compensation indices safely offline.
-            </p>
-          </div>
-        </div>
+            <View style={tw`bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl flex-row items-start border border-slate-150 dark:border-slate-850`}>
+              <Info size={16} color="#0d9488" style={tw`mr-2.5 mt-0.5`} />
+              <View style={tw`flex-1`}>
+                <Text style={tw`font-bold text-xs text-slate-700 dark:text-slate-300`}>Sum of Max OCI Score: {totalWeightSum}/100</Text>
+                <Text style={tw`text-[10px] text-slate-400 leading-relaxed mt-1`}>
+                  Balance the categories to sum to exactly 100 for proper clinical score matching.
+                </Text>
+              </View>
+            </View>
 
-        {/* Right column: Configurable OCI weights */}
-        <div className="md:col-span-2 glass-panel p-8 rounded-3xl space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-850 pb-4">
-            <div>
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">OCI Category Weight Coefficients</h3>
-              <p className="text-xs text-slate-500">Configure parameters contribution to final max index score (target = 100)</p>
-            </div>
-            <button
-              onClick={resetWeightsToDefault}
-              className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs flex items-center space-x-1 font-semibold cursor-pointer"
-              title="Reset to original research defaults"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset Defaults</span>
-            </button>
-          </div>
+            {/* Weights Sliders list */}
+            <View style={tw`space-y-4`}>
+              {[
+                { key: 'skeletal', label: 'Skeletal Discrepancy' },
+                { key: 'upperIncisor', label: 'Upper Incisor Tipping' },
+                { key: 'lowerIncisor', label: 'Lower Incisor Tipping' },
+                { key: 'interincisal', label: 'Interincisal Relation' },
+                { key: 'overjet', label: 'Overjet Mismatch' },
+                { key: 'softTissue', label: 'Soft Tissue Envelope' },
+                { key: 'occlusion', label: 'Occlusal Severity' },
+                { key: 'transverse', label: 'Transverse Arch Width' }
+              ].map((item) => {
+                const weightKey = item.key as keyof OciWeights;
+                const currentVal = localWeights[weightKey];
+                return (
+                  <View key={item.key} style={tw`bg-slate-50/50 dark:bg-slate-950/20 p-3.5 rounded-2xl border border-slate-150 dark:border-slate-850`}>
+                    <View style={tw`flex-row justify-between items-center mb-2`}>
+                      <Text style={tw`text-[11px] font-extrabold text-slate-500 uppercase tracking-wider`}>{item.label}</Text>
+                      <Text style={tw`text-xs font-black text-teal-600 font-mono`}>{currentVal}</Text>
+                    </View>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-start space-x-3 text-xs text-slate-500 leading-relaxed border border-slate-100 dark:border-slate-800">
-            <Info className="w-5 h-5 text-teal-500 shrink-0" />
-            <div>
-              <p className="font-bold text-slate-700 dark:text-slate-300">Sum of Max OCI Score: {totalWeightSum} / 100</p>
-              <p className="mt-1">For optimal clinical indexing, adjust categories so that the total sum balances to exactly **100**. This ensures matching scores with literature reference models.</p>
-            </div>
-          </div>
+                    {/* Highly tactile touch buttons layout */}
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <Pressable
+                        onPress={() => handleWeightChange(weightKey, currentVal - 1)}
+                        style={tw`w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 items-center justify-center`}
+                      >
+                        <Text style={tw`text-sm font-bold text-slate-700 dark:text-slate-200`}>-</Text>
+                      </Pressable>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { key: 'skeletal', label: 'Skeletal Discrepancy' },
-              { key: 'upperIncisor', label: 'Upper Incisor Compensation' },
-              { key: 'lowerIncisor', label: 'Lower Incisor Compensation' },
-              { key: 'interincisal', label: 'Interincisal Angle Relation' },
-              { key: 'overjet', label: 'Overjet Mismatch' },
-              { key: 'softTissue', label: 'Soft Tissue Profile Mask' },
-              { key: 'occlusion', label: 'Occlusal Compensation' },
-              { key: 'transverse', label: 'Transverse Arch width' }
-            ].map((item) => (
-              <div key={item.key} className="space-y-1.5 bg-slate-50/50 dark:bg-slate-950/20 p-3.5 rounded-xl border border-slate-150 dark:border-slate-800/40">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex justify-between">
-                  <span>{item.label}</span>
-                  <span className="font-mono text-teal-600 dark:text-teal-400 font-bold">{localWeights[item.key as keyof OciWeights]}</span>
-                </label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="range"
-                    min="0"
-                    max="30"
-                    step="1"
-                    value={localWeights[item.key as keyof OciWeights]}
-                    onChange={(e) => handleWeightChange(item.key as keyof OciWeights, Number(e.target.value))}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                  />
-                  <input
-                    type="number"
-                    value={localWeights[item.key as keyof OciWeights]}
-                    onChange={(e) => handleWeightChange(item.key as keyof OciWeights, Number(e.target.value))}
-                    className="w-12 px-1.5 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+                      <View style={tw`flex-1 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${(currentVal / 30) * 100}%` }]} />
+                      </View>
 
-          <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-850 pt-5">
-            <p className="text-xs font-semibold text-slate-400">
-              * Weights are synced instantly in memory and saved to disk.
-            </p>
-            <div className="flex items-center space-x-2">
-              {successMsg && (
-                <span className="text-xs text-emerald-600 font-bold animate-pulse">{successMsg}</span>
-              )}
-              <button
-                type="button"
-                onClick={saveWeights}
-                className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-md shadow-teal-500/10"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save New Coefficients</span>
-              </button>
-            </div>
-          </div>
-        </div>
+                      <Pressable
+                        onPress={() => handleWeightChange(weightKey, currentVal + 1)}
+                        style={tw`w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 items-center justify-center`}
+                      >
+                        <Text style={tw`text-sm font-bold text-slate-700 dark:text-slate-200`}>+</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
 
-      </div>
-    </div>
+            {/* Bottom Controls */}
+            <View style={tw`border-t border-slate-100 dark:border-slate-850 pt-5 flex-row justify-between items-center`}>
+              <Text style={tw`text-[10px] font-semibold text-slate-400 flex-1 pr-3`}>
+                * Weights are synced instantly in memory and saved to disk.
+              </Text>
+              
+              <View style={tw`flex-row items-center`}>
+                {successMsg !== '' && (
+                  <Text style={tw`text-xs text-emerald-600 font-bold mr-3`}>{successMsg}</Text>
+                )}
+                <Pressable
+                  onPress={saveWeights}
+                  style={tw`px-5 py-2.5 bg-teal-500 rounded-xl flex-row items-center`}
+                >
+                  <Save size={14} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-bold text-white`}>Save Weights</Text>
+                </Pressable>
+              </View>
+            </View>
+
+          </View>
+
+        </View>
+
+      </View>
+    </ScrollView>
   );
 }

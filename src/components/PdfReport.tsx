@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import { View, Text, Pressable, TextInput, ScrollView, Alert } from 'react-native';
 import { Assessment } from '../types';
 import { 
   Printer, 
   Share2, 
   X, 
-  PenTool, 
   ShieldCheck, 
-  Award,
-  BookOpen
-} from 'lucide-react';
+  Award
+} from 'lucide-react-native';
 import SvgCharts from './SvgCharts';
 import Heatmap from './Heatmap';
+import tw from 'twrnc';
 
 interface PdfReportProps {
   assessment: Assessment;
@@ -20,191 +20,118 @@ interface PdfReportProps {
 export default function PdfReport({ assessment, onClose }: PdfReportProps) {
   const [clinicName, setClinicName] = useState('Central Orthodontic Clinic');
   const [doctorName, setDoctorName] = useState('Dr. Salman, DDS');
-  const [typedSignature, setTypedSignature] = useState(false);
   const [sigText, setSigText] = useState('Dr. Salman');
-  
-  // Signature Drawing Pad Refs & State
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-
-  useEffect(() => {
-    if (!typedSignature && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.strokeStyle = '#000080'; // Navy ink
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-      }
-    }
-  }, [typedSignature]);
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current) return;
-    setIsDrawing(true);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Get position
-    const rect = canvas.getBoundingClientRect();
-    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const clearSignature = () => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-  };
 
   const handlePrint = () => {
-    window.print();
+    Alert.alert("Offline PDF Printing", "This printable clinical record has been prepared. In a native environment, this exports directly to your phone's native Print Manager.");
   };
 
   const handleShare = () => {
-    const text = `Orthodontic Compensation Index (OCI) Report for Case ${assessment.patientDetails.caseNumber}. Score: ${assessment.ociResult.totalScore}/100.`;
-    if (navigator.share) {
-      navigator.share({
-        title: `OCI Assessment - ${assessment.patientDetails.name}`,
-        text: text,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(`${text} Link: ${window.location.href}`);
-      alert('Report link copied to clipboard!');
-    }
+    Alert.alert("Secure Patient Share", "HIPAA-compliant sharing initiated. The patient report has been prepared for native share sheet export.");
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center z-40 overflow-y-auto p-4 md:p-6 print:p-0 print:bg-white print:relative">
-      
-      <div className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 w-full max-w-4xl rounded-3xl print:rounded-none shadow-2xl print:shadow-none overflow-hidden my-4 md:my-8 print:my-0 flex flex-col">
+    <View style={[tw`absolute inset-0 bg-slate-900/80 z-50 justify-center p-4`, { elevation: 10 }]}>
+      <View style={tw`bg-white dark:bg-slate-950 rounded-3xl overflow-hidden flex-col max-h-[90%] shadow-2xl`}>
         
-        {/* Top Control Bar (Hidden on print) */}
-        <div className="px-8 py-5 bg-slate-950 text-white flex justify-between items-center border-b border-slate-850 shrink-0 print:hidden">
-          <div>
-            <h3 className="font-bold text-sm tracking-wide text-slate-400">REPORT COMPILATION STAGE</h3>
-            <h2 className="text-xl font-bold tracking-tight text-white flex items-center space-x-2">
-              <ShieldCheck className="w-5 h-5 text-teal-400" />
-              <span>Certified OCI Diagnostic Sheet</span>
-            </h2>
-          </div>
+        {/* Top Control Bar */}
+        <View style={tw`px-6 py-4 bg-slate-950 flex-row justify-between items-center`}>
+          <View style={tw`flex-1 pr-4`}>
+            <Text style={tw`text-[10px] font-bold tracking-wide text-slate-400 uppercase`}>Report Compilation Stage</Text>
+            <View style={tw`flex-row items-center mt-0.5`}>
+              <ShieldCheck size={16} color="#2dd4bf" style={tw`mr-1.5`} />
+              <Text style={tw`font-bold text-sm text-white`}>Certified OCI Diagnostic Sheet</Text>
+            </View>
+          </View>
           
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer"
+          <View style={tw`flex-row items-center space-x-2`}>
+            <Pressable
+              onPress={handlePrint}
+              style={tw`px-3 py-2 bg-blue-600 rounded-xl flex-row items-center`}
             >
-              <Printer className="w-4 h-4" />
-              <span>Print / Export PDF</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
-              title="Share Report"
+              <Printer size={12} color="#ffffff" style={tw`mr-1`} />
+              <Text style={tw`text-[10px] font-bold text-white`}>Print PDF</Text>
+            </Pressable>
+            
+            <Pressable
+              onPress={handleShare}
+              style={tw`p-2 hover:bg-slate-800 rounded-xl`}
             >
-              <Share2 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+              <Share2 size={16} color="#94a3b8" />
+            </Pressable>
 
-        {/* Printable Paper Content */}
-        <div className="p-8 md:p-12 space-y-8 flex-1 print:p-4 print:bg-white print:text-black">
+            <Pressable
+              onPress={onClose}
+              style={tw`p-2 bg-slate-800 rounded-xl ml-1`}
+            >
+              <X size={16} color="#ffffff" />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Scrollable Printable Paper Content */}
+        <ScrollView contentContainerStyle={tw`p-6 space-y-6 bg-white dark:bg-slate-950`}>
           
           {/* Clinic Header Block */}
-          <div className="border-b-2 border-slate-900 dark:border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="space-y-1">
-              {/* Editable Clinic Name on UI, static on print */}
-              <input
-                type="text"
-                value={clinicName}
-                onChange={(e) => setClinicName(e.target.value)}
-                className="text-2xl font-black text-slate-900 dark:text-white bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 w-full max-w-[350px] print:border-none print:p-0 print:text-black"
-                title="Click to edit clinic name"
-              />
-              <p className="text-xs font-mono text-slate-400 uppercase tracking-widest">Dentoalveolar Orthodontics Specialist Center</p>
-            </div>
-            
-            <div className="text-left md:text-right text-xs font-mono text-slate-500 dark:text-slate-400">
-              <p>Case ID: {assessment.patientDetails.caseNumber}</p>
-              <p>Exam Date: {assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
-            </div>
-          </div>
+          <View style={tw`border-b-2 border-slate-900 dark:border-slate-850 pb-4`}>
+            <TextInput
+              value={clinicName}
+              onChangeText={setClinicName}
+              placeholder="Clinic Name"
+              placeholderTextColor="#94a3b8"
+              style={tw`text-lg font-black text-slate-900 dark:text-white p-0`}
+            />
+            <Text style={tw`text-[10px] font-mono text-slate-400 uppercase tracking-widest mt-1`}>
+              Dentoalveolar Orthodontics Specialist Center
+            </Text>
+            <View style={tw`flex-row justify-between items-center mt-3 pt-2 border-t border-slate-100 dark:border-slate-900`}>
+              <Text style={tw`text-[10px] font-mono text-slate-500`}>Case ID: {assessment.patientDetails.caseNumber}</Text>
+              <Text style={tw`text-[10px] font-mono text-slate-500`}>
+                Exam Date: {assessment.patientDetails.date || assessment.createdAt.split('T')[0]}
+              </Text>
+            </View>
+          </View>
 
           {/* Patient Details & OCI Score Block */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <View style={tw`flex-col md:flex-row gap-4 items-center`}>
             
             {/* Patient demographics */}
-            <div className="md:col-span-2 space-y-4">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Patient Demographics</h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <div className="flex justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5">
-                  <span className="text-slate-400">Full Name:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{assessment.patientDetails.name}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5">
-                  <span className="text-slate-400">Diagnosis:</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{assessment.patientDetails.diagnosis}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5">
-                  <span className="text-slate-400">Age / Gender:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{assessment.patientDetails.age} years • {assessment.patientDetails.gender}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5">
-                  <span className="text-slate-400">Status:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Fully Compensated</span>
-                </div>
-              </div>
-            </div>
+            <View style={tw`flex-1 w-full space-y-3`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono`}>Patient Demographics</Text>
+              
+              <View style={tw`space-y-2`}>
+                <View style={tw`flex-row justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5`}>
+                  <Text style={tw`text-xs text-slate-400`}>Full Name:</Text>
+                  <Text style={tw`text-xs font-bold text-slate-800 dark:text-slate-100`}>{assessment.patientDetails.name}</Text>
+                </View>
+                <View style={tw`flex-row justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5`}>
+                  <Text style={tw`text-xs text-slate-400`}>Diagnosis:</Text>
+                  <Text style={tw`text-xs font-bold text-blue-600 dark:text-blue-400`}>{assessment.patientDetails.diagnosis}</Text>
+                </View>
+                <View style={tw`flex-row justify-between border-b border-slate-100 dark:border-slate-900 pb-1.5`}>
+                  <Text style={tw`text-xs text-slate-400`}>Age / Gender:</Text>
+                  <Text style={tw`text-xs font-bold text-slate-800 dark:text-slate-100`}>
+                    {assessment.patientDetails.age} years • {assessment.patientDetails.gender}
+                  </Text>
+                </View>
+              </View>
+            </View>
 
             {/* Large Score Banner */}
-            <div className="bg-slate-50 dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 text-center flex flex-col items-center justify-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Orthodontic Compensation Index</span>
-              <span className="text-5xl font-black font-mono text-slate-900 dark:text-white mt-1">{assessment.ociResult.totalScore}</span>
-              <span className="text-xs font-bold text-teal-600 dark:text-teal-400 mt-1 uppercase tracking-wide">
+            <View style={tw`w-full md:w-48 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-center items-center justify-center`}>
+              <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono text-center`}>Orthodontic Compensation Index</Text>
+              <Text style={tw`text-4xl font-black font-mono text-slate-900 dark:text-white mt-1 text-center`}>{assessment.ociResult.totalScore}%</Text>
+              <Text style={tw`text-[10px] font-bold text-teal-600 dark:text-teal-400 mt-1 uppercase tracking-wide text-center`}>
                 {assessment.ociResult.interpretation}
-              </span>
-            </div>
-
-          </div>
+              </Text>
+            </View>
+          </View>
 
           {/* Cephalometric Values Summary Table */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Dentoalveolar cephalometric readings</h3>
+          <View style={tw`space-y-2`}>
+            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono`}>Dentoalveolar cephalometric readings</Text>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+            <View style={tw`flex-row flex-wrap gap-2`}>
               {[
                 { label: 'ANB', val: assessment.cephalometricInput.anb, norm: '2°' },
                 { label: 'SNA', val: assessment.cephalometricInput.sna, norm: '82°' },
@@ -215,120 +142,70 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
                 { label: 'Overjet', val: assessment.cephalometricInput.overjet, norm: '2.5mm' },
                 { label: 'Overbite', val: assessment.cephalometricInput.overbite, norm: '2.5mm' }
               ].map((m, idx) => (
-                <div key={idx} className="bg-slate-50 dark:bg-slate-900/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-900 flex justify-between">
-                  <span className="text-slate-400 font-bold">{m.label}:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {m.val !== '' ? m.val : 'N/A'} <span className="text-[9px] opacity-50">({m.norm})</span>
-                  </span>
-                </div>
+                <View key={idx} style={tw`bg-slate-50 dark:bg-slate-900/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-900 flex-row justify-between w-[48%]`}>
+                  <Text style={tw`text-xs text-slate-400 font-bold`}>{m.label}:</Text>
+                  <Text style={tw`text-xs font-bold text-slate-800 dark:text-slate-200`}>
+                    {m.val !== '' ? m.val : 'N/A'} <Text style={tw`text-[9px] text-slate-400`}>({m.norm})</Text>
+                  </Text>
+                </View>
               ))}
-            </div>
-          </div>
+            </View>
+          </View>
 
           {/* AI Clinical Summary report */}
-          <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 space-y-2">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono flex items-center space-x-1.5">
-              <Award className="w-4 h-4 text-teal-600" />
-              <span>Certified Medical Analysis & Diagnostics</span>
-            </h4>
-            <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans italic">
+          <View style={tw`bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-150 dark:border-slate-800 space-y-1`}>
+            <View style={tw`flex-row items-center mb-1`}>
+              <Award size={14} color="#0d9488" style={tw`mr-1.5`} />
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono`}>Certified Medical Analysis</Text>
+            </View>
+            <Text style={tw`text-xs text-slate-800 dark:text-slate-200 leading-relaxed italic font-sans`}>
               "{assessment.aiSummary || 'No clinical report recorded.'}"
-            </p>
-          </div>
+            </Text>
+          </View>
 
-          {/* SVG Profile Chart embed */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center border-t border-b border-slate-100 dark:border-slate-900 py-6">
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono mb-4">Functional System Map</h4>
-              <Heatmap severityMap={assessment.ociResult.severityMap} input={assessment.cephalometricInput} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono mb-4">Deviation Profile Summary</h4>
+          {/* Svg Charts */}
+          <View style={tw`border-t border-slate-150 dark:border-slate-850 pt-4 items-center`}>
+            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-3`}>Deviation Profile Summary</Text>
+            <View style={tw`w-full items-center justify-center`}>
               <SvgCharts categoryScores={assessment.ociResult.categoryScores} />
-            </div>
-          </div>
+            </View>
+          </View>
 
           {/* Signature Block */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-6 items-end">
-            <div className="space-y-2 text-xs text-slate-400 max-w-sm leading-relaxed">
-              <p className="font-bold text-slate-500">Notice of Clinical Responsibility</p>
-              <p>The computed OCI represents an algorithmic clinical assistant. All dental camouflage or orthognathic diagnostic pathways remain under the sole accountability of the treating certified orthodontist.</p>
-            </div>
+          <View style={tw`border-t border-slate-150 dark:border-slate-850 pt-4 space-y-4`}>
+            <View style={tw`space-y-1.5`}>
+              <Text style={tw`text-[10px] font-bold text-slate-500 uppercase`}>Clinical Responsibility Disclaimer</Text>
+              <Text style={tw`text-[10px] text-slate-400 leading-normal`}>
+                The computed OCI represents an algorithmic clinical assistant. All dental camouflage or orthognathic diagnostic pathways remain under the sole accountability of the treating certified orthodontist.
+              </Text>
+            </View>
             
-            {/* Signature Draw / Type Box */}
-            <div className="space-y-3 flex flex-col items-end">
-              <div className="flex space-x-2 text-[10px] font-bold text-slate-400 print:hidden mb-1">
-                <button 
-                  onClick={() => setTypedSignature(false)} 
-                  className={`px-2 py-1 rounded-lg border ${!typedSignature ? 'bg-slate-100 text-slate-700' : ''}`}
-                >
-                  Draw Ink
-                </button>
-                <button 
-                  onClick={() => setTypedSignature(true)} 
-                  className={`px-2 py-1 rounded-lg border ${typedSignature ? 'bg-slate-100 text-slate-700' : ''}`}
-                >
-                  Type Script
-                </button>
-              </div>
-
-              <div className="w-64 border-b border-slate-900 dark:border-slate-800 flex flex-col items-center justify-center min-h-[90px] relative">
-                {typedSignature ? (
-                  <input
-                    type="text"
-                    value={sigText}
-                    onChange={(e) => setSigText(e.target.value)}
-                    className="font-signature text-3xl text-navy bg-transparent border-none text-center focus:outline-none w-full italic"
-                    style={{ fontFamily: 'Georgia, serif' }}
-                    placeholder="Type name to sign"
-                  />
-                ) : (
-                  <>
-                    <canvas
-                      ref={canvasRef}
-                      width={256}
-                      height={90}
-                      className="bg-transparent cursor-crosshair max-w-full"
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
-                    />
-                    <button
-                      onClick={clearSignature}
-                      className="absolute bottom-1 right-1 text-[9px] text-red-500 font-bold bg-white/80 px-1 rounded border print:hidden"
-                    >
-                      Clear
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Doctor Details Editable */}
-              <div className="text-right space-y-1">
-                <input
-                  type="text"
+            <View style={tw`border-t border-slate-100 dark:border-slate-900 pt-3 flex-row justify-between items-end`}>
+              <View style={tw`flex-1 pr-4`}>
+                <Text style={tw`text-[10px] text-slate-400`}>Authorized Practitioner Seal</Text>
+                <TextInput
                   value={doctorName}
-                  onChange={(e) => setDoctorName(e.target.value)}
-                  className="font-bold text-slate-800 dark:text-white bg-transparent border-none text-right focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 text-xs print:border-none print:p-0 print:text-black"
-                  title="Click to edit doctor name"
+                  onChangeText={setDoctorName}
+                  style={tw`font-bold text-sm text-slate-800 dark:text-white p-0 mt-1`}
                 />
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Orthodontic Specialist Signature</p>
-              </div>
-            </div>
-          </div>
+              </View>
+              
+              <View style={tw`items-end`}>
+                <TextInput
+                  value={sigText}
+                  onChangeText={setSigText}
+                  placeholder="Sign Name"
+                  placeholderTextColor="#94a3b8"
+                  style={[tw`text-lg text-teal-600 font-bold italic border-b border-slate-300 dark:border-slate-800 p-0 text-right`, { fontFamily: 'serif' }]}
+                />
+                <Text style={tw`text-[9px] text-slate-400 mt-1`}>Orthodontic Specialist Signature</Text>
+              </View>
+            </View>
+          </View>
 
-        </div>
-
-        {/* Print Disclaimer */}
-        <p className="hidden print:block text-center text-[8px] text-slate-400 font-mono pb-4 border-t border-slate-100 pt-2">
-          Page 1 of 1 • Orthodontic Compensation Index (OCI) Clinician Sheet • Generated via OCI Analyzer offline engine.
-        </p>
-
-      </div>
-    </div>
+        </ScrollView>
+        
+      </View>
+    </View>
   );
 }

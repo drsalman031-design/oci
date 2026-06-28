@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Orthodontic Compensation Index (OCI)",
+    "slug": "orthodontic-compensation-index",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d9488"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d9488"
+      },
+      "package": "com.dr.salman.oci"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

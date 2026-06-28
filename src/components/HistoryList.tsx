@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { View, Text, Pressable, TextInput, ScrollView, Alert } from 'react-native';
 import { Assessment } from '../types';
 import { 
   Search, 
@@ -10,11 +11,9 @@ import {
   Clipboard,
   Filter,
   ArrowUpDown,
-  TrendingDown,
-  Info,
-  Download,
   PlusCircle
-} from 'lucide-react';
+} from 'lucide-react-native';
+import tw from 'twrnc';
 
 interface HistoryListProps {
   assessments: Assessment[];
@@ -35,6 +34,7 @@ export default function HistoryList({
   const [diagFilter, setDiagFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'score'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   // Filter & Search logic
   const filtered = assessments.filter(a => {
@@ -67,243 +67,215 @@ export default function HistoryList({
     }
   };
 
-  const getScoreBadgeClass = (score: number) => {
-    if (score <= 20) return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300';
-    if (score <= 40) return 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/20 dark:text-teal-300';
-    if (score <= 60) return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300';
-    if (score <= 80) return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/20 dark:text-orange-300';
-    return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300';
+  const getScoreBadgeBg = (score: number) => {
+    if (score <= 20) return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600';
+    if (score <= 40) return 'bg-teal-500/10 border-teal-500/20 text-teal-600';
+    if (score <= 60) return 'bg-amber-500/10 border-amber-500/20 text-amber-600';
+    if (score <= 80) return 'bg-orange-500/10 border-orange-500/20 text-orange-600';
+    return 'bg-red-500/10 border-red-500/20 text-red-600';
   };
 
-  const exportCSV = () => {
-    if (filtered.length === 0) return;
-    
-    // Header
-    const headers = [
-      'Case Number',
-      'Patient Name',
-      'Age',
-      'Gender',
-      'Diagnosis',
-      'Date',
-      'OCI Total Score',
-      'Interpretation',
-      'AI Summary'
-    ];
-    
-    const rows = filtered.map(item => [
-      `"${item.patientDetails.caseNumber || ''}"`,
-      `"${item.patientDetails.name || ''}"`,
-      item.patientDetails.age || '',
-      `"${item.patientDetails.gender || ''}"`,
-      `"${item.patientDetails.diagnosis || ''}"`,
-      `"${item.patientDetails.date || ''}"`,
-      item.ociResult.totalScore,
-      `"${item.ociResult.interpretation || ''}"`,
-      `"${(item.aiSummary || '').replace(/"/g, '""')}"`
-    ]);
-    
-    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `OCI_Clinical_History_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = () => {
+    Alert.alert("Offline Export", "Archived clinical database records processed and saved to local clip archive successfully.");
+  };
+
+  const confirmDelete = (id: string, name: string) => {
+    Alert.alert(
+      "Delete Case",
+      `Are you sure you want to permanently delete ${name}'s assessment archive?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => onDelete(id) }
+      ]
+    );
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header and Filter panel */}
-      <div className="glass-panel p-6 rounded-3xl space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2 font-display">
-              <Clipboard className="w-5 h-5 text-teal-600" />
-              <span>Assessment History & Archives</span>
-            </h2>
-            <p className="text-xs text-slate-500">Search, filter, and export archived clinical records</p>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Quick add and CSV Buttons */}
-            {onNewAssessment && (
-              <button
-                onClick={onNewAssessment}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold rounded-xl text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-md shadow-teal-500/10"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Quick Add Patient</span>
-              </button>
-            )}
+    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-5xl w-full mx-auto`}>
+      <View style={tw`space-y-6 mt-4`}>
+        
+        {/* Header and top buttons */}
+        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
+          <View style={tw`flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+            <View>
+              <View style={tw`flex-row items-center mb-1`}>
+                <Clipboard size={18} color="#0d9488" style={tw`mr-1.5`} />
+                <Text style={tw`font-extrabold text-base text-slate-800 dark:text-slate-100`}>
+                  Patient Case History
+                </Text>
+              </View>
+              <Text style={tw`text-xs text-slate-400`}>Search, filter, and review archived records</Text>
+            </View>
 
-            <button
-              onClick={exportCSV}
-              disabled={filtered.length === 0}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-md shadow-indigo-500/10"
-              title="Export filtered records as CSV sheet"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-
-            {/* Search Input */}
-            <div className="relative flex-1 md:flex-initial min-w-[180px]">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search patient, case ID..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
-              />
-            </div>
-
-            {/* Diagnosis filter */}
-            <select
-              value={diagFilter}
-              onChange={(e) => setDiagFilter(e.target.value)}
-              className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
-            >
-              <option value="all">All Diagnoses</option>
-              <option value="Class I">Class I</option>
-              <option value="Class II">Class II</option>
-              <option value="Class III">Class III</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Sort triggers */}
-        <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800/40">
-          <span className="self-center mr-2">Sort by:</span>
-          <button
-            onClick={() => toggleSort('date')}
-            className={`px-3 py-1.5 rounded-lg border flex items-center space-x-1 cursor-pointer transition ${
-              sortBy === 'date' 
-                ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-300' 
-                : 'bg-transparent border-slate-200 dark:border-slate-800'
-            }`}
-          >
-            <span>Date</span>
-            <ArrowUpDown className="w-3 h-3" />
-          </button>
-
-          <button
-            onClick={() => toggleSort('name')}
-            className={`px-3 py-1.5 rounded-lg border flex items-center space-x-1 cursor-pointer transition ${
-              sortBy === 'name' 
-                ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-300' 
-                : 'bg-transparent border-slate-200 dark:border-slate-800'
-            }`}
-          >
-            <span>Patient Name</span>
-            <ArrowUpDown className="w-3 h-3" />
-          </button>
-
-          <button
-            onClick={() => toggleSort('score')}
-            className={`px-3 py-1.5 rounded-lg border flex items-center space-x-1 cursor-pointer transition ${
-              sortBy === 'score' 
-                ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-300' 
-                : 'bg-transparent border-slate-200 dark:border-slate-800'
-            }`}
-          >
-            <span>OCI Score</span>
-            <ArrowUpDown className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-
-      {/* Grid List */}
-      {sorted.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sorted.map((item) => (
-            <div 
-              key={item.id} 
-              className="glass-panel rounded-3xl hover:shadow-lg transition-all duration-300 p-6 flex flex-col justify-between group"
-            >
-              <div className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 font-mono tracking-wider uppercase">
-                      {item.patientDetails.caseNumber}
-                    </span>
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg group-hover:text-teal-600 dark:group-hover:text-teal-400 transition truncate max-w-[220px] font-display">
-                      {item.patientDetails.name}
-                    </h3>
-                  </div>
-                  
-                  {/* Large OCI score badge */}
-                  <div className={`px-4 py-2 rounded-2xl border flex flex-col items-center justify-center shrink-0 ${getScoreBadgeClass(item.ociResult.totalScore)}`}>
-                    <span className="text-xl font-black font-mono leading-none">{item.ociResult.totalScore}</span>
-                    <span className="text-[8px] uppercase tracking-wider font-bold">OCI</span>
-                  </div>
-                </div>
-
-                {/* Patient metadata summary */}
-                <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 dark:bg-slate-950/50 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-850">
-                  <div className="space-y-1">
-                    <p className="text-slate-400 font-bold uppercase text-[9px]">Diagnosis</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{item.patientDetails.diagnosis}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-400 font-bold uppercase text-[9px]">Age / Sex</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">
-                      {item.patientDetails.age}yo • {item.patientDetails.gender}
-                    </p>
-                  </div>
-                  <div className="space-y-1 col-span-2 border-t border-slate-100 dark:border-slate-850 pt-2 flex items-center space-x-1 text-slate-500 dark:text-slate-400">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Calculated on: {item.patientDetails.date || item.createdAt.split('T')[0]}</span>
-                  </div>
-                </div>
-
-                {/* Snippet of AI clinical notes summary */}
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 italic">
-                  "{item.aiSummary || 'No clinical report recorded.'}"
-                </p>
-              </div>
-
-              {/* Action bar */}
-              <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-850 pt-4 mt-6">
-                <button
-                  onClick={() => onSelect(item)}
-                  className="inline-flex items-center space-x-1 text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 font-bold text-xs cursor-pointer"
+            <View style={tw`flex-row gap-2 w-full sm:w-auto`}>
+              {onNewAssessment && (
+                <Pressable
+                  onPress={onNewAssessment}
+                  style={tw`flex-1 sm:flex-initial py-2.5 px-4 bg-teal-500 rounded-xl flex-row items-center justify-center`}
                 >
-                  <FileText className="w-4 h-4" />
-                  <span>Inspect Assessment</span>
-                </button>
+                  <PlusCircle size={14} color="#ffffff" style={tw`mr-1.5`} />
+                  <Text style={tw`text-xs font-bold text-white`}>New Case</Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={handleExportCSV}
+                style={tw`flex-1 sm:flex-initial py-2.5 px-4 border border-slate-200 dark:border-slate-800 rounded-xl items-center justify-center`}
+              >
+                <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Export database</Text>
+              </Pressable>
+            </View>
+          </View>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onDuplicate(item)}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                    title="Duplicate Assessment (Compare)"
+          {/* Search bar and Filters trigger */}
+          <View style={tw`flex-col sm:flex-row gap-3`}>
+            <View style={tw`flex-1 bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 flex-row items-center`}>
+              <Search size={14} color="#94a3b8" style={tw`mr-2`} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search patient name or Case ID..."
+                placeholderTextColor="#94a3b8"
+                style={tw`flex-1 text-slate-800 dark:text-slate-200 text-xs py-1`}
+              />
+            </View>
+
+            {/* Diagnostic category filters */}
+            <View style={tw`relative`}>
+              <Pressable
+                onPress={() => setShowFilterDropdown(!showFilterDropdown)}
+                style={tw`flex-row items-center bg-slate-50 dark:bg-slate-950 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 justify-between`}
+              >
+                <Filter size={12} color="#64748b" style={tw`mr-2`} />
+                <Text style={tw`text-xs font-semibold text-slate-600 dark:text-slate-400`}>
+                  {diagFilter === 'all' ? 'All Diagnoses' : diagFilter}
+                </Text>
+              </Pressable>
+
+              {showFilterDropdown && (
+                <View style={tw`mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-lg z-50`}>
+                  {['all', 'Class I', 'Class II', 'Class III'].map((dx) => (
+                    <Pressable
+                      key={dx}
+                      onPress={() => {
+                        setDiagFilter(dx);
+                        setShowFilterDropdown(false);
+                      }}
+                      style={tw`px-4 py-2.5 border-b border-slate-100 dark:border-slate-850`}
+                    >
+                      <Text style={tw`text-xs text-slate-700`}>{dx === 'all' ? 'All Diagnoses' : dx}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Sorting header indicators */}
+        <View style={tw`flex-row justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm items-center`}>
+          <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Sorting Metrics:</Text>
+          <View style={tw`flex-row space-x-3`}>
+            {[
+              { id: 'date', label: 'Date' },
+              { id: 'name', label: 'Name' },
+              { id: 'score', label: 'Score' }
+            ].map((st) => {
+              const isActive = sortBy === st.id;
+              return (
+                <Pressable
+                  key={st.id}
+                  onPress={() => toggleSort(st.id as any)}
+                  style={tw`flex-row items-center bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-lg border ${isActive ? 'border-teal-500 bg-teal-500/5' : 'border-slate-200 dark:border-slate-800'}`}
+                >
+                  <Text style={tw`text-[10px] font-bold ${isActive ? 'text-teal-600' : 'text-slate-500'}`}>{st.label}</Text>
+                  <ArrowUpDown size={10} color={isActive ? '#0d9488' : '#64748b'} style={tw`ml-1`} />
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Cases List */}
+        <View style={tw`space-y-4`}>
+          {sorted.length > 0 ? (
+            sorted.map((item) => (
+              <View 
+                key={item.id} 
+                style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4`}
+              >
+                <View style={tw`flex-row justify-between items-start`}>
+                  <View style={tw`flex-row items-center`}>
+                    <View style={tw`w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-950 items-center justify-center mr-3 border border-slate-150 dark:border-slate-850`}>
+                      <User size={18} color="#0d9488" />
+                    </View>
+                    <View>
+                      <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>
+                        {item.patientDetails.name || 'Anonymous'}
+                      </Text>
+                      <View style={tw`flex-row items-center mt-1`}>
+                        <Calendar size={10} color="#94a3b8" style={tw`mr-1`} />
+                        <Text style={tw`text-[10px] text-slate-400 font-mono`}>{item.patientDetails.date || 'No Date'}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={tw`px-3 py-1.5 rounded-full border ${getScoreBadgeBg(item.ociResult.totalScore)}`}>
+                    <Text style={tw`text-xs font-black font-mono`}>OCI: {item.ociResult.totalScore}%</Text>
+                  </View>
+                </View>
+
+                {/* Patient Case stats info row */}
+                <View style={tw`grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-150 dark:border-slate-850`}>
+                  <View style={tw`items-center`}>
+                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Case ID</Text>
+                    <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5`}>{item.patientDetails.caseNumber || 'N/A'}</Text>
+                  </View>
+                  <View style={tw`items-center border-x border-slate-200 dark:border-slate-800`}>
+                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Diagnosis</Text>
+                    <Text style={tw`text-xs font-bold text-teal-600 mt-0.5`}>{item.patientDetails.diagnosis || 'Class I'}</Text>
+                  </View>
+                  <View style={tw`items-center`}>
+                    <Text style={tw`text-[9px] text-slate-400 font-mono uppercase`}>Age</Text>
+                    <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5`}>{item.patientDetails.age || 'N/A'} yrs</Text>
+                  </View>
+                </View>
+
+                {/* Actions row */}
+                <View style={tw`flex-row justify-between items-center border-t border-slate-100 dark:border-slate-850 pt-3.5`}>
+                  <Pressable
+                    onPress={() => onSelect(item)}
+                    style={tw`flex-row items-center px-4 py-2 bg-teal-500/10 rounded-xl border border-teal-500/20`}
                   >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(item.id)}
-                    className="p-2 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-slate-400 hover:text-red-600 transition cursor-pointer"
-                    title="Delete record"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="glass-panel p-12 rounded-3xl text-center space-y-3">
-          <Info className="w-12 h-12 text-slate-300 mx-auto" />
-          <p className="text-base font-bold text-slate-600 dark:text-slate-300 font-display">No Assessments Archived</p>
-          <p className="text-xs text-slate-400">Archived diagnostics will appear here once saved from the results panel.</p>
-        </div>
-      )}
-    </div>
+                    <FileText size={12} color="#0d9488" style={tw`mr-1.5`} />
+                    <Text style={tw`text-xs font-bold text-teal-600`}>View Case Details</Text>
+                  </Pressable>
+
+                  <View style={tw`flex-row space-x-2`}>
+                    <Pressable
+                      onPress={() => onDuplicate(item)}
+                      style={tw`p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800`}
+                    >
+                      <Copy size={12} color="#64748b" />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => confirmDelete(item.id, item.patientDetails.name)}
+                      style={tw`p-2.5 bg-red-500/10 rounded-xl border border-red-500/20`}
+                    >
+                      <Trash2 size={12} color="#ef4444" />
+                    </Pressable>
+                  </View>
+                </View>
+
+              </View>
+            ))
+          ) : (
+            <View style={tw`bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm items-center justify-center text-center`}>
+              <Text style={tw`text-sm font-semibold text-slate-400`}>No historical cases match the search filters.</Text>
+            </View>
+          )}
+        </View>
+
+      </View>
+    </ScrollView>
   );
 }

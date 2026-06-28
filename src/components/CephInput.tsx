@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import { CephalometricInput } from '../types';
 import { Norms } from '../scoringEngine';
 import { 
   ArrowLeft, 
-  HelpCircle, 
   Sparkles, 
   RotateCcw,
   BookOpen
-} from 'lucide-react';
+} from 'lucide-react-native';
+import tw from 'twrnc';
 
 interface CephInputProps {
   initialInput?: CephalometricInput;
@@ -16,7 +17,6 @@ interface CephInputProps {
   onBack: () => void;
 }
 
-// Preset values for demonstrating OCI calculation easily
 const PRESETS = {
   class1Normal: {
     anb: 2, sna: 82, snb: 80, wits: 0, snMp: 32, fma: 25,
@@ -30,9 +30,9 @@ const PRESETS = {
   },
   class2Compensated: {
     anb: 8, sna: 86, snb: 78, wits: 6, snMp: 36, fma: 28,
-    u1Sn: 92, u1NaDeg: 12, u1NaMm: 1.5, // retroclined upper incisors to compensate
-    impa: 102, l1NbDeg: 34, l1NbMm: 7, // proclined lower incisors to reach overjet
-    interincisalAngle: 145, overjet: 3.5, overbite: 4.5, // moderately compensated OJ
+    u1Sn: 92, u1NaDeg: 12, u1NaMm: 1.5,
+    impa: 102, l1NbDeg: 34, l1NbMm: 7,
+    interincisalAngle: 145, overjet: 3.5, overbite: 4.5,
     upperLipELine: 1, lowerLipELine: 3, nasolabialAngle: 90, facialConvexity: 22,
     molarRelation: 'Class II' as const, canineRelation: 'Class II' as const, crossbite: 'None' as const,
     deepBite: 5, openBite: 0, curveOfSpee: 3, midlineDeviation: 1,
@@ -40,9 +40,9 @@ const PRESETS = {
   },
   class3Compensated: {
     anb: -4, sna: 78, snb: 82, wits: -7, snMp: 29, fma: 22,
-    u1Sn: 118, u1NaDeg: 36, u1NaMm: 8.5, // extreme proclined upper incisors to reach positive overjet
-    impa: 76, l1NbDeg: 14, l1NbMm: 1, // extremely retroclined lower incisors
-    interincisalAngle: 122, overjet: 1.0, overbite: 0.5, // barely positive overjet!
+    u1Sn: 118, u1NaDeg: 36, u1NaMm: 8.5,
+    impa: 76, l1NbDeg: 14, l1NbMm: 1,
+    interincisalAngle: 122, overjet: 1.0, overbite: 0.5,
     upperLipELine: -5, lowerLipELine: 2, nasolabialAngle: 115, facialConvexity: 3,
     molarRelation: 'Class III' as const, canineRelation: 'Class III' as const, crossbite: 'Anterior' as const,
     deepBite: 0, openBite: 1, curveOfSpee: 0.5, midlineDeviation: 1.5,
@@ -51,7 +51,6 @@ const PRESETS = {
 };
 
 export default function CephInput({ initialInput, diagnosis, onCalculate, onBack }: CephInputProps) {
-  // Setup forms
   const [activeTab, setActiveTab] = useState<'skeletal' | 'dental' | 'soft' | 'clinical'>('skeletal');
   const [form, setForm] = useState<CephalometricInput>(initialInput || {
     anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
@@ -66,7 +65,7 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   const handleFieldChange = (key: keyof CephalometricInput, val: any) => {
     setForm(prev => ({
       ...prev,
-      [key]: val
+      [key]: val === '' ? '' : Number(val)
     }));
   };
 
@@ -86,674 +85,256 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCalculate = () => {
     onCalculate(form);
   };
 
-  // Helper to render normal ranges inline with validation alert
+  const getDevColor = (field: keyof CephalometricInput, val: any) => {
+    if (val === '' || val === undefined) return 'text-slate-400';
+    const num = Number(val);
+    const norm = Norms[field as string];
+    if (!norm) return 'text-slate-700 dark:text-slate-300';
+    if (num < norm.min || num > norm.max) return 'text-amber-600 font-bold';
+    return 'text-teal-600 font-bold';
+  };
+
   const renderRangeGuide = (field: string) => {
     const norm = Norms[field];
     if (!norm) return null;
     return (
-      <span className="text-[10px] text-slate-400 font-mono">
+      <Text style={tw`text-[10px] text-slate-400 font-mono mt-0.5`}>
         Normal: {norm.min} to {norm.max}{norm.unit} (Mean: {norm.mean})
-      </span>
+      </Text>
     );
   };
 
-  const getDevColor = (field: keyof CephalometricInput, val: any) => {
-    if (val === '') return 'text-slate-400';
-    const num = Number(val);
-    const norm = Norms[field as string];
-    if (!norm) return 'text-slate-700 dark:text-slate-300';
-    if (num < norm.min || num > norm.max) return 'text-amber-600 font-semibold';
-    return 'text-teal-600 font-semibold';
+  const renderInputField = (field: keyof CephalometricInput, label: string) => {
+    const currentVal = form[field];
+    return (
+      <View style={tw`space-y-1 mb-4 w-full`}>
+        <View style={tw`flex-row justify-between mb-1`}>
+          <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide`}>{label}</Text>
+          <Text style={tw`text-xs ${getDevColor(field, currentVal)}`}>
+            {currentVal !== '' && currentVal !== undefined ? `${currentVal}` : 'Empty'}
+          </Text>
+        </View>
+        <TextInput
+          value={currentVal === '' || currentVal === undefined ? '' : String(currentVal)}
+          onChangeText={(txt) => handleFieldChange(field, txt)}
+          keyboardType="numeric"
+          placeholder="e.g. 0.0"
+          placeholderTextColor="#94a3b8"
+          style={tw`w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm`}
+        />
+        {renderRangeGuide(field as string)}
+      </View>
+    );
+  };
+
+  const renderSelectField = (field: keyof CephalometricInput, label: string, options: string[]) => {
+    const currentVal = form[field];
+    return (
+      <View style={tw`space-y-1.5 mb-4`}>
+        <Text style={tw`text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1`}>{label}</Text>
+        <View style={tw`flex-row flex-wrap gap-1.5`}>
+          {options.map((opt) => {
+            const isSelected = currentVal === opt;
+            return (
+              <Pressable
+                key={opt}
+                onPress={() => setForm(prev => ({ ...prev, [field]: opt }))}
+                style={tw`px-3 py-2 rounded-xl border ${isSelected ? 'bg-teal-500 border-teal-500' : 'bg-transparent border-slate-200 dark:border-slate-700'}`}
+              >
+                <Text style={tw`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                  {opt}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Top controls and presets */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm gap-4">
-        <div>
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-teal-500" />
-            <span>Clinical Presets</span>
-          </h3>
-          <p className="text-xs text-slate-500">Quickly prefill diagnostic archetypes to evaluate scoring behavior</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => applyPreset('class1Normal')}
-            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-          >
-            Normal Class I
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('class2Compensated')}
-            className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 rounded-lg text-xs font-semibold border border-blue-200 dark:border-blue-900 transition cursor-pointer"
-          >
-            Class II Compensated
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('class3Compensated')}
-            className="px-3 py-1.5 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 rounded-lg text-xs font-semibold border border-teal-200 dark:border-teal-900 transition cursor-pointer"
-          >
-            Class III Compensated
-          </button>
-          <button
-            type="button"
-            onClick={clearForm}
-            className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs border border-red-200 transition cursor-pointer"
-            title="Clear all fields"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+    <ScrollView contentContainerStyle={tw`pb-12 px-4 max-w-4xl w-full mx-auto`}>
+      <View style={tw`space-y-6 mt-4`}>
+        
+        {/* Presets and top controls */}
+        <View style={tw`bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4`}>
+          <View>
+            <View style={tw`flex-row items-center mb-1`}>
+              <Sparkles size={16} color="#0d9488" style={tw`mr-1.5`} />
+              <Text style={tw`font-extrabold text-sm text-slate-800 dark:text-slate-100`}>Clinical Presets</Text>
+            </View>
+            <Text style={tw`text-xs text-slate-400`}>Quickly prefill diagnostic archetypes to evaluate scoring</Text>
+          </View>
+          <View style={tw`flex-row flex-wrap gap-2`}>
+            <Pressable
+              onPress={() => applyPreset('class1Normal')}
+              style={tw`px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700`}
+            >
+              <Text style={tw`text-[11px] font-bold text-slate-700 dark:text-slate-300`}>Normal Class I</Text>
+            </Pressable>
+            
+            <Pressable
+              onPress={() => applyPreset('class2Compensated')}
+              style={tw`px-3 py-1.5 bg-teal-500/10 rounded-lg border border-teal-500/20`}
+            >
+              <Text style={tw`text-[11px] font-bold text-teal-600 dark:text-teal-400`}>Class II Compensated</Text>
+            </Pressable>
+            
+            <Pressable
+              onPress={() => applyPreset('class3Compensated')}
+              style={tw`px-3 py-1.5 bg-blue-500/10 rounded-lg border border-blue-500/20`}
+            >
+              <Text style={tw`text-[11px] font-bold text-blue-600 dark:text-blue-400`}>Class III Compensated</Text>
+            </Pressable>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-slate-950 px-8 py-6 text-white border-b border-slate-800 flex justify-between items-center">
-          <div>
-            <span className="text-xs uppercase tracking-widest text-teal-400 font-mono">Step 2 of 2</span>
-            <h2 className="text-2xl font-bold tracking-tight">Cephalometric & Clinical Parameters</h2>
-            {diagnosis && (
-              <span className="inline-block mt-1.5 bg-blue-500/20 text-blue-300 text-xs px-2.5 py-0.5 rounded-full border border-blue-400/25">
-                Target Pattern: {diagnosis}
-              </span>
+            <Pressable
+              onPress={clearForm}
+              style={tw`p-2 bg-red-500/10 rounded-lg border border-red-500/20`}
+            >
+              <RotateCcw size={14} color="#f87171" />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Form panel */}
+        <View style={tw`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden`}>
+          {/* Header */}
+          <View style={tw`bg-slate-950 p-6 flex-row justify-between items-center`}>
+            <View>
+              <Text style={tw`text-[10px] font-mono text-teal-400 uppercase tracking-widest`}>Step 2 of 2</Text>
+              <Text style={tw`text-lg font-bold text-white`}>Cephalometric Parameters</Text>
+              {diagnosis ? (
+                <Text style={tw`text-[10px] text-teal-300 font-semibold bg-teal-500/10 px-2 py-0.5 rounded-full mt-1.5 self-start border border-teal-500/20`}>
+                  Diagnosis: {diagnosis}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable 
+              onPress={onBack}
+              style={tw`flex-row items-center bg-white/10 px-3 py-1.5 rounded-xl border border-white/10`}
+            >
+              <ArrowLeft size={14} color="#ffffff" style={tw`mr-1`} />
+              <Text style={tw`text-xs font-bold text-white`}>Back</Text>
+            </Pressable>
+          </View>
+
+          {/* Tab buttons */}
+          <View style={tw`flex-row bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 overflow-x-auto`}>
+            {[
+              { id: 'skeletal', label: '1. Skeletal' },
+              { id: 'dental', label: '2. Dental' },
+              { id: 'soft', label: '3. Soft' },
+              { id: 'clinical', label: '4. Clinical' }
+            ].map((tab) => {
+              const isSelected = activeTab === tab.id;
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id as any)}
+                  style={tw`flex-1 py-3 items-center border-b-2 ${isSelected ? 'border-teal-500 bg-white dark:bg-slate-900' : 'border-transparent'}`}
+                >
+                  <Text style={tw`text-xs font-extrabold ${isSelected ? 'text-teal-500' : 'text-slate-400'}`}>
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Tab content */}
+          <View style={tw`p-6 min-h-[350px]`}>
+            {activeTab === 'skeletal' && (
+              <View style={tw`space-y-4`}>
+                <View style={tw`bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex-row items-start mb-2`}>
+                  <BookOpen size={16} color="#0d9488" style={tw`mr-2 mt-0.5 shrink-0`} />
+                  <Text style={tw`text-xs text-slate-500 leading-relaxed flex-1`}>
+                    Skeletal assessment evaluates the basic sagittal & vertical bony relations. Under-compensated Class II/III skeletal patterns carry significant pre-treatment therapeutic camouflage challenges.
+                  </Text>
+                </View>
+
+                {renderInputField('anb', 'ANB Angle (°) *')}
+                {renderInputField('sna', 'SNA Angle (°)')}
+                {renderInputField('snb', 'SNB Angle (°)')}
+                {renderInputField('wits', 'Wits Appraisal (mm)')}
+                {renderInputField('snMp', 'SN-MP Angle (°)')}
+                {renderInputField('fma', 'FMA (Y-Axis/Tweed) (°)')}
+              </View>
             )}
-          </div>
-          <button 
-            type="button"
-            onClick={onBack}
-            className="p-2 hover:bg-white/10 rounded-xl text-white/80 hover:text-white transition cursor-pointer flex items-center space-x-1.5 text-xs font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Patient Info</span>
-          </button>
-        </div>
 
-        {/* Tab Controls */}
-        <div className="flex border-b border-slate-100 dark:border-slate-800 overflow-x-auto bg-slate-50 dark:bg-slate-950">
-          {[
-            { id: 'skeletal', label: '1. Skeletal (Sagittal/Vertical)' },
-            { id: 'dental', label: '2. Dental (Incisors / Joint)' },
-            { id: 'soft', label: '3. Soft Tissue & Profile' },
-            { id: 'clinical', label: '4. Occlusion & Transverse' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-6 py-4 border-b-2 font-semibold text-xs uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
-                activeTab === tab.id 
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900' 
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+            {activeTab === 'dental' && (
+              <View style={tw`space-y-4`}>
+                {renderInputField('u1Sn', 'U1-SN Angle (°) *')}
+                {renderInputField('u1NaDeg', 'U1-NA Angle (°)')}
+                {renderInputField('u1NaMm', 'U1-NA Distance (mm)')}
+                {renderInputField('impa', 'L1-MP Angle (IMPA) (°) *')}
+                {renderInputField('l1NbDeg', 'L1-NB Angle (°)')}
+                {renderInputField('l1NbMm', 'L1-NB Distance (mm)')}
+                {renderInputField('interincisalAngle', 'Interincisal Angle (°) *')}
+                {renderInputField('overjet', 'Overjet (mm) *')}
+                {renderInputField('overbite', 'Overbite (mm)')}
+              </View>
+            )}
 
-        {/* Form Fields */}
-        <div className="p-8 min-h-[350px]">
-          {activeTab === 'skeletal' && (
-            <div className="space-y-6">
-              <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl flex items-start space-x-3 text-xs text-slate-500 leading-relaxed border border-slate-100 dark:border-slate-800">
-                <BookOpen className="w-5 h-5 text-blue-500 shrink-0" />
-                <p>
-                  **Skeletal assessment** evaluates basic sagitto-vertical bony discrepancies. Under-compensated cases with massive skeletal disharmony but normal overjets indicate extreme natural compensation. Use standard Steiner, Tweed, and Downs landmarks.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* ANB */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>ANB Angle (°) *</span>
-                    <span className={getDevColor('anb', form.anb)}>
-                      {form.anb !== '' ? `${form.anb}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.anb}
-                    onChange={(e) => handleFieldChange('anb', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('anb')}
-                </div>
+            {activeTab === 'soft' && (
+              <View style={tw`space-y-4`}>
+                {renderInputField('upperLipELine', 'Upper Lip to E-Line (mm)')}
+                {renderInputField('lowerLipELine', 'Lower Lip to E-Line (mm)')}
+                {renderInputField('nasolabialAngle', 'Nasolabial Angle (°)')}
+                {renderInputField('facialConvexity', 'Facial Convexity (°)')}
+              </View>
+            )}
 
-                {/* SNA */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>SNA Angle (°)</span>
-                    <span className={getDevColor('sna', form.sna)}>
-                      {form.sna !== '' ? `${form.sna}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.sna}
-                    onChange={(e) => handleFieldChange('sna', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('sna')}
-                </div>
-
-                {/* SNB */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>SNB Angle (°)</span>
-                    <span className={getDevColor('snb', form.snb)}>
-                      {form.snb !== '' ? `${form.snb}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.snb}
-                    onChange={(e) => handleFieldChange('snb', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('snb')}
-                </div>
-
-                {/* Wits */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Wits Appraisal (mm)</span>
-                    <span className={getDevColor('wits', form.wits)}>
-                      {form.wits !== '' ? `${form.wits}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.wits}
-                    onChange={(e) => handleFieldChange('wits', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('wits')}
-                </div>
-
-                {/* SN-MP */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>SN-MP Angle (°)</span>
-                    <span className={getDevColor('snMp', form.snMp)}>
-                      {form.snMp !== '' ? `${form.snMp}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.snMp}
-                    onChange={(e) => handleFieldChange('snMp', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('snMp')}
-                </div>
-
-                {/* FMA */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>FMA (°)</span>
-                    <span className={getDevColor('fma', form.fma)}>
-                      {form.fma !== '' ? `${form.fma}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.fma}
-                    onChange={(e) => handleFieldChange('fma', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('fma')}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'dental' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* U1-SN */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>U1-SN Angle (°)</span>
-                    <span className={getDevColor('u1Sn', form.u1Sn)}>
-                      {form.u1Sn !== '' ? `${form.u1Sn}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.u1Sn}
-                    onChange={(e) => handleFieldChange('u1Sn', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('u1Sn')}
-                </div>
-
-                {/* IMPA */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>IMPA Angle (°)</span>
-                    <span className={getDevColor('impa', form.impa)}>
-                      {form.impa !== '' ? `${form.impa}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.impa}
-                    onChange={(e) => handleFieldChange('impa', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('impa')}
-                </div>
-
-                {/* U1-NA Deg */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>U1-NA Angle (°)</span>
-                    <span className={getDevColor('u1NaDeg', form.u1NaDeg)}>
-                      {form.u1NaDeg !== '' ? `${form.u1NaDeg}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.u1NaDeg}
-                    onChange={(e) => handleFieldChange('u1NaDeg', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('u1NaDeg')}
-                </div>
-
-                {/* L1-NB Deg */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>L1-NB Angle (°)</span>
-                    <span className={getDevColor('l1NbDeg', form.l1NbDeg)}>
-                      {form.l1NbDeg !== '' ? `${form.l1NbDeg}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.l1NbDeg}
-                    onChange={(e) => handleFieldChange('l1NbDeg', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('l1NbDeg')}
-                </div>
-
-                {/* U1-NA mm */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>U1-NA Distance (mm)</span>
-                    <span className={getDevColor('u1NaMm', form.u1NaMm)}>
-                      {form.u1NaMm !== '' ? `${form.u1NaMm}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.u1NaMm}
-                    onChange={(e) => handleFieldChange('u1NaMm', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('u1NaMm')}
-                </div>
-
-                {/* L1-NB mm */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>L1-NB Distance (mm)</span>
-                    <span className={getDevColor('l1NbMm', form.l1NbMm)}>
-                      {form.l1NbMm !== '' ? `${form.l1NbMm}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.l1NbMm}
-                    onChange={(e) => handleFieldChange('l1NbMm', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('l1NbMm')}
-                </div>
-
-                {/* Interincisal Angle */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Interincisal Angle (°) *</span>
-                    <span className={getDevColor('interincisalAngle', form.interincisalAngle)}>
-                      {form.interincisalAngle !== '' ? `${form.interincisalAngle}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.interincisalAngle}
-                    onChange={(e) => handleFieldChange('interincisalAngle', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('interincisalAngle')}
-                </div>
-
-                {/* Overjet */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Overjet (mm) *</span>
-                    <span className={getDevColor('overjet', form.overjet)}>
-                      {form.overjet !== '' ? `${form.overjet}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.overjet}
-                    onChange={(e) => handleFieldChange('overjet', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('overjet')}
-                </div>
-
-                {/* Overbite */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Overbite (mm)</span>
-                    <span className={getDevColor('overbite', form.overbite)}>
-                      {form.overbite !== '' ? `${form.overbite}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.overbite}
-                    onChange={(e) => handleFieldChange('overbite', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('overbite')}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'soft' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Upper Lip to E-line */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Upper Lip to E-Line (mm)</span>
-                    <span className={getDevColor('upperLipELine', form.upperLipELine)}>
-                      {form.upperLipELine !== '' ? `${form.upperLipELine}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.upperLipELine}
-                    onChange={(e) => handleFieldChange('upperLipELine', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('upperLipELine')}
-                </div>
-
-                {/* Lower Lip to E-line */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Lower Lip to E-Line (mm)</span>
-                    <span className={getDevColor('lowerLipELine', form.lowerLipELine)}>
-                      {form.lowerLipELine !== '' ? `${form.lowerLipELine}mm` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.lowerLipELine}
-                    onChange={(e) => handleFieldChange('lowerLipELine', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('lowerLipELine')}
-                </div>
-
-                {/* Nasolabial Angle */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Nasolabial Angle (°)</span>
-                    <span className={getDevColor('nasolabialAngle', form.nasolabialAngle)}>
-                      {form.nasolabialAngle !== '' ? `${form.nasolabialAngle}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.nasolabialAngle}
-                    onChange={(e) => handleFieldChange('nasolabialAngle', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('nasolabialAngle')}
-                </div>
-
-                {/* Facial Convexity */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Facial Convexity (°)</span>
-                    <span className={getDevColor('facialConvexity', form.facialConvexity)}>
-                      {form.facialConvexity !== '' ? `${form.facialConvexity}°` : 'Unentered'}
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.facialConvexity}
-                    onChange={(e) => handleFieldChange('facialConvexity', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  />
-                  {renderRangeGuide('facialConvexity')}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'clinical' && (
-            <div className="space-y-6">
-              {/* Category selector fields & millimeter inputs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {activeTab === 'clinical' && (
+              <View style={tw`space-y-4`}>
+                {renderSelectField('molarRelation', 'Molar Relation', ['Class I', 'Class II', 'Class III'])}
+                {renderSelectField('canineRelation', 'Canine Relation', ['Class I', 'Class II', 'Class III'])}
+                {renderSelectField('crossbite', 'Anterior Crossbite', ['None', 'Anterior', 'Posterior', 'Single Tooth'])}
+                {renderSelectField('posteriorCrossbite', 'Posterior Crossbite', ['None', 'Unilateral', 'Bilateral'])}
                 
-                {/* Molar Relation */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Molar Relation
-                  </label>
-                  <select
-                    value={form.molarRelation}
-                    onChange={(e) => handleFieldChange('molarRelation', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  >
-                    <option value="" className="dark:bg-slate-900">Unselected</option>
-                    <option value="Class I" className="dark:bg-slate-900">Class I</option>
-                    <option value="Class II" className="dark:bg-slate-900">Class II</option>
-                    <option value="Class III" className="dark:bg-slate-900">Class III</option>
-                  </select>
-                </div>
+                {renderInputField('deepBite', 'Deep Bite (mm)')}
+                {renderInputField('openBite', 'Open Bite (mm)')}
+                {renderInputField('curveOfSpee', 'Curve of Spee (mm)')}
+                {renderInputField('archWidthDifference', 'Arch Width Diff (mm)')}
+                {renderInputField('dentalMidlineDev', 'Dental Midline Dev (mm)')}
+              </View>
+            )}
+          </View>
 
-                {/* Canine Relation */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Canine Relation
-                  </label>
-                  <select
-                    value={form.canineRelation}
-                    onChange={(e) => handleFieldChange('canineRelation', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  >
-                    <option value="" className="dark:bg-slate-900">Unselected</option>
-                    <option value="Class I" className="dark:bg-slate-900">Class I</option>
-                    <option value="Class II" className="dark:bg-slate-900">Class II</option>
-                    <option value="Class III" className="dark:bg-slate-900">Class III</option>
-                  </select>
-                </div>
+          {/* Footer Actions */}
+          <View style={tw`bg-slate-50 dark:bg-slate-950 p-6 border-t border-slate-200 dark:border-slate-800 flex-row justify-between items-center`}>
+            <View style={tw`flex-row space-x-1.5`}>
+              {['skeletal', 'dental', 'soft', 'clinical'].map((tab) => (
+                <View 
+                  key={tab} 
+                  style={tw`w-2 h-2 rounded-full ${activeTab === tab ? 'bg-teal-500' : 'bg-slate-200 dark:bg-slate-800'}`} 
+                />
+              ))}
+            </View>
+            
+            <View style={tw`flex-row space-x-3`}>
+              <Pressable
+                onPress={onBack}
+                style={tw`px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl`}
+              >
+                <Text style={tw`text-xs font-bold text-slate-600 dark:text-slate-400`}>Back</Text>
+              </Pressable>
+              
+              <Pressable
+                onPress={handleCalculate}
+                style={tw`px-5 py-2.5 bg-teal-500 rounded-xl shadow-md`}
+              >
+                <Text style={tw`text-xs font-bold text-white`}>Calculate OCI</Text>
+              </Pressable>
+            </View>
+          </View>
 
-                {/* Crossbite */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Crossbite Presence
-                  </label>
-                  <select
-                    value={form.crossbite}
-                    onChange={(e) => handleFieldChange('crossbite', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  >
-                    <option value="" className="dark:bg-slate-900">Unselected</option>
-                    <option value="None" className="dark:bg-slate-900">None</option>
-                    <option value="Anterior" className="dark:bg-slate-900">Anterior</option>
-                    <option value="Posterior" className="dark:bg-slate-900">Posterior</option>
-                    <option value="Single Tooth" className="dark:bg-slate-900">Single Tooth</option>
-                  </select>
-                </div>
+        </View>
 
-                {/* Posterior Crossbite */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Posterior Crossbite
-                  </label>
-                  <select
-                    value={form.posteriorCrossbite}
-                    onChange={(e) => handleFieldChange('posteriorCrossbite', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                  >
-                    <option value="" className="dark:bg-slate-900">Unselected</option>
-                    <option value="None" className="dark:bg-slate-900">None</option>
-                    <option value="Unilateral" className="dark:bg-slate-900">Unilateral</option>
-                    <option value="Bilateral" className="dark:bg-slate-900">Bilateral</option>
-                  </select>
-                </div>
-
-                {/* Deep Bite mm */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Deep Bite (mm)</span>
-                    <span className="text-teal-600 font-mono text-xs">{form.deepBite !== '' ? `${form.deepBite}mm` : ''}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={form.deepBite}
-                    onChange={(e) => handleFieldChange('deepBite', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                    placeholder="e.g. 2"
-                  />
-                </div>
-
-                {/* Open Bite mm */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Open Bite (mm)</span>
-                    <span className="text-teal-600 font-mono text-xs">{form.openBite !== '' ? `${form.openBite}mm` : ''}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={form.openBite}
-                    onChange={(e) => handleFieldChange('openBite', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                    placeholder="e.g. 0"
-                  />
-                </div>
-
-                {/* Curve of Spee */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Curve of Spee (mm)</span>
-                    <span className="text-teal-600 font-mono text-xs">{form.curveOfSpee !== '' ? `${form.curveOfSpee}mm` : ''}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={form.curveOfSpee}
-                    onChange={(e) => handleFieldChange('curveOfSpee', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                    placeholder="e.g. 1.5"
-                  />
-                </div>
-
-                {/* Arch Width Difference */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Arch Width Difference (mm)</span>
-                    <span className="text-teal-600 font-mono text-xs">{form.archWidthDifference !== '' ? `${form.archWidthDifference}mm` : ''}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={form.archWidthDifference}
-                    onChange={(e) => handleFieldChange('archWidthDifference', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                    placeholder="Maxilla minus Mandible"
-                  />
-                </div>
-
-                {/* Dental Midline Deviation */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex justify-between">
-                    <span>Dental Midline Deviation (mm)</span>
-                    <span className="text-teal-600 font-mono text-xs">{form.dentalMidlineDev !== '' ? `${form.dentalMidlineDev}mm` : ''}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={form.dentalMidlineDev}
-                    onChange={(e) => handleFieldChange('dentalMidlineDev', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                    placeholder="e.g. 0"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="bg-slate-50 dark:bg-slate-950 px-8 py-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-3 items-center">
-          <div className="flex space-x-1">
-            {['skeletal', 'dental', 'soft', 'clinical'].map((tab) => (
-              <div 
-                key={tab} 
-                className={`w-2.5 h-2.5 rounded-full ${activeTab === tab ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} 
-              />
-            ))}
-          </div>
-          
-          <div className="flex space-x-3 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex-1 sm:flex-initial px-5 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl font-medium text-xs transition cursor-pointer"
-            >
-              Back to Patient Info
-            </button>
-            <button
-              type="submit"
-              className="flex-1 sm:flex-initial px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-xs transition cursor-pointer flex items-center justify-center space-x-2 shadow-md shadow-teal-500/10"
-            >
-              <span>Calculate OCI Score</span>
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
+      </View>
+    </ScrollView>
   );
 }
