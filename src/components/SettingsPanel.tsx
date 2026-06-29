@@ -173,25 +173,21 @@ export default function SettingsPanel({
             
             <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-3.5`}>
               <View style={tw`space-y-1`}>
-                <Text style={tw`font-extrabold text-sm text-slate-100 uppercase tracking-wide`}>Index Scoring Weights</Text>
-                <Text style={tw`text-[10px] text-slate-400 mt-0.5`}>Calibrate OCI target index values (Sum target = 100)</Text>
+                <Text style={tw`font-extrabold text-sm text-slate-100 uppercase tracking-wide`}>Orthodontic Index Domains</Text>
+                <Text style={tw`text-[10px] text-slate-400 mt-0.5`}>Standardized OCI 2.0 clinical diagnostic domains (Total = 100)</Text>
               </View>
               
-              <Pressable
-                onPress={resetWeightsToDefault}
-                style={tw`flex-row items-center bg-white/5 border border-white/10 px-3 py-2 rounded-xl`}
-              >
-                <RefreshCw size={11} color="#14B8A6" style={tw`mr-1.5`} />
-                <Text style={tw`text-[10px] font-bold text-slate-300`}>Reset</Text>
-              </Pressable>
+              <View style={tw`bg-teal-500/10 border border-teal-500/25 px-2.5 py-1.5 rounded-xl`}>
+                <Text style={tw`text-[9px] font-black text-teal-400 uppercase tracking-wider font-mono`}>AUTOMATIC v2.0</Text>
+              </View>
             </View>
 
             <View style={tw`bg-teal-500/5 p-4 rounded-2xl flex-row items-start border border-teal-500/10`}>
               <Info size={15} color="#14B8A6" style={tw`mr-2.5 mt-0.5 shrink-0`} />
               <View style={tw`flex-1`}>
-                <Text style={tw`font-bold text-xs text-white`}>Calculated Sum: {totalWeightSum}/100</Text>
+                <Text style={tw`font-bold text-xs text-white`}>Cumulative Scoring Max: 100</Text>
                 <Text style={tw`text-[10px] text-slate-400 leading-relaxed mt-1`}>
-                  All scoring algorithms adapt dynamic ratios perfectly based on standard clinical parameters.
+                  The Orthodontic Compensation Index is automatically computed based on standard clinical parameters and accepted reference values. Manual score override is disabled to preserve diagnostic consistency.
                 </Text>
               </View>
             </View>
@@ -199,70 +195,37 @@ export default function SettingsPanel({
             {/* Weights Sliders */}
             <View style={tw`space-y-3`}>
               {[
-                { key: 'skeletal', label: 'Skeletal Discrepancy' },
-                { key: 'upperIncisor', label: 'Upper Incisor Tipping' },
-                { key: 'lowerIncisor', label: 'Lower Incisor Tipping' },
-                { key: 'interincisal', label: 'Interincisal Relation' },
-                { key: 'overjet', label: 'Overjet Mismatch' },
-                { key: 'softTissue', label: 'Soft Tissue Envelope' },
-                { key: 'occlusion', label: 'Occlusal Severity' },
-                { key: 'transverse', label: 'Transverse Arch Width' }
+                { key: 'skeletal', label: 'Skeletal Compensation', max: 20 },
+                { key: 'maxillaryDental', label: 'Maxillary Dental Compensation', max: 15 },
+                { key: 'mandibularDental', label: 'Mandibular Dental Compensation', max: 20 },
+                { key: 'interincisal', label: 'Interincisal Relationship', max: 10 },
+                { key: 'overjetOverbite', label: 'Overjet/Overbite Compensation', max: 10 },
+                { key: 'softTissue', label: 'Soft Tissue Compensation', max: 15 },
+                { key: 'overallHarmony', label: 'Overall Harmony/Compensation', max: 10 }
               ].map((item) => {
-                const weightKey = item.key as keyof OciWeights;
-                const currentVal = localWeights[weightKey];
                 return (
                   <View key={item.key} style={tw`bg-black/35 p-4 rounded-2xl border border-white/5`}>
-                    <View style={tw`flex-row justify-between items-center mb-2.5`}>
-                      <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>{item.label}</Text>
-                      <Text style={tw`text-xs font-black text-teal-400 font-mono`}>{currentVal}</Text>
+                    <View style={tw`flex-row justify-between items-center mb-1`}>
+                      <Text style={tw`text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono`}>{item.label}</Text>
+                      <Text style={tw`text-xs font-black text-teal-400 font-mono`}>Max: {item.max}</Text>
                     </View>
 
-                    {/* Button-based adjuster triggers */}
-                    <View style={tw`flex-row items-center space-x-3`}>
-                      <Pressable
-                        onPress={() => handleWeightChange(weightKey, currentVal - 1)}
-                        style={tw`w-9 h-9 rounded-xl bg-white/5 border border-white/10 items-center justify-center`}
-                      >
-                        <Text style={tw`text-sm font-black text-white`}>-</Text>
-                      </Pressable>
-
-                      <View style={tw`flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-[#14B8A6] rounded-full`, { width: `${(currentVal / 30) * 100}%` }]} />
+                    <View style={tw`flex-row items-center justify-between mt-2 pt-2 border-t border-white/5`}>
+                      <Text style={tw`text-[9px] text-slate-500 italic`}>Standard reference metric</Text>
+                      <View style={tw`bg-white/5 px-2.5 py-0.5 rounded-md border border-white/10`}>
+                        <Text style={tw`text-[7px] text-slate-400 font-mono font-black uppercase tracking-wider`}>Standard Lock</Text>
                       </View>
-
-                      <Pressable
-                        onPress={() => handleWeightChange(weightKey, currentVal + 1)}
-                        style={tw`w-9 h-9 rounded-xl bg-white/5 border border-white/10 items-center justify-center`}
-                      >
-                        <Text style={tw`text-sm font-black text-white`}>+</Text>
-                      </Pressable>
                     </View>
                   </View>
                 );
               })}
             </View>
 
-            {/* Save Buttons */}
-            <View style={tw`border-t border-white/5 pt-5 flex-row justify-between items-center`}>
-              <Text style={tw`text-[10px] text-slate-500 italic flex-1 pr-3`}>
-                * Saved configurations persist in Async Storage immediately.
+            {/* Locked note */}
+            <View style={tw`border-t border-white/5 pt-4 flex-row justify-between items-center`}>
+              <Text style={tw`text-[10px] text-slate-500 italic`}>
+                * Clinical values map to index weights using specialized orthodontic algorithms.
               </Text>
-              
-              <View style={tw`flex-row items-center`}>
-                {successMsg !== '' && (
-                  <Text style={tw`text-xs text-teal-400 font-extrabold mr-3`}>{successMsg}</Text>
-                )}
-                <Pressable
-                  onPress={saveWeights}
-                  style={({ pressed }) => [
-                    tw`px-5 py-3.5 bg-[#14B8A6] rounded-2xl flex-row items-center justify-center shadow-lg border border-teal-400/30`,
-                    pressed ? tw`opacity-90` : null
-                  ]}
-                >
-                  <Save size={13} color="#ffffff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Save Weights</Text>
-                </Pressable>
-              </View>
             </View>
 
           </View>

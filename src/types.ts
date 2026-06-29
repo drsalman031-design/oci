@@ -6,6 +6,9 @@ export interface PatientDetails {
   diagnosis: 'Class II' | 'Class III' | 'Class I' | '';
   date: string;
   clinicalNotes: string;
+  facialProfile?: 'Straight' | 'Convex' | 'Concave' | '';
+  smileAnalysis?: 'Consonant' | 'Non-Consonant' | 'Gummy' | 'Flat' | '';
+  crowdingSpacing?: 'None' | 'Crowding' | 'Spacing' | '';
 }
 
 export interface CephalometricInput {
@@ -93,12 +96,11 @@ export interface NormativeRange {
 }
 
 export interface OciWeights {
-  skeletal: number;       // Max: 15
-  upperIncisor: number;   // Max: 15
-  lowerIncisor: number;   // Max: 20
+  skeletal: number;       // Max: 20
+  maxillaryDental: number; // Max: 15
+  mandibularDental: number; // Max: 20
   interincisal: number;   // Max: 10
-  overjet: number;        // Max: 10
-  softTissue: number;     // Max: 10
-  occlusion: number;      // Max: 10
-  transverse: number;     // Max: 10
+  overjetOverbite: number; // Max: 10
+  softTissue: number;     // Max: 15
+  overallHarmony: number; // Max: 10
 }

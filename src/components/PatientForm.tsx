@@ -16,6 +16,9 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
   const [gender, setGender] = useState<PatientDetails['gender']>(initialDetails?.gender || '');
   const [caseNumber, setCaseNumber] = useState(initialDetails?.caseNumber || '');
   const [diagnosis, setDiagnosis] = useState<PatientDetails['diagnosis']>(initialDetails?.diagnosis || '');
+  const [facialProfile, setFacialProfile] = useState<PatientDetails['facialProfile']>(initialDetails?.facialProfile || 'Straight');
+  const [smileAnalysis, setSmileAnalysis] = useState<PatientDetails['smileAnalysis']>(initialDetails?.smileAnalysis || 'Consonant');
+  const [crowdingSpacing, setCrowdingSpacing] = useState<PatientDetails['crowdingSpacing']>(initialDetails?.crowdingSpacing || 'None');
   const [clinicalNotes, setClinicalNotes] = useState(initialDetails?.clinicalNotes || '');
   const [date] = useState(initialDetails?.date || new Date().toISOString().split('T')[0]);
   
@@ -48,6 +51,9 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
         diagnosis,
         date,
         clinicalNotes,
+        facialProfile,
+        smileAnalysis,
+        crowdingSpacing,
       });
     }
   };
@@ -180,6 +186,75 @@ export default function PatientForm({ initialDetails, onNext, onCancel }: Patien
               })}
             </View>
             {errors.diagnosis && <Text style={tw`text-[10px] text-rose-400 font-mono mt-1`}>{errors.diagnosis}</Text>}
+          </View>
+
+          {/* Facial Profile Assessment */}
+          <View style={tw`space-y-2`}>
+            <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>
+              Facial Profile Assessment
+            </Text>
+            <View style={tw`flex-row bg-black/40 border border-white/10 p-1 rounded-2xl`}>
+              {['Straight', 'Convex', 'Concave'].map((prof) => {
+                const isSelected = facialProfile === prof;
+                return (
+                  <Pressable
+                    key={prof}
+                    onPress={() => setFacialProfile(prof as any)}
+                    style={tw`flex-1 py-3 rounded-xl items-center ${isSelected ? 'bg-[#14B8A6]' : 'bg-transparent'}`}
+                  >
+                    <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                      {prof}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Smile Analysis */}
+          <View style={tw`space-y-2`}>
+            <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>
+              Smile Analysis
+            </Text>
+            <View style={tw`flex-row bg-black/40 border border-white/10 p-1 rounded-2xl`}>
+              {['Consonant', 'Non-Consonant', 'Gummy', 'Flat'].map((smile) => {
+                const isSelected = smileAnalysis === smile;
+                return (
+                  <Pressable
+                    key={smile}
+                    onPress={() => setSmileAnalysis(smile as any)}
+                    style={tw`flex-1 py-3 rounded-xl items-center ${isSelected ? 'bg-[#14B8A6]' : 'bg-transparent'}`}
+                  >
+                    <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                      {smile}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Crowding / Spacing */}
+          <View style={tw`space-y-2`}>
+            <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1`}>
+              Arch Crowding / Spacing
+            </Text>
+            <View style={tw`flex-row bg-black/40 border border-white/10 p-1 rounded-2xl`}>
+              {['None', 'Crowding', 'Spacing'].map((space) => {
+                const isSelected = crowdingSpacing === space;
+                return (
+                  <Pressable
+                    key={space}
+                    onPress={() => setCrowdingSpacing(space as any)}
+                    style={tw`flex-1 py-3 rounded-xl items-center ${isSelected ? 'bg-[#14B8A6]' : 'bg-transparent'}`}
+                  >
+                    <Text style={tw`text-xs font-black ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                      {space}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           {/* Clinical Diagnostic Notes */}

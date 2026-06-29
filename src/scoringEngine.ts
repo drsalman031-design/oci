@@ -29,196 +29,177 @@ export const Norms: Record<string, NormativeRange> = {
 
 // Default weights for OCI
 export const DEFAULT_WEIGHTS: OciWeights = {
-  skeletal: 15,
-  upperIncisor: 15,
-  lowerIncisor: 20,
+  skeletal: 20,
+  maxillaryDental: 15,
+  mandibularDental: 20,
   interincisal: 10,
-  overjet: 10,
-  softTissue: 10,
-  occlusion: 10,
-  transverse: 10,
+  overjetOverbite: 10,
+  softTissue: 15,
+  overallHarmony: 10,
 };
-
-// Helper to calculate absolute deviation normalized to a score
-function getDeviationRatio(val: number | '', norm: NormativeRange, maxTolerance: number = 10): number {
-  if (val === '') return 0;
-  const dev = Math.abs(val - norm.mean);
-  const idealRange = (norm.max - norm.min) / 2;
-  
-  if (dev <= idealRange) {
-    return 0; // within normal range
-  }
-  
-  // normalized deviation ratio up to 1.0
-  const excessDev = dev - idealRange;
-  return Math.min(excessDev / maxTolerance, 1.0);
-}
 
 export function calculateOCI(input: CephalometricInput, weights: OciWeights = DEFAULT_WEIGHTS): OciResult {
   const categoryScores: CategoryScore[] = [];
 
-  // 1. Skeletal Discrepancy (Max: weights.skeletal)
-  // Higher skeletal deviation means more severe malocclusion.
-  const anbDev = getDeviationRatio(input.anb, Norms.anb, 6);
-  const witsDev = getDeviationRatio(input.wits, Norms.wits, 6);
-  const fmaDev = getDeviationRatio(input.fma, Norms.fma, 8);
-  const skeletalRatio = (anbDev * 0.5 + witsDev * 0.3 + fmaDev * 0.2);
-  const skeletalScore = Math.round(skeletalRatio * weights.skeletal);
+  // Extract variables with default fallback to normative means
+  const sna = input.sna !== '' ? Number(input.sna) : 82;
+  const snb = input.snb !== '' ? Number(input.snb) : 80;
+  const anb = input.anb !== '' ? Number(input.anb) : 2;
+  const wits = input.wits !== '' ? Number(input.wits) : 0;
+
+  const u1Sn = input.u1Sn !== '' ? Number(input.u1Sn) : 104;
+  const u1NaDeg = input.u1NaDeg !== '' ? Number(input.u1NaDeg) : 22;
+  const u1NaMm = input.u1NaMm !== '' ? Number(input.u1NaMm) : 4;
+
+  const impa = input.impa !== '' ? Number(input.impa) : 90;
+  const l1NbDeg = input.l1NbDeg !== '' ? Number(input.l1NbDeg) : 25;
+  const l1NbMm = input.l1NbMm !== '' ? Number(input.l1NbMm) : 4;
+
+  const interincisalAngle = input.interincisalAngle !== '' ? Number(input.interincisalAngle) : 135;
+  const overjet = input.overjet !== '' ? Number(input.overjet) : 2.5;
+  const overbite = input.overbite !== '' ? Number(input.overbite) : 2.5;
+
+  const upperLipELine = input.upperLipELine !== '' ? Number(input.upperLipELine) : -2;
+  const lowerLipELine = input.lowerLipELine !== '' ? Number(input.lowerLipELine) : 0;
+  const nasolabialAngle = input.nasolabialAngle !== '' ? Number(input.nasolabialAngle) : 102;
+
+  // 1. Determine Skeletal Pattern (Class I, II, or III)
+  let skeletalPattern: 'Class I' | 'Class II' | 'Class III' = 'Class I';
+  if (anb < 0) {
+    skeletalPattern = 'Class III';
+  } else if (anb > 4.5) {
+    skeletalPattern = 'Class II';
+  } else {
+    skeletalPattern = 'Class I';
+  }
+
+  // 1. Skeletal Compensation (Max: 20)
+  // Evaluates sagittal discrepancies (ANB, Wits) and jaw imbalances.
+  const anbDev = Math.abs(anb - 2);
+  const anbScore = Math.min(Math.max(0, anbDev - 2) * 2.5, 10); // max 10
+
+  const witsDev = Math.abs(wits - 0);
+  const witsScore = Math.min(Math.max(0, witsDev - 2) * 2, 6); // max 6
+
+  const snaDev = Math.abs(sna - 82);
+  const snbDev = Math.abs(snb - 80);
+  const snaSnbScore = Math.min((Math.max(0, snaDev - 2) + Math.max(0, snbDev - 2)) * 1.0, 4); // max 4
+
+  const skeletalScore = Math.round(anbScore + witsScore + snaSnbScore);
+
   categoryScores.push({
-    name: 'Skeletal Discrepancy',
+    name: 'Skeletal Compensation',
     score: skeletalScore,
-    maxScore: weights.skeletal,
-    severity: getSeverity(skeletalScore, weights.skeletal),
-    details: `Skeletal Class deviation assessed via ANB (${input.anb || 'N/A'}°), Wits (${input.wits !== '' ? input.wits + 'mm' : 'N/A'}), and vertical FMA (${input.fma || 'N/A'}°).`
+    maxScore: 20,
+    severity: getSeverity(skeletalScore, 20),
+    details: `Skeletal Pattern Class ${skeletalPattern}. ANB: ${anb}° (Norm: 2°), Wits: ${wits}mm (Norm: 0mm), SNA: ${sna}°/SNB: ${snb}°.`
   });
 
-  // 2. Upper Incisor Compensation (Max: weights.upperIncisor)
-  // Reflects dental compensation in the maxilla.
-  const u1SnDev = getDeviationRatio(input.u1Sn, Norms.u1Sn, 15);
-  const u1NaDegDev = getDeviationRatio(input.u1NaDeg, Norms.u1NaDeg, 15);
-  const u1NaMmDev = getDeviationRatio(input.u1NaMm, Norms.u1NaMm, 5);
-  const upperRatio = (u1SnDev * 0.4 + u1NaDegDev * 0.4 + u1NaMmDev * 0.2);
-  const upperScore = Math.round(upperRatio * weights.upperIncisor);
+  // 2. Maxillary Dental Compensation (Max: 15)
+  // Measures tipping and displacement of maxillary incisors relative to anterior skull base and maxilla.
+  const u1SnDev = Math.abs(u1Sn - 104);
+  const u1SnScore = Math.min(Math.max(0, u1SnDev - 5) * 1.0, 6); // max 6
+
+  const u1NaDegDev = Math.abs(u1NaDeg - 22);
+  const u1NaDegScore = Math.min(Math.max(0, u1NaDegDev - 5) * 1.0, 5); // max 5
+
+  const u1NaMmDev = Math.abs(u1NaMm - 4);
+  const u1NaMmScore = Math.min(Math.max(0, u1NaMmDev - 2) * 1.5, 4); // max 4
+
+  const maxillaryScore = Math.round(u1SnScore + u1NaDegScore + u1NaMmScore);
+
   categoryScores.push({
-    name: 'Upper Incisor Compensation',
-    score: upperScore,
-    maxScore: weights.upperIncisor,
-    severity: getSeverity(upperScore, weights.upperIncisor),
-    details: `Maxillary incisor tipping/displacement (U1-SN: ${input.u1Sn || 'N/A'}°, U1-NA: ${input.u1NaDeg || 'N/A'}° / ${input.u1NaMm || 'N/A'}mm).`
+    name: 'Maxillary Dental Compensation',
+    score: maxillaryScore,
+    maxScore: 15,
+    severity: getSeverity(maxillaryScore, 15),
+    details: `U1-SN: ${u1Sn}° (Norm: 104°), U1-NA: ${u1NaDeg}° / ${u1NaMm}mm. Shows compensatory tipping of the maxillary incisors.`
   });
 
-  // 3. Lower Incisor Compensation (Max: weights.lowerIncisor)
-  // Reflects dental compensation in the mandible (crucial in both Class II & III).
-  const impaDev = getDeviationRatio(input.impa, Norms.impa, 15);
-  const l1NbDegDev = getDeviationRatio(input.l1NbDeg, Norms.l1NbDeg, 15);
-  const l1NbMmDev = getDeviationRatio(input.l1NbMm, Norms.l1NbMm, 5);
-  const lowerRatio = (impaDev * 0.4 + l1NbDegDev * 0.4 + l1NbMmDev * 0.2);
-  const lowerScore = Math.round(lowerRatio * weights.lowerIncisor);
+  // 3. Mandibular Dental Compensation (Max: 20)
+  // Evaluates position and proclination of lower incisors relative to the mandibular plane.
+  const impaDev = Math.abs(impa - 90);
+  const impaScore = Math.min(Math.max(0, impaDev - 5) * 1.25, 8); // max 8
+
+  const l1NbDegDev = Math.abs(l1NbDeg - 25);
+  const l1NbDegScore = Math.min(Math.max(0, l1NbDegDev - 5) * 1.25, 7); // max 7
+
+  const l1NbMmDev = Math.abs(l1NbMm - 4);
+  const l1NbMmScore = Math.min(Math.max(0, l1NbMmDev - 2) * 1.5, 5); // max 5
+
+  const mandibularScore = Math.round(impaScore + l1NbDegScore + l1NbMmScore);
+
   categoryScores.push({
-    name: 'Lower Incisor Compensation',
-    score: lowerScore,
-    maxScore: weights.lowerIncisor,
-    severity: getSeverity(lowerScore, weights.lowerIncisor),
-    details: `Mandibular incisor tipping/displacement (IMPA: ${input.impa || 'N/A'}°, L1-NB: ${input.l1NbDeg || 'N/A'}° / ${input.l1NbMm || 'N/A'}mm).`
+    name: 'Mandibular Dental Compensation',
+    score: mandibularScore,
+    maxScore: 20,
+    severity: getSeverity(mandibularScore, 20),
+    details: `IMPA: ${impa}° (Norm: 90°), L1-NB: ${l1NbDeg}° / ${l1NbMm}mm. Displays lower incisor tilt masking skeletal sagittal gaps.`
   });
 
-  // 4. Interincisal Angle (Max: weights.interincisal)
-  // Reflects the combined relationship of upper & lower incisors.
-  const interincisalDev = getDeviationRatio(input.interincisalAngle, Norms.interincisalAngle, 20);
-  const interincisalScore = Math.round(interincisalDev * weights.interincisal);
+  // 4. Interincisal Relationship (Max: 10)
+  // Reflects combined tipping status.
+  const interincisalDev = Math.abs(interincisalAngle - 135);
+  const interincisalScore = Math.round(Math.min(Math.max(0, interincisalDev - 5) * 0.5, 10)); // max 10
+
   categoryScores.push({
     name: 'Interincisal Relationship',
     score: interincisalScore,
-    maxScore: weights.interincisal,
-    severity: getSeverity(interincisalScore, weights.interincisal),
-    details: `Interincisal angle (${input.interincisalAngle || 'N/A'}°) reflecting relative protrusion or retroclination.`
+    maxScore: 10,
+    severity: getSeverity(interincisalScore, 10),
+    details: `Interincisal Angle: ${interincisalAngle}° (Norm: 135°). Reveals bimaxillary protrusion (<125°) or upright retroclination (>140°).`
   });
 
-  // 5. Overjet Compensation (Max: weights.overjet)
-  // If skeletal ANB is severely Class II (>6°) or Class III (< -1°),
-  // but overjet is compensated to normal (1.5 - 3.5mm), we have extreme dental compensation.
-  // If overjet is severe (e.g. 10mm in Class II, or -5mm in Class III), we have LESS dental compensation.
-  let overjetRatio = 0;
-  if (input.anb !== '' && input.overjet !== '') {
-    const anbVal = input.anb;
-    const ojVal = input.overjet;
-    // Ideal skeletal Class I (ANB = 2°) generally has normal overjet (~2.5mm).
-    // Let's measure mismatch.
-    const expectedOverjet = 2.5 + (anbVal - 2) * 0.8; // theoretical overjet without compensation
-    const compensationAmount = Math.abs(expectedOverjet - ojVal);
-    overjetRatio = Math.min(compensationAmount / 8, 1.0);
-  } else {
-    overjetRatio = getDeviationRatio(input.overjet, Norms.overjet, 5);
-  }
-  const overjetScore = Math.round(overjetRatio * weights.overjet);
+  // 5. Overjet/Overbite Compensation (Max: 10)
+  // Compares anterior occlusion relative to skeletal pattern limits.
+  const ojDev = Math.abs(overjet - 2.5);
+  const ojScore = Math.min(Math.max(0, ojDev - 1.0) * 1.25, 5); // max 5
+
+  const overbiteMm = overbite > 10 ? overbite * 0.08 : overbite; // percentage conversion fallback
+  const obDev = Math.abs(overbiteMm - 2.5);
+  const obScore = Math.min(Math.max(0, obDev - 1.0) * 1.25, 5); // max 5
+
+  const overjetOverbiteScore = Math.round(ojScore + obScore);
+
   categoryScores.push({
-    name: 'Overjet Compensation',
-    score: overjetScore,
-    maxScore: weights.overjet,
-    severity: getSeverity(overjetScore, weights.overjet),
-    details: `Clinical overjet (${input.overjet !== '' ? input.overjet + 'mm' : 'N/A'}) compared against expected skeletal overjet profile.`
+    name: 'Overjet/Overbite Compensation',
+    score: overjetOverbiteScore,
+    maxScore: 10,
+    severity: getSeverity(overjetOverbiteScore, 10),
+    details: `Overjet: ${overjet}mm (Norm: 2.5mm), Overbite: ${overbite}${overbite > 10 ? '%' : 'mm'} (Norm: 2.5mm / 30%).`
   });
 
-  // 6. Soft Tissue Compensation (Max: weights.softTissue)
-  const lipUDev = getDeviationRatio(input.upperLipELine, Norms.upperLipELine, 4);
-  const lipLDev = getDeviationRatio(input.lowerLipELine, Norms.lowerLipELine, 4);
-  const nasoDev = getDeviationRatio(input.nasolabialAngle, Norms.nasolabialAngle, 15);
-  const softRatio = (lipUDev * 0.3 + lipLDev * 0.3 + nasoDev * 0.4);
-  const softTissueScore = Math.round(softRatio * weights.softTissue);
+  // 6. Soft Tissue Compensation (Max: 15)
+  // Evaluates upper and lower lip profiles relative to E-Line and nasolabial angle.
+  const upperLipDev = Math.abs(upperLipELine - (-2));
+  const upperLipScore = Math.min(Math.max(0, upperLipDev - 2) * 1.5, 5); // max 5
+
+  const lowerLipDev = Math.abs(lowerLipELine - 0);
+  const lowerLipScore = Math.min(Math.max(0, lowerLipDev - 2) * 1.5, 5); // max 5
+
+  const nasolabialDev = Math.abs(nasolabialAngle - 102);
+  const nasolabialScore = Math.min(Math.max(0, nasolabialDev - 8) * 0.4, 5); // max 5
+
+  const softTissueScore = Math.round(upperLipScore + lowerLipScore + nasolabialScore);
+
   categoryScores.push({
-    name: 'Soft Tissue Masking',
+    name: 'Soft Tissue Compensation',
     score: softTissueScore,
-    maxScore: weights.softTissue,
-    severity: getSeverity(softTissueScore, weights.softTissue),
-    details: `Lip to E-Line (${input.upperLipELine || '0'}mm / ${input.lowerLipELine || '0'}mm) and nasolabial angle (${input.nasolabialAngle || 'N/A'}°).`
+    maxScore: 15,
+    severity: getSeverity(softTissueScore, 15),
+    details: `Upper Lip to E-line: ${upperLipELine}mm (Norm: -2mm), Lower Lip to E-line: ${lowerLipELine}mm (Norm: 0mm), Nasolabial: ${nasolabialAngle}° (Norm: 102°).`
   });
 
-  // 7. Occlusal Compensation (Max: weights.occlusion)
-  // Hard/soft categorical inputs
-  let occlRatio = 0;
-  let occlCount = 0;
-  if (input.molarRelation) {
-    occlCount++;
-    if (input.molarRelation !== 'Class I') occlRatio += 0.4;
-  }
-  if (input.canineRelation) {
-    occlCount++;
-    if (input.canineRelation !== 'Class I') occlRatio += 0.3;
-  }
-  if (input.crossbite && input.crossbite !== 'None') {
-    occlCount++;
-    occlRatio += 0.2;
-  }
-  if (input.deepBite !== '') {
-    occlCount++;
-    if (input.deepBite > 4) occlRatio += 0.2;
-  }
-  if (input.openBite !== '') {
-    occlCount++;
-    if (input.openBite > 0) occlRatio += 0.2;
-  }
-  if (input.curveOfSpee !== '') {
-    occlCount++;
-    if (input.curveOfSpee > 2) occlRatio += 0.1;
-  }
-  
-  const occlFactor = occlCount > 0 ? Math.min(occlRatio, 1.0) : 0;
-  const occlusalScore = Math.round(occlFactor * weights.occlusion);
-  categoryScores.push({
-    name: 'Occlusal Compensation',
-    score: occlusalScore,
-    maxScore: weights.occlusion,
-    severity: getSeverity(occlusalScore, weights.occlusion),
-    details: `Molar Relation (${input.molarRelation || 'N/A'}), Deep bite (${input.deepBite || '0'}mm), Curve of Spee (${input.curveOfSpee || '0'}mm).`
-  });
+  // 7. Overall Harmony/Compensation (Max: 10)
+  // Measures the degree of general dental-skeletal balance.
+  const overallScore = Math.round((skeletalScore / 20 * 3) + (maxillaryScore / 15 * 3) + (mandibularScore / 20 * 4));
 
-  // 8. Transverse Compensation (Max: weights.transverse)
-  let transRatio = 0;
-  let transCount = 0;
-  if (input.posteriorCrossbite && input.posteriorCrossbite !== 'None') {
-    transCount++;
-    transRatio += input.posteriorCrossbite === 'Bilateral' ? 0.6 : 0.4;
-  }
-  if (input.archWidthDifference !== '') {
-    transCount++;
-    // Normal arch width diff maxilla vs mandible is ~0-2mm. Significant mismatch triggers high compensation.
-    const diff = Math.abs(input.archWidthDifference);
-    if (diff > 4) transRatio += 0.4;
-    else if (diff > 2) transRatio += 0.2;
-  }
-  if (input.dentalMidlineDev !== '') {
-    transCount++;
-    if (input.dentalMidlineDev > 2) transRatio += 0.2;
-  }
-
-  const transFactor = transCount > 0 ? Math.min(transRatio, 1.0) : 0;
-  const transverseScore = Math.round(transFactor * weights.transverse);
   categoryScores.push({
-    name: 'Transverse Compensation',
-    score: transverseScore,
-    maxScore: weights.transverse,
-    severity: getSeverity(transverseScore, weights.transverse),
-    details: `Transverse base discrepancy and dental arch width mismatch (${input.archWidthDifference || '0'}mm diff).`
+    name: 'Overall Harmony/Compensation',
+    score: overallScore,
+    maxScore: 10,
+    severity: getSeverity(overallScore, 10),
+    details: `Weighted index aggregation representing total holistic facial balance and compensation load.`
   });
 
   // Calculate Total Score (Sum of categories, guaranteed <= 100)
@@ -237,32 +218,31 @@ export function calculateOCI(input: CephalometricInput, weights: OciWeights = DE
 
   // Determine Recommendation based on OCI & Skeletal Discrepancy
   let recommendation = 'Conventional Orthodontics';
-  const isClassIII = input.anb !== '' && input.anb < 0;
-  const isSevereSkeletal = input.anb !== '' && (input.anb > 6 || input.anb < -2);
+  const isSevereSkeletal = anb > 6 || anb < -2;
 
   if (totalScore <= 20) {
-    recommendation = 'Conventional Orthodontics (Excellent candidate for direct biomechanical alignment)';
+    recommendation = 'Conventional Orthodontics (Excellent candidate for direct biomechanical alignment with minimal compensation)';
   } else if (totalScore <= 40) {
-    recommendation = 'Camouflage Possible (Dentoalveolar system has adaptive capacity; standard orthodontic corrections)';
+    recommendation = 'Camouflage Highly Feasible (Dentoalveolar system has reasonable adaptive capacity; standard orthodontics is recommended)';
   } else if (totalScore <= 60) {
     if (isSevereSkeletal) {
-      recommendation = 'Borderline Case (Camouflage vs. Surgical Option depends heavily on soft tissue profile & patient desires)';
+      recommendation = 'Borderline Camouflage Case (Camouflage vs. Surgical Option depends heavily on soft tissue profile & patient aesthetics)';
     } else {
-      recommendation = 'Conventional Orthodontics with minor extractions/IPR or custom torque mechanics';
+      recommendation = 'Conventional Orthodontics with minor extractions/IPR or active torque management';
     }
   } else if (totalScore <= 80) {
-    recommendation = 'Orthognathic Consultation Suggested (Skeletal limit reached; orthodontic-surgical plan advisable)';
+    recommendation = 'Orthognathic Consultation Suggested (Skeletal limit reached; orthognathic surgical planning is highly advisable)';
   } else {
-    recommendation = 'Presurgical Decompensation Recommended (Highly compromised dentition; must reverse compensation before orthognathic surgery)';
+    recommendation = 'Presurgical Decompensation Recommended (Highly compromised dentoalveolar system; must reverse compensations before surgery)';
   }
 
   // Calculate severity map colors for schematic face heatmap
   const severityMap: OciResult['severityMap'] = {
-    upperIncisors: getSeverityColor(upperScore, weights.upperIncisor),
-    lowerIncisors: getSeverityColor(lowerScore, weights.lowerIncisor),
-    softTissue: getSeverityColor(softTissueScore, weights.softTissue),
-    occlusion: getSeverityColor(occlusalScore, weights.occlusion),
-    transverse: getSeverityColor(transverseScore, weights.transverse),
+    upperIncisors: getSeverityColor(maxillaryScore, 15),
+    lowerIncisors: getSeverityColor(mandibularScore, 20),
+    softTissue: getSeverityColor(softTissueScore, 15),
+    occlusion: getSeverityColor(overjetOverbiteScore, 10),
+    transverse: getSeverityColor(overallScore, 10),
   };
 
   return {

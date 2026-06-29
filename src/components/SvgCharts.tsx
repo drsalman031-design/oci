@@ -47,11 +47,13 @@ export default function SvgCharts({ categoryScores }: SvgChartsProps) {
 
   const getClinicalColor = (name: string) => {
     switch (name) {
-      case 'Maxillary Incisor': return '#14B8A6';
-      case 'Mandibular Incisor': return '#22D3EE';
-      case 'Soft Tissue Lip Profile': return '#F59E0B';
-      case 'Occlusion Sagitto-Vertical': return '#EF4444';
-      case 'Transverse Skeletodental': return '#10B981';
+      case 'Skeletal Compensation': return '#F59E0B';
+      case 'Maxillary Dental Compensation': return '#14B8A6';
+      case 'Mandibular Dental Compensation': return '#22D3EE';
+      case 'Interincisal Relationship': return '#A855F7';
+      case 'Overjet/Overbite Compensation': return '#EF4444';
+      case 'Soft Tissue Compensation': return '#EC4899';
+      case 'Overall Harmony/Compensation': return '#10B981';
       default: return '#14B8A6';
     }
   };

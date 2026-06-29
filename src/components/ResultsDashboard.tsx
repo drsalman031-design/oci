@@ -15,7 +15,7 @@ import {
   Info
 } from 'lucide-react-native';
 import MarkdownRenderer from './MarkdownRenderer';
-import { generateClinicalSummary } from '../lib/gemini';
+import { generateClinicalSummary, generateLocalClinicalSynthesis } from '../lib/gemini';
 import tw from 'twrnc';
 import { OciResult, CephalometricInput, PatientDetails } from '../types';
 import SvgCharts from './SvgCharts';
@@ -293,37 +293,4 @@ export default function ResultsDashboard({
       </View>
     </ScrollView>
   );
-}
-
-function generateLocalClinicalSynthesis(
-  patient: PatientDetails,
-  ceph: CephalometricInput,
-  oci: OciResult
-): string {
-  const dx = patient.diagnosis || 'skeletal malocclusion';
-  const anbText = ceph.anb !== '' && ceph.anb !== undefined ? `ANB is **${ceph.anb}°**` : 'ANB';
-  const impaText = ceph.impa !== '' && ceph.impa !== undefined ? `IMPA is **${ceph.impa}°**` : 'IMPA';
-  const overjetText = ceph.overjet !== '' && ceph.overjet !== undefined ? `Overjet is **${ceph.overjet}mm**` : 'Overjet';
-
-  let summary = `The patient displays a **${oci.interpretation}** of sagittal disharmony (computed OCI score: **${oci.totalScore}/100**) associated with a skeletal **${dx}** discrepancy.\n\n`;
-
-  if (patient.diagnosis === 'Class III') {
-    summary += `### Diagnostic Synthesis\n\nCephalometrics indicate skeletal Class III relationship (${anbText}). Upper incisors display proclination while lower incisors show retroclination as a primary compensatory mechanism to establish positive overjet (${overjetText}).\n\n`;
-    if (oci.totalScore > 60) {
-      summary += `### Surgical Pathway suggested\n\nDue to the severe degree of dental compensation, orthodontic camouflage possesses high limitation. Mandibular incisors have exceeded normal biomechanical limits (${impaText}). An orthognathic consultation should be strongly pursued.`;
-    } else {
-      summary += `### Camouflage Predictability\n\nCompensation levels are within clinical guidelines. Orthodontic dental camouflage may be successfully achieved with carefully managed mechanics and anchorage.`;
-    }
-  } else if (patient.diagnosis === 'Class II') {
-    summary += `### Diagnostic Synthesis\n\nCephalometrics indicate skeletal Class II sagittal profile (${anbText}). Compensatory dental patterns show a mismatch, with proclined lower incisors (${impaText}) and retroclined upper incisors to maintain functional overjet (${overjetText}).\n\n`;
-    if (oci.totalScore > 60) {
-      summary += `### Decompensation Guide\n\nWith an OCI of **${oci.totalScore}%**, dentoalveolar limits have been heavily compromised. Camouflage will yield unstable or periodontally hazardous outcomes. Suggest presurgical decompensation and surgical correction.`;
-    } else {
-      summary += `### Camouflage Guide\n\nModerate compensation is observed. Dentoalveolar camouflage is realistic, potentially involving selective dental extractions or interproximal reduction (IPR) to preserve labial bone plates.`;
-    }
-  } else {
-    summary += `### General Note\n\nDiagnostic parameters show well-balanced sagittal relations (${anbText}) and mild dentialveolar compensations, appropriate for conventional orthodontic alignment.`;
-  }
-
-  return summary;
 }

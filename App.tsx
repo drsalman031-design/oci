@@ -107,6 +107,22 @@ export default function App() {
   const handleCephSubmit = (input: CephalometricInput) => {
     setActiveCeph(input);
     const result = calculateOCI(input, weights);
+    
+    let derivedDiagnosis: 'Class I' | 'Class II' | 'Class III' = 'Class I';
+    if (input.anb !== '') {
+      const anbVal = Number(input.anb);
+      if (anbVal < 0) derivedDiagnosis = 'Class III';
+      else if (anbVal > 4.5) derivedDiagnosis = 'Class II';
+      else derivedDiagnosis = 'Class I';
+    }
+
+    if (activePatient) {
+      setActivePatient({
+        ...activePatient,
+        diagnosis: derivedDiagnosis
+      });
+    }
+
     setActiveResult(result);
     setScreen('results');
   };

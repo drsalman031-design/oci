@@ -117,84 +117,142 @@ export default function Heatmap({ severityMap, input }: HeatmapProps) {
         
         {/* SVG Schematic Face Profile */}
         <View style={tw`flex-row justify-center p-5 bg-black/40 rounded-[24px] border border-white/5 w-full`}>
-          <Svg width="220" height="240" viewBox="0 0 200 240" style={tw`overflow-visible`}>
-            {/* Outline of human profile */}
-            <Path
-              d="M 20,10 C 60,8 100,20 120,40 C 128,48 135,55 132,65 C 128,78 115,82 118,92 Q 135,100 140,118 C 138,128 118,128 122,138 C 124,142 135,148 132,156 Q 112,168 112,174 C 112,182 128,190 122,202 Q 118,210 98,214 Q 58,222 20,220"
-              fill="none"
-              stroke="rgba(255,255,255,0.15)"
-              strokeWidth="2"
-            />
-
-            {/* Nose Accent */}
-            <Path d="M 118,92 Q 135,100 140,118" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-
-            {/* Dentition Maxilla */}
-            <Path d="M 80,120 Q 95,120 105,125" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-            <Path d="M 80,155 Q 95,155 102,150" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-
-            {/* Hotspot Zones with touch handlers */}
-            
-            {/* Soft Tissue */}
-            <G onPress={() => setSelectedZone('softTissue')}>
+          <View style={tw`relative w-[200px] h-[240px]`}>
+            <Svg width="200" height="240" viewBox="0 0 200 240" style={tw`overflow-visible`}>
+              {/* Outline of human profile */}
               <Path
-                d="M 132,65 Q 118,92 118,92 Q 142,108 140,118 Q 118,128 122,138 Q 135,148 132,156 Q 112,168 112,174 Q 128,190 122,202"
+                d="M 20,10 C 60,8 100,20 120,40 C 128,48 135,55 132,65 C 128,78 115,82 118,92 Q 135,100 140,118 C 138,128 118,128 122,138 C 124,142 135,148 132,156 Q 112,168 112,174 C 112,182 128,190 122,202 Q 118,210 98,214 Q 58,222 20,220"
                 fill="none"
-                stroke={getHexColor(severityMap.softTissue)}
-                strokeWidth={selectedZone === 'softTissue' ? 6 : 3.5}
-                opacity={0.9}
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth="2"
               />
-              <Circle cx="132" cy="118" r="5" fill={getHexColor(severityMap.softTissue)} stroke="#ffffff" strokeWidth="1" />
-            </G>
 
-            {/* Upper Incisors */}
-            <G onPress={() => setSelectedZone('upperIncisors')}>
-              <Line
-                x1="105" y1="125" x2="114" y2="137"
-                stroke={getHexColor(severityMap.upperIncisors)}
-                strokeWidth={selectedZone === 'upperIncisors' ? 8 : 4.5}
-                strokeLinecap="round"
-              />
-              <Circle cx="109" cy="131" r="5" fill={getHexColor(severityMap.upperIncisors)} stroke="#ffffff" strokeWidth="1" />
-            </G>
+              {/* Nose Accent */}
+              <Path d="M 118,92 Q 135,100 140,118" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
 
-            {/* Lower Incisors */}
-            <G onPress={() => setSelectedZone('lowerIncisors')}>
-              <Line
-                x1="102" y1="150" x2="111" y2="138"
-                stroke={getHexColor(severityMap.lowerIncisors)}
-                strokeWidth={selectedZone === 'lowerIncisors' ? 8 : 4.5}
-                strokeLinecap="round"
-              />
-              <Circle cx="106" cy="144" r="5" fill={getHexColor(severityMap.lowerIncisors)} stroke="#ffffff" strokeWidth="1" />
-            </G>
+              {/* Dentition Maxilla */}
+              <Path d="M 80,120 Q 95,120 105,125" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+              <Path d="M 80,155 Q 95,155 102,150" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
 
-            {/* Occlusion */}
-            <G onPress={() => setSelectedZone('occlusion')}>
-              <Path
-                d="M 85,134 L 102,134 Q 106,134 108,137"
-                fill="none"
-                stroke={getHexColor(severityMap.occlusion)}
-                strokeWidth={selectedZone === 'occlusion' ? 5 : 3.5}
-              />
-              <Circle cx="94" cy="134" r="5" fill={getHexColor(severityMap.occlusion)} stroke="#ffffff" strokeWidth="1" />
-            </G>
+              {/* Hotspot Zones with touch handlers */}
+              
+              {/* Soft Tissue */}
+              <G>
+                <Path
+                  d="M 132,65 Q 118,92 118,92 Q 142,108 140,118 Q 118,128 122,138 Q 135,148 132,156 Q 112,168 112,174 Q 128,190 122,202"
+                  fill="none"
+                  stroke={getHexColor(severityMap.softTissue)}
+                  strokeWidth={selectedZone === 'softTissue' ? 6 : 3.5}
+                  opacity={0.9}
+                />
+                <Circle cx="132" cy="118" r="5" fill={getHexColor(severityMap.softTissue)} stroke="#ffffff" strokeWidth="1" />
+              </G>
 
-            {/* Transverse */}
-            <G onPress={() => setSelectedZone('transverse')}>
-              <Path
-                d="M 60,110 Q 75,120 70,160"
-                fill="none"
-                stroke={getHexColor(severityMap.transverse)}
-                strokeWidth={selectedZone === 'transverse' ? 5 : 2.5}
-                strokeDasharray="4,3"
-              />
-              <Circle cx="68" cy="135" r="5" fill={getHexColor(severityMap.transverse)} stroke="#ffffff" strokeWidth="1" />
-            </G>
+              {/* Upper Incisors */}
+              <G>
+                <Line
+                  x1="105" y1="125" x2="114" y2="137"
+                  stroke={getHexColor(severityMap.upperIncisors)}
+                  strokeWidth={selectedZone === 'upperIncisors' ? 8 : 4.5}
+                  strokeLinecap="round"
+                />
+                <Circle cx="109" cy="131" r="5" fill={getHexColor(severityMap.upperIncisors)} stroke="#ffffff" strokeWidth="1" />
+              </G>
 
-            <SvgText x="30" y="105" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Skeletal Profile</SvgText>
-            <SvgText x="145" y="75" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Ricketts E-Line</SvgText>
-          </Svg>
+              {/* Lower Incisors */}
+              <G>
+                <Line
+                  x1="102" y1="150" x2="111" y2="138"
+                  stroke={getHexColor(severityMap.lowerIncisors)}
+                  strokeWidth={selectedZone === 'lowerIncisors' ? 8 : 4.5}
+                  strokeLinecap="round"
+                />
+                <Circle cx="106" cy="144" r="5" fill={getHexColor(severityMap.lowerIncisors)} stroke="#ffffff" strokeWidth="1" />
+              </G>
+
+              {/* Occlusion */}
+              <G>
+                <Path
+                  d="M 85,134 L 102,134 Q 106,134 108,137"
+                  fill="none"
+                  stroke={getHexColor(severityMap.occlusion)}
+                  strokeWidth={selectedZone === 'occlusion' ? 5 : 3.5}
+                />
+                <Circle cx="94" cy="134" r="5" fill={getHexColor(severityMap.occlusion)} stroke="#ffffff" strokeWidth="1" />
+              </G>
+
+              {/* Transverse */}
+              <G>
+                <Path
+                  d="M 60,110 Q 75,120 70,160"
+                  fill="none"
+                  stroke={getHexColor(severityMap.transverse)}
+                  strokeWidth={selectedZone === 'transverse' ? 5 : 2.5}
+                  strokeDasharray="4,3"
+                />
+                <Circle cx="68" cy="135" r="5" fill={getHexColor(severityMap.transverse)} stroke="#ffffff" strokeWidth="1" />
+              </G>
+
+              <SvgText x="30" y="105" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Skeletal Profile</SvgText>
+              <SvgText x="145" y="75" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Ricketts E-Line</SvgText>
+            </Svg>
+
+            {/* Absolute-positioned safe Pressable overlays with 44px mobile touch targets & zero DOM warnings */}
+            <Pressable
+              onPress={() => setSelectedZone('softTissue')}
+              style={[
+                tw`absolute w-11 h-11 rounded-full items-center justify-center cursor-pointer`,
+                { left: 132 - 22, top: 118 - 22 }
+              ]}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+            >
+              <View style={[tw`w-2 h-2 rounded-full bg-transparent`, selectedZone === 'softTissue' && tw`bg-white border border-black/30 w-2.5 h-2.5 shadow-sm`]} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => setSelectedZone('upperIncisors')}
+              style={[
+                tw`absolute w-11 h-11 rounded-full items-center justify-center cursor-pointer`,
+                { left: 109 - 22, top: 131 - 22 }
+              ]}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+            >
+              <View style={[tw`w-2 h-2 rounded-full bg-transparent`, selectedZone === 'upperIncisors' && tw`bg-white border border-black/30 w-2.5 h-2.5 shadow-sm`]} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => setSelectedZone('lowerIncisors')}
+              style={[
+                tw`absolute w-11 h-11 rounded-full items-center justify-center cursor-pointer`,
+                { left: 106 - 22, top: 144 - 22 }
+              ]}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+            >
+              <View style={[tw`w-2 h-2 rounded-full bg-transparent`, selectedZone === 'lowerIncisors' && tw`bg-white border border-black/30 w-2.5 h-2.5 shadow-sm`]} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => setSelectedZone('occlusion')}
+              style={[
+                tw`absolute w-11 h-11 rounded-full items-center justify-center cursor-pointer`,
+                { left: 94 - 22, top: 134 - 22 }
+              ]}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+            >
+              <View style={[tw`w-2 h-2 rounded-full bg-transparent`, selectedZone === 'occlusion' && tw`bg-white border border-black/30 w-2.5 h-2.5 shadow-sm`]} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => setSelectedZone('transverse')}
+              style={[
+                tw`absolute w-11 h-11 rounded-full items-center justify-center cursor-pointer`,
+                { left: 68 - 22, top: 135 - 22 }
+              ]}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+            >
+              <View style={[tw`w-2 h-2 rounded-full bg-transparent`, selectedZone === 'transverse' && tw`bg-white border border-black/30 w-2.5 h-2.5 shadow-sm`]} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Selected Zone Info Panel */}

@@ -57,6 +57,7 @@ const PRESETS = {
 
 export default function CephInput({ initialInput, diagnosis, onCalculate, onBack }: CephInputProps) {
   const [activeTab, setActiveTab] = useState<'skeletal' | 'dental' | 'soft' | 'clinical'>('skeletal');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [form, setForm] = useState<CephalometricInput>(initialInput || {
     anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
     u1Sn: '', u1NaDeg: '', u1NaMm: '',
@@ -68,6 +69,7 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   });
 
   const handleFieldChange = (key: keyof CephalometricInput, val: any) => {
+    setValidationError(null);
     setForm(prev => ({
       ...prev,
       [key]: val === '' ? '' : Number(val)
@@ -75,10 +77,12 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   };
 
   const applyPreset = (presetType: keyof typeof PRESETS) => {
+    setValidationError(null);
     setForm(PRESETS[presetType]);
   };
 
   const clearForm = () => {
+    setValidationError(null);
     setForm({
       anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
       u1Sn: '', u1NaDeg: '', u1NaMm: '',
@@ -91,6 +95,28 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
   };
 
   const handleCalculate = () => {
+    const requiredKeys: (keyof CephalometricInput)[] = [
+      'sna', 'snb', 'anb', 'wits',
+      'u1Sn', 'u1NaDeg', 'u1NaMm',
+      'impa', 'l1NbDeg', 'l1NbMm',
+      'interincisalAngle', 'overjet', 'overbite',
+      'upperLipELine', 'lowerLipELine', 'nasolabialAngle'
+    ];
+
+    const missingLabels: string[] = [];
+    requiredKeys.forEach(key => {
+      if (form[key] === '' || form[key] === undefined) {
+        const norm = Norms[key as string];
+        missingLabels.push(norm ? norm.label : String(key));
+      }
+    });
+
+    if (missingLabels.length > 0) {
+      setValidationError(`Missing required clinical fields: ${missingLabels.join(', ')}. All 16 measurements are required.`);
+      return;
+    }
+
+    setValidationError(null);
     onCalculate(form);
   };
 
@@ -113,12 +139,15 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
     );
   };
 
-  const renderInputField = (field: keyof CephalometricInput, label: string) => {
+  const renderInputField = (field: keyof CephalometricInput, label: string, isRequired: boolean = false) => {
     const currentVal = form[field];
+    const isMissing = isRequired && (currentVal === '' || currentVal === undefined);
     return (
       <View style={tw`space-y-2 mb-5 w-full`}>
         <View style={tw`flex-row justify-between items-center mb-1`}>
-          <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>{label}</Text>
+          <Text style={tw`text-[10px] font-black ${isMissing ? 'text-rose-400' : 'text-slate-400'} uppercase tracking-widest font-mono`}>
+            {label} {isRequired ? '*' : ''}
+          </Text>
           <Text style={tw`text-xs ${getDevColorClass(field, currentVal)}`}>
             {currentVal !== '' && currentVal !== undefined ? `${currentVal}${Norms[field as string]?.unit || ''}` : 'No value'}
           </Text>
@@ -129,7 +158,7 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
           keyboardType="numeric"
           placeholder="0.0"
           placeholderTextColor="#475569"
-          style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border border-white/10 focus:border-[#14B8A6] text-white text-xs font-bold`}
+          style={tw`w-full px-4 py-3.5 bg-black/45 rounded-2xl border ${isMissing ? 'border-rose-500 bg-rose-500/10' : 'border-white/10 focus:border-[#14B8A6]'} text-white text-xs font-bold`}
         />
         {renderRangeGuide(field as string)}
       </View>
@@ -272,35 +301,35 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
                   </Text>
                 </View>
 
-                {renderInputField('anb', 'ANB Angle (°) *')}
-                {renderInputField('sna', 'SNA Angle (°)')}
-                {renderInputField('snb', 'SNB Angle (°)')}
-                {renderInputField('wits', 'Wits Appraisal (mm)')}
-                {renderInputField('snMp', 'SN-MP Angle (°)')}
-                {renderInputField('fma', 'FMA Angle (°)')}
+                {renderInputField('anb', 'ANB Angle (°)', true)}
+                {renderInputField('sna', 'SNA Angle (°)', true)}
+                {renderInputField('snb', 'SNB Angle (°)', true)}
+                {renderInputField('wits', 'Wits Appraisal (mm)', true)}
+                {renderInputField('snMp', 'SN-MP Angle (°)', false)}
+                {renderInputField('fma', 'FMA Angle (°)', false)}
               </View>
             )}
 
             {activeTab === 'dental' && (
               <View style={tw`space-y-4`}>
-                {renderInputField('u1Sn', 'U1-SN Angle (°) *')}
-                {renderInputField('u1NaDeg', 'U1-NA Angle (°)')}
-                {renderInputField('u1NaMm', 'U1-NA Dist (mm)')}
-                {renderInputField('impa', 'L1-MP Angle (IMPA) (°) *')}
-                {renderInputField('l1NbDeg', 'L1-NB Angle (°)')}
-                {renderInputField('l1NbMm', 'L1-NB Dist (mm)')}
-                {renderInputField('interincisalAngle', 'Interincisal Angle (°) *')}
-                {renderInputField('overjet', 'Overjet (mm) *')}
-                {renderInputField('overbite', 'Overbite (mm)')}
+                {renderInputField('u1Sn', 'U1-SN Angle (°)', true)}
+                {renderInputField('u1NaDeg', 'U1-NA Angle (°)', true)}
+                {renderInputField('u1NaMm', 'U1-NA Dist (mm)', true)}
+                {renderInputField('impa', 'L1-MP Angle (IMPA) (°)', true)}
+                {renderInputField('l1NbDeg', 'L1-NB Angle (°)', true)}
+                {renderInputField('l1NbMm', 'L1-NB Dist (mm)', true)}
+                {renderInputField('interincisalAngle', 'Interincisal Angle (°)', true)}
+                {renderInputField('overjet', 'Overjet (mm)', true)}
+                {renderInputField('overbite', 'Overbite (mm or %)', true)}
               </View>
             )}
 
             {activeTab === 'soft' && (
               <View style={tw`space-y-4`}>
-                {renderInputField('upperLipELine', 'Upper Lip to E-Line (mm)')}
-                {renderInputField('lowerLipELine', 'Lower Lip to E-Line (mm)')}
-                {renderInputField('nasolabialAngle', 'Nasolabial Angle (°)')}
-                {renderInputField('facialConvexity', 'Facial Convexity (°)')}
+                {renderInputField('upperLipELine', 'Upper Lip to E-Line (mm)', true)}
+                {renderInputField('lowerLipELine', 'Lower Lip to E-Line (mm)', true)}
+                {renderInputField('nasolabialAngle', 'Nasolabial Angle (°)', true)}
+                {renderInputField('facialConvexity', 'Facial Convexity (°)', false)}
               </View>
             )}
 
@@ -319,6 +348,12 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
               </View>
             )}
           </View>
+
+          {validationError && (
+            <View style={tw`mx-6 mb-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl`}>
+              <Text style={tw`text-rose-400 text-xs font-bold leading-relaxed font-mono`}>{validationError}</Text>
+            </View>
+          )}
 
           {/* Footer Actions */}
           <View style={tw`bg-black/30 p-5 border-t border-white/5 flex-row justify-between items-center`}>
