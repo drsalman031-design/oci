@@ -14,7 +14,8 @@ import {
   Zap,
   Info
 } from 'lucide-react-native';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from './MarkdownRenderer';
+import { generateClinicalSummary } from '../lib/gemini';
 import tw from 'twrnc';
 import { OciResult, CephalometricInput, PatientDetails } from '../types';
 import SvgCharts from './SvgCharts';
@@ -48,23 +49,9 @@ export default function ResultsDashboard({
     async function fetchAiSummary() {
       setLoadingSummary(true);
       try {
-        const response = await fetch('/api/assessments/ai-summary', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            patientDetails,
-            cephalometricInput,
-            ociResult
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setAiSummary(data.summary);
-          setEditedSummary(data.summary);
-        } else {
-          throw new Error('Failed to generate summary');
-        }
+        const summary = await generateClinicalSummary(patientDetails, cephalometricInput, ociResult);
+        setAiSummary(summary);
+        setEditedSummary(summary);
       } catch (err) {
         console.warn('AI API offline or restricted, using local synthesis:', err);
         const localSynthesis = generateLocalClinicalSynthesis(patientDetails, cephalometricInput, ociResult);
@@ -293,9 +280,7 @@ export default function ResultsDashboard({
               </Text>
             </View>
           ) : (
-            <div className="markdown-body text-xs text-slate-200 leading-relaxed space-y-2">
-              <ReactMarkdown>{editedSummary}</ReactMarkdown>
-            </div>
+            <MarkdownRenderer>{editedSummary}</MarkdownRenderer>
           )}
         </View>
 

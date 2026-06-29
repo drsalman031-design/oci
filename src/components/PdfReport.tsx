@@ -9,7 +9,7 @@ import {
   Award,
   Sparkles
 } from 'lucide-react-native';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from './MarkdownRenderer';
 import SvgCharts from './SvgCharts';
 import Heatmap from './Heatmap';
 import tw from 'twrnc';
@@ -172,9 +172,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
               <Award size={13} color="#14B8A6" style={tw`mr-1.5`} />
               <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Clinical Diagnosis Synthesis</Text>
             </View>
-            <div className="markdown-body text-xs text-slate-200 leading-relaxed space-y-2">
-              <ReactMarkdown>{assessment.aiSummary || 'No clinical report recorded.'}</ReactMarkdown>
-            </div>
+            <MarkdownRenderer>{assessment.aiSummary || 'No clinical report recorded.'}</MarkdownRenderer>
           </View>
 
           {/* Svg Charts */}

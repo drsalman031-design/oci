@@ -6,8 +6,8 @@ import {
   OciResult, 
   Assessment, 
   OciWeights 
-} from './types';
-import { calculateOCI, DEFAULT_WEIGHTS } from './scoringEngine';
+} from './src/types';
+import { calculateOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
 
 // Async Storage DB Helpers
 import {
@@ -19,19 +19,19 @@ import {
   dbExportBackup,
   dbImportBackup,
   dbClearAllData
-} from './lib/db';
+} from './src/lib/db';
 
 // Components
-import Splash from './components/Splash';
-import Home from './components/Home';
-import PatientForm from './components/PatientForm';
-import CephInput from './components/CephInput';
-import ResultsDashboard from './components/ResultsDashboard';
-import HistoryList from './components/HistoryList';
-import SettingsPanel from './components/SettingsPanel';
-import PdfReport from './components/PdfReport';
-import TreatmentPlanning from './components/TreatmentPlanning';
-import ReportsPanel from './components/ReportsPanel';
+import Splash from './src/components/Splash';
+import Home from './src/components/Home';
+import PatientForm from './src/components/PatientForm';
+import CephInput from './src/components/CephInput';
+import ResultsDashboard from './src/components/ResultsDashboard';
+import HistoryList from './src/components/HistoryList';
+import SettingsPanel from './src/components/SettingsPanel';
+import PdfReport from './src/components/PdfReport';
+import TreatmentPlanning from './src/components/TreatmentPlanning';
+import ReportsPanel from './src/components/ReportsPanel';
 
 // Icons
 import { 

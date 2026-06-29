@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Sparkles, Send, Brain, ShieldAlert, BookOpen, AlertCircle, RefreshCw } from 'lucide-react-native';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from './MarkdownRenderer';
+import { generateChatResponse } from '../lib/gemini';
 import tw from 'twrnc';
 
 interface Message {
@@ -60,26 +61,16 @@ How would you like to proceed today? Select a preset topic below or write your s
     setLoading(true);
 
     try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: textToSend,
-          history: messages.slice(1).map((m) => ({
-            role: m.role,
-            text: m.text,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate response.');
-      }
-
-      const data = await response.json();
+      const history = messages.slice(1).map((m) => ({
+        role: m.role,
+        text: m.text,
+      }));
+      
+      const reply = await generateChatResponse(textToSend, history);
+      
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', text: data.text || 'Sorry, I encountered an issue.' },
+        { role: 'assistant', text: reply },
       ]);
     } catch (error) {
       setMessages((prev) => [
@@ -144,9 +135,7 @@ How would you like to proceed today? Select a preset topic below or write your s
                     {msg.text}
                   </Text>
                 ) : (
-                  <div className="markdown-body text-xs text-slate-200 leading-relaxed space-y-2">
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  </div>
+                  <MarkdownRenderer>{msg.text}</MarkdownRenderer>
                 )}
               </View>
               <Text style={tw`text-[8px] text-slate-500 font-mono uppercase mt-1.5 px-2`}>

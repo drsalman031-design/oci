@@ -1,49 +1,51 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
 
-// Load environment variables
-dotenv.config();
+let aiInstance: any = null;
 
-const app = express();
-const PORT = 3000;
+// Helper to get Gemini API Client safely
+function getGeminiClient() {
+  if (aiInstance) return aiInstance;
 
-app.use(express.json());
+  // Check standard environment keys
+  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-// Initialize Gemini API Client
-let ai: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
+  if (apiKey) {
+    aiInstance = new GoogleGenAI({
+      apiKey: apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
       },
-    },
-  });
+    });
+    return aiInstance;
+  }
+  return null;
 }
 
-// API endpoint to generate AI Clinical Summary
-app.post('/api/assessments/ai-summary', async (req, res) => {
+export async function generateClinicalSummary(
+  patientDetails: any,
+  cephalometricInput: any,
+  ociResult: any
+): Promise<string> {
+  const ai = getGeminiClient();
+
+  if (!ai) {
+    // Elegant clinical mock summary when API key is not present
+    return `### Clinical Summary (Offline/Local Mode)
+
+The patient **${patientDetails.name || 'Anonymous'}** (${patientDetails.age || 'N/A'}yo ${patientDetails.gender || 'N/A'}) presents with **${ociResult.interpretation}** (computed OCI score: **${ociResult.totalScore}/100**), reflecting a skeletal **${patientDetails.diagnosis || 'Class II/III'}** discrepancy.
+
+#### Dentoalveolar Profile
+* **Overjet**: ${cephalometricInput.overjet !== '' ? cephalometricInput.overjet + ' mm' : 'N/A'} (Norm: 2.5mm)
+* **IMPA (Lower Incisor)**: ${cephalometricInput.impa !== '' ? cephalometricInput.impa + '°' : 'N/A'} (Norm: 90°)
+* **U1-SN (Upper Incisor)**: ${cephalometricInput.u1Sn !== '' ? cephalometricInput.u1Sn + '°' : 'N/A'} (Norm: 104°)
+
+#### Clinical Directive
+${ociResult.recommendation}`;
+  }
+
   try {
-    const { patientDetails, cephalometricInput, ociResult } = req.body;
-
-    if (!patientDetails || !cephalometricInput || !ociResult) {
-      return res.status(400).json({ error: 'Missing assessment data' });
-    }
-
-    if (!ai) {
-      // Return a professional mock summary if API Key is missing, to maintain offline readiness
-      const mockSummary = `AI SUMMARY (DEMO MODE - GEMINI_API_KEY NOT CONFIGURED):
-The patient ${patientDetails.name || 'Anonymous'} (${patientDetails.age || 'N/A'}yo ${patientDetails.gender || 'N/A'}) exhibits ${ociResult.interpretation} (OCI score: ${ociResult.totalScore}/100) associated with a skeletal ${patientDetails.diagnosis || 'Class II/III'} discrepancy.
-The maxillary dentoalveolar components exhibit compensations corresponding to the jaw relationship. Overjet is ${cephalometricInput.overjet !== '' ? cephalometricInput.overjet + 'mm' : 'N/A'} and IMPA is ${cephalometricInput.impa || 'N/A'}°. 
-Clinical recommendation: ${ociResult.recommendation}.`;
-      return res.json({ summary: mockSummary });
-    }
-
     const prompt = `You are a professional consulting orthodontist. Please generate a concise, premium-quality clinical summary and assessment report for an orthodontic patient based on their diagnostic details, cephalometric inputs, and computed Orthodontic Compensation Index (OCI).
 
 Patient Information:
@@ -76,28 +78,25 @@ Please write a highly polished, professional 3-4 sentence orthodontic clinical s
       contents: prompt,
     });
 
-    const summary = response.text || 'Unable to generate summary.';
-    res.json({ summary });
+    return response.text || 'Unable to generate clinical summary via Gemini.';
   } catch (error: any) {
     console.error('Error generating AI clinical summary:', error);
-    res.status(500).json({ error: error.message || 'Server error' });
+    return `### Clinical Summary (Local Safe Fallback)
+
+The patient **${patientDetails.name || 'Anonymous'}** exhibits **${ociResult.interpretation}** with an index score of **${ociResult.totalScore}%**.
+
+*Note: Live analysis failed due to connection or configuration error: ${error.message || 'Check API key'}.*`;
   }
-});
+}
 
-// AI Orthodontic Consulting Chat Endpoint
-app.post('/api/ai/chat', async (req, res) => {
-  try {
-    const { message, history } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
+export async function generateChatResponse(message: string, history: any[]): Promise<string> {
+  const ai = getGeminiClient();
 
-    if (!ai) {
-      // Offline fallback responses for orthodontic clinical queries
-      const lowerMsg = message.toLowerCase();
-      let reply = '';
-      if (lowerMsg.includes('impa') || lowerMsg.includes('lower incisor')) {
-        reply = `### Clinical Guide on Mandibular Incisor Compensation (IMPA)
+  if (!ai) {
+    // Comprehensive clinical consultation fallbacks when offline
+    const lowerMsg = message.toLowerCase();
+    if (lowerMsg.includes('impa') || lowerMsg.includes('lower incisor')) {
+      return `### Clinical Guide on Mandibular Incisor Compensation (IMPA)
 
 In orthodontic treatment planning, **IMPA (Incisor Mandibular Plane Angle)** is a crucial metric with a norm of **90° ± 5°**.
 
@@ -110,8 +109,10 @@ Flaring lower incisors beyond **95°** in Class II camouflage cases carries seve
 
 #### 3. Growth Modifications
 In growing patients (under age 14), orthopedic functional appliances (e.g., Twin Block, Herbst) can encourage mandibular growth while minimizing dental flaring.`;
-      } else if (lowerMsg.includes('class iii') || lowerMsg.includes('class 3')) {
-        reply = `### Orthodontic Management of Skeletal Class III Discrepancies
+    }
+
+    if (lowerMsg.includes('class iii') || lowerMsg.includes('class 3')) {
+      return `### Orthodontic Management of Skeletal Class III Discrepancies
 
 Skeletal Class III malocclusions represent one of the most challenging orthopedic and dental anomalies, characterized by mandibular prognathism, maxillary retrognathism, or a combination of both (ANB < 0°).
 
@@ -128,8 +129,10 @@ For successful surgical outcomes, the natural compensations must be **fully reve
 1. Procline lower incisors (increase IMPA to ~90°).
 2. Retrocline/upright upper incisors (decrease U1-SN to ~104°).
 3. This increases the negative overjet temporarily but maximizes the skeletal correction possible during jaw surgery.`;
-      } else if (lowerMsg.includes('extraction') || lowerMsg.includes('premolar')) {
-        reply = `### Extraction Decision Matrix in Sagittal Discrepancies
+    }
+
+    if (lowerMsg.includes('extraction') || lowerMsg.includes('premolar')) {
+      return `### Extraction Decision Matrix in Sagittal Discrepancies
 
 The choice between extraction and non-extraction mechanics in Class II and Class III orthodontic treatments must be guided by **alveolar bone limits, profile soft-tissue support, and crowding**.
 
@@ -143,8 +146,9 @@ The choice between extraction and non-extraction mechanics in Class II and Class
 
 #### 3. Soft Tissue Impact
 * Avoid extractions in patients with an **acute nasolabial angle (<90°)** or flat/concave profiles, as this can severely flatten the upper lip and worsen the aesthetic appearance of aging.`;
-      } else {
-        reply = `### Orthodontic AI Consultation Summary
+    }
+
+    return `### Orthodontic AI Consultation Summary
 
 Thank you for consulting the OCI Clinical Co-pilot. I am ready to assist you with advanced biomechanical advice and diagnostic calculations.
 
@@ -154,58 +158,35 @@ Here are several topics you can query:
 * **"Premolar extraction patterns"** to examine therapeutic extraction matrices.
 * **"Presurgical decompensation goals"** to plan orthognathic surgery preparation.
 
-*Note: This is an offline consulting assistant running with built-in orthodontic expertise. Connect your Gemini API Key in Settings to enable real-time web-connected case reviews.*`;
-      }
+*Note: This is an offline consulting assistant running with built-in orthodontic expertise. Set the EXPO_PUBLIC_GEMINI_API_KEY environment variable to enable live web-connected case reviews.*`;
+  }
 
-      return res.json({ text: reply });
-    }
-
-    const systemPrompt = `You are "OCI OrthoPilot", an elite board-certified consulting orthodontist chatbot designed to assist Dr. Salman (MDS Orthodontist) in clinical case evaluations, cephalometric calculations, and sagittal compensation limits.
-You provide highly academic, professional, and precise orthodontic answers with clear structural markdown.
-Keep responses focused on orthodontics (biomechanics, cephalometrics, periodontology, growth modifications, and orthognathic surgery).
-Reference specific metrics like IMPA, U1-SN, ANB, Wits, FMA, and the E-line.
-Do not use generic conversational filler; write as a senior clinical advisor.`;
-
-    const chatHistory = history ? history.map((h: any) => ({
+  try {
+    const formattedHistory = history.map((h: any) => ({
       role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.text }]
-    })) : [];
+      parts: [{ text: h.text }],
+    }));
 
+    // Start a chat session using chats API
     const chat = ai.chats.create({
       model: 'gemini-3.5-flash',
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: `You are an expert, board-certified consulting orthodontist assisting Dr. Salman MDS.
+Analyze dentofacial discrepancies, periodontal alveolar limit risks, sagittal skeletal discrepancies (Class II, Class III), vertical growth patterns (hyperdivergent, hypodivergent), and surgical planning decompensations.
+Answer professionally, scientifically, with zero fluff. Focus strictly on clinical evidence, orthodontic metrics, and biotype safety boundaries.`,
       },
-      history: chatHistory,
+      history: formattedHistory,
     });
 
     const response = await chat.sendMessage({ message });
-    res.json({ text: response.text || 'No response.' });
+    return response.text || 'No response from Co-pilot AI.';
   } catch (error: any) {
-    console.error('Error in AI consulting chat:', error);
-    res.status(500).json({ error: error.message || 'Server error' });
-  }
-});
+    console.error('Chat error:', error);
+    return `### Clinical Co-pilot Error
 
-// Setup Vite Dev server or Serve static files
-async function setupServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+I encountered an error communicating with the live Gemini AI engine:
+**${error.message || 'Request failed'}**
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT} under NODE_ENV=${process.env.NODE_ENV}`);
-  });
+Please verify your API key is correctly configured in your environment or continue in offline consulting mode.`;
+  }
 }
-
-setupServer();
