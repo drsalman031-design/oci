@@ -48,6 +48,8 @@ export default function HistoryList({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [isDriveConnected, setIsDriveConnected] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkDrive() {
@@ -101,14 +103,17 @@ export default function HistoryList({
   };
 
   const confirmDelete = (id: string, name: string) => {
-    Alert.alert(
-      "Delete Case Archive",
-      `Are you sure you want to permanently delete ${name}'s assessment archive? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Confirm Delete", style: "destructive", onPress: () => onDelete(id) }
-      ]
-    );
+    setDeleteTarget({ id, name });
+  };
+
+  const handleDuplicateWithToast = (item: Assessment) => {
+    try {
+      onDuplicate(item);
+      setToast(`Successfully duplicated record for ${item.patientDetails.name}`);
+      setTimeout(() => setToast(null), 3500);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -117,7 +122,8 @@ export default function HistoryList({
   };
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
+    <View style={tw`flex-1 relative bg-[#050814]`}>
+      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
         {/* Brand Card header */}
@@ -338,7 +344,7 @@ export default function HistoryList({
                         <Edit2 size={12} color="#22D3EE" />
                       </Pressable>
                       <Pressable
-                        onPress={() => onDuplicate(item)}
+                        onPress={() => handleDuplicateWithToast(item)}
                         style={({ pressed }) => [
                           tw`p-2.5 bg-white/5 rounded-xl border border-white/10`,
                           pressed ? tw`bg-white/10` : null
@@ -370,5 +376,57 @@ export default function HistoryList({
 
       </View>
     </ScrollView>
-  );
+
+    {/* Custom Premium Delete Confirmation Modal */}
+    {deleteTarget && (
+      <View style={tw`absolute inset-0 bg-black/85 z-50 justify-center items-center p-6`}>
+        <View style={tw`bg-[#0B1020] border border-white/10 rounded-[28px] p-6 max-w-sm w-full shadow-2xl space-y-4`}>
+          <View style={tw`w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 items-center justify-center self-center mb-1`}>
+            <Trash2 size={20} color="#F43F5E" />
+          </View>
+          <Text style={tw`text-white font-black text-center text-sm uppercase tracking-wider`}>Delete Case Archive?</Text>
+          <Text style={tw`text-slate-400 text-xs text-center leading-relaxed`}>
+            Are you sure you want to permanently delete <Text style={tw`text-rose-400 font-extrabold`}>{deleteTarget.name}</Text>'s assessment archive? This action cannot be undone.
+          </Text>
+          <View style={tw`flex-row gap-3 pt-2`}>
+            <Pressable
+              onPress={() => setDeleteTarget(null)}
+              style={({ pressed }) => [
+                tw`flex-1 py-3 bg-white/5 border border-white/10 rounded-xl items-center justify-center`,
+                pressed ? tw`bg-white/10` : null
+              ]}
+            >
+              <Text style={tw`text-slate-300 text-xs font-bold`}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                onDelete(deleteTarget.id);
+                setToast(`Deleted record for ${deleteTarget.name}`);
+                setDeleteTarget(null);
+                setTimeout(() => setToast(null), 3500);
+              }}
+              style={({ pressed }) => [
+                tw`flex-1 py-3 bg-rose-500 rounded-xl items-center justify-center shadow-lg shadow-rose-500/20`,
+                pressed ? tw`opacity-90` : null
+              ]}
+            >
+              <Text style={tw`text-white text-xs font-black`}>Delete</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    )}
+
+    {/* Custom Toast Notification Banner */}
+    {toast && (
+      <View style={tw`absolute bottom-20 left-4 right-4 bg-[#14B8A6] border border-teal-400 rounded-2xl p-4 shadow-2xl flex-row items-center z-50`}>
+        <Award size={16} color="#ffffff" style={tw`mr-3`} />
+        <Text style={tw`text-white text-xs font-extrabold flex-1`}>{toast}</Text>
+        <Pressable onPress={() => setToast(null)}>
+          <Text style={tw`text-white/60 text-xs font-mono px-1`}>✕</Text>
+        </Pressable>
+      </View>
+    )}
+  </View>
+);
 }

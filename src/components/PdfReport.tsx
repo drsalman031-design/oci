@@ -220,10 +220,41 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
   // Direct high-fidelity PDF print stream generator
   const handleDownloadPdf = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      Alert.alert("Popup Blocked", "Please enable popups for this site to generate the clinical PDF report.");
-      return;
+    let printTargetDoc: Document | null = null;
+    let printWindow: Window | null = null;
+    let isIframe = false;
+
+    try {
+      let iframe = document.getElementById('pdf-print-iframe') as HTMLIFrameElement;
+      if (!iframe) {
+        iframe = document.createElement('iframe') as HTMLIFrameElement;
+        iframe.id = 'pdf-print-iframe';
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.style.visibility = 'hidden';
+        document.body.appendChild(iframe);
+      }
+      printTargetDoc = iframe.contentDocument || iframe.contentWindow?.document || null;
+      if (printTargetDoc) {
+        isIframe = true;
+      }
+    } catch (err) {
+      console.warn("Iframe setup failed, falling back to window.open", err);
+    }
+
+    if (!isIframe) {
+      printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        try {
+          Alert.alert("Popup Blocked", "Please enable popups for this site to generate the clinical PDF report.");
+        } catch (e) {
+          console.warn("Alert blocked", e);
+        }
+        return;
+      }
+      printTargetDoc = printWindow.document;
     }
 
     // Color helpers for the printed layout based on OCI Score
@@ -234,7 +265,8 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
     else if (total > 40) { scoreColor = '#F59E0B'; bgLight = '#FEFBE8'; }
     else if (total > 20) { scoreColor = '#14B8A6'; bgLight = '#F0FDFA'; }
 
-    printWindow.document.write(`
+    printTargetDoc?.open();
+    printTargetDoc?.write(`
       <html>
         <head>
           <title>${pdfFilename}</title>
@@ -729,15 +761,31 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
         </body>
       </html>
     `);
-    printWindow.document.close();
-    printWindow.print();
+    printTargetDoc?.close();
+
+    if (isIframe) {
+      setTimeout(() => {
+        const iframe = document.getElementById('pdf-print-iframe') as HTMLIFrameElement;
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }
+      }, 500);
+    } else if (printWindow) {
+      printWindow.focus();
+      printWindow.print();
+    }
   };
 
   const handleShare = () => {
-    Alert.alert(
-      "Clinical Share Protocol",
-      `The clinical files for OCI case ${assessment.patientDetails.caseNumber} have been compiled. Shared link is active for Dr. Salman.`
-    );
+    try {
+      Alert.alert(
+        "Clinical Share Protocol",
+        `The clinical files for OCI case ${assessment.patientDetails.caseNumber} have been compiled. Shared link is active for Dr. Salman.`
+      );
+    } catch (e) {
+      console.log("Share Alert blocked. Protocol compiled successfully.");
+    }
   };
 
   return (

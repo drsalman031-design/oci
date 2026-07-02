@@ -36,8 +36,6 @@ import PdfReport from './src/components/PdfReport';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ReportsPanel from './src/components/ReportsPanel';
 import GoogleDriveSync from './src/components/GoogleDriveSync';
-import RemindersPanel from './src/components/RemindersPanel';
-import { autoGenerateFollowupsForPatient } from './src/lib/reminders';
 
 // Icons
 import { 
@@ -50,14 +48,21 @@ import {
   Sun,
   Users,
   Brain,
-  Award,
-  Bell
+  Award
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
 export default function App() {
+  const safeAlert = (title: string, message: string) => {
+    try {
+      Alert.alert(title, message);
+    } catch (e) {
+      console.log(`Alert blocked [${title}]: ${message}`, e);
+    }
+  };
+
   // Core Navigation
-  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports' | 'reminders'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports'>('splash');
   
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -250,7 +255,7 @@ export default function App() {
         }
       }
 
-      Alert.alert("Assessment Updated", "The patient record has been successfully updated in-place.");
+      safeAlert("Assessment Updated", "The patient record has been successfully updated in-place.");
     } else {
       // Create a robust GUID
       const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
@@ -267,18 +272,8 @@ export default function App() {
       const nextAssessments = [newAssessment, ...savedAssessments];
       setSavedAssessments(nextAssessments);
       await dbSaveAssessment(newAssessment);
-      
-      // Automatically generate daily and monthly clinical follow-up tasks for this patient
-      const isGrowing = activePatient && activePatient.age !== '' ? Number(activePatient.age) < 16 : false;
-      await autoGenerateFollowupsForPatient(
-        uuid,
-        activePatient?.name || 'Anonymous',
-        activePatient?.caseNumber || 'N/A',
-        activePatient?.diagnosis || 'Class I',
-        isGrowing
-      );
 
-      Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally, and clinical follow-up tasks have been added to your schedule.");
+      safeAlert("Assessment Saved", "The patient record has been compiled and saved locally.");
     }
   };
 
@@ -314,6 +309,7 @@ export default function App() {
       cephalometricInput: { ...assessment.cephalometricInput },
       ociResult: { ...assessment.ociResult },
       aiSummary: assessment.aiSummary,
+      advanced: assessment.advanced ? { ...assessment.advanced } : undefined,
       createdAt: new Date().toISOString()
     };
 
@@ -334,7 +330,7 @@ export default function App() {
       }
     }
 
-    Alert.alert("Record Duplicated", `Successfully created copy: ${duplicatedAssessment.patientDetails.name}`);
+    safeAlert("Record Duplicated", `Successfully created copy: ${duplicatedAssessment.patientDetails.name}`);
   };
 
   const handleEditAssessment = (assessment: Assessment) => {
@@ -368,7 +364,7 @@ export default function App() {
   const handleExportDatabase = async () => {
     try {
       const backupJson = await dbExportBackup();
-      Alert.alert("Backup Exported", "Save this JSON backup secure key locally.");
+      safeAlert("Backup Exported", "Save this JSON backup secure key locally.");
     } catch (e) {
       console.error('Failed to export OCI index backup:', e);
     }
@@ -378,7 +374,7 @@ export default function App() {
     await dbClearAllData();
     await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(DEMO_PATIENTS));
     setSavedAssessments(DEMO_PATIENTS);
-    Alert.alert("Database Reset", "All local clinical history has been successfully reset to the 3 professional demo cases.");
+    safeAlert("Database Reset", "All local clinical history has been successfully reset to the 3 professional demo cases.");
   };
 
   return (
@@ -515,12 +511,6 @@ export default function App() {
                 />
               )}
 
-              {screen === 'reminders' && (
-                <RemindersPanel
-                  savedAssessments={savedAssessments}
-                />
-              )}
-
               {screen === 'about' && (
                 <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
                   <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
@@ -603,7 +593,6 @@ export default function App() {
               { id: 'history', label: 'Patients', icon: Users },
               { id: 'patient-form', label: 'Analysis', icon: Activity, action: handleStartNewAssessment },
               { id: 'treatment-planning', label: 'Treatment', icon: Brain },
-              { id: 'reminders', label: 'Reminders', icon: Bell },
               { id: 'reports', label: 'Reports', icon: FileText },
               { id: 'settings', label: 'Settings', icon: SettingsIcon }
             ].map((item) => {
