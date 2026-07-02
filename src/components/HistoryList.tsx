@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Assessment } from '../types';
 import { 
   Search, 
@@ -15,7 +16,10 @@ import {
   Bookmark,
   ChevronRight,
   ShieldCheck,
-  Award
+  Award,
+  Edit2,
+  Clock,
+  Cloud
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -24,6 +28,8 @@ interface HistoryListProps {
   onSelect: (assessment: Assessment) => void;
   onDelete: (id: string) => void;
   onDuplicate: (assessment: Assessment) => void;
+  onEdit: (assessment: Assessment) => void;
+  onOpenSyncDashboard: () => void;
   onNewAssessment?: () => void;
 }
 
@@ -32,6 +38,8 @@ export default function HistoryList({
   onSelect, 
   onDelete, 
   onDuplicate,
+  onEdit,
+  onOpenSyncDashboard,
   onNewAssessment
 }: HistoryListProps) {
   const [search, setSearch] = useState('');
@@ -39,6 +47,15 @@ export default function HistoryList({
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'score'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [isDriveConnected, setIsDriveConnected] = useState(false);
+
+  useEffect(() => {
+    async function checkDrive() {
+      const connected = await AsyncStorage.getItem('oci_gdrive_connected') === 'true';
+      setIsDriveConnected(connected);
+    }
+    checkDrive();
+  }, [assessments]);
 
   // Filter & Search logic
   const filtered = assessments.filter(a => {
@@ -129,16 +146,17 @@ export default function HistoryList({
           {/* Quick Actions Bar */}
           <View style={tw`flex-row gap-3 mt-4`}>
             <Pressable
-              onPress={handleExportCSV}
+              onPress={onOpenSyncDashboard}
               style={({ pressed }) => [
-                tw`flex-1 py-3 bg-white/5 border border-white/10 rounded-2xl items-center justify-center`,
-                pressed ? tw`bg-white/10` : null
+                tw`flex-1 py-3 bg-[#14B8A6]/10 border border-[#14B8A6]/25 rounded-2xl items-center justify-center flex-row space-x-1.5`,
+                pressed ? tw`bg-[#14B8A6]/20` : null
               ]}
             >
-              <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-widest`}>Sync Cloud Storage</Text>
+              <Cloud size={12} color="#14B8A6" />
+              <Text style={tw`text-[10px] font-black text-teal-400 uppercase tracking-widest`}>Google Cloud Backup</Text>
             </Pressable>
             <View style={tw`px-4 bg-teal-500/5 rounded-2xl border border-teal-500/10 justify-center items-center`}>
-              <Text style={tw`text-[10px] font-black text-teal-400 font-mono`}>{assessments.length} Active</Text>
+              <Text style={tw`text-[10px] font-black text-teal-400 font-mono`}>{assessments.length} Patients</Text>
             </View>
           </View>
         </View>
@@ -257,7 +275,7 @@ export default function HistoryList({
                   </View>
 
                   {/* Patient mini metrics chart */}
-                  <View style={tw`flex-row justify-between bg-black/35 p-3 rounded-2xl border border-white/5 mb-4`}>
+                  <View style={tw`flex-row justify-between bg-black/35 p-3 rounded-2xl border border-white/5 mb-3`}>
                     <View style={tw`flex-1 items-center`}>
                       <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Case File</Text>
                       <Text style={tw`text-xs font-extrabold text-slate-200 mt-0.5`}>{item.patientDetails.caseNumber || 'N/A'}</Text>
@@ -269,6 +287,30 @@ export default function HistoryList({
                     <View style={tw`flex-1 items-center`}>
                       <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Demographic</Text>
                       <Text style={tw`text-xs font-extrabold text-slate-200 mt-0.5`}>{item.patientDetails.age || 'N/A'}y / {item.patientDetails.gender[0] || '?'}</Text>
+                    </View>
+                  </View>
+
+                  {/* Vault & Synchronicity Status indicators */}
+                  <View style={tw`flex-row justify-between items-center mb-4 px-1.5`}>
+                    <View style={tw`flex-row items-center space-x-1`}>
+                      <Clock size={10} color="#94A3B8" />
+                      <Text style={tw`text-[8px] text-slate-400 font-mono`}>
+                        Mod: {new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </Text>
+                    </View>
+
+                    <View style={tw`flex-row items-center space-x-3`}>
+                      <View style={tw`flex-row items-center space-x-1`}>
+                        <Cloud size={10} color={isDriveConnected ? "#14B8A6" : "#64748B"} />
+                        <Text style={[tw`text-[8px] font-mono font-bold`, isDriveConnected ? tw`text-teal-400` : tw`text-slate-500`]}>
+                          {isDriveConnected ? "Cloud Sync: Synced" : "Local Vault"}
+                        </Text>
+                      </View>
+
+                      <View style={tw`flex-row items-center space-x-1`}>
+                        <ShieldCheck size={10} color="#22D3EE" />
+                        <Text style={tw`text-[8px] text-cyan-400 font-mono font-black`}>AES-256</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -286,6 +328,15 @@ export default function HistoryList({
                     </Pressable>
 
                     <View style={tw`flex-row space-x-2`}>
+                      <Pressable
+                        onPress={() => onEdit(item)}
+                        style={({ pressed }) => [
+                          tw`p-2.5 bg-cyan-500/10 rounded-xl border border-cyan-500/20`,
+                          pressed ? tw`bg-cyan-500/20` : null
+                        ]}
+                      >
+                        <Edit2 size={12} color="#22D3EE" />
+                      </Pressable>
                       <Pressable
                         onPress={() => onDuplicate(item)}
                         style={({ pressed }) => [

@@ -22,6 +22,8 @@ import {
 } from './src/lib/db';
 
 // Components
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoginScreen from './src/components/LoginScreen';
 import Splash from './src/components/Splash';
 import Home from './src/components/Home';
 import PatientForm from './src/components/PatientForm';
@@ -32,6 +34,7 @@ import SettingsPanel from './src/components/SettingsPanel';
 import PdfReport from './src/components/PdfReport';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ReportsPanel from './src/components/ReportsPanel';
+import GoogleDriveSync from './src/components/GoogleDriveSync';
 
 // Icons
 import { 
@@ -52,6 +55,10 @@ export default function App() {
   // Core Navigation
   const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports'>('splash');
   
+  // Authentication states
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isGoogleUser, setIsGoogleUser] = useState<boolean>(false);
+
   // Local states
   const [savedAssessments, setSavedAssessments] = useState<Assessment[]>([]);
   const [weights, setWeights] = useState<OciWeights>(DEFAULT_WEIGHTS);
@@ -65,13 +72,34 @@ export default function App() {
   // PDF Overlay State
   const [pdfReportAssessment, setPdfReportAssessment] = useState<Assessment | null>(null);
 
+  // Edit & Cloud Backup dashboard states
+  const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
+  const [syncDashboardVisible, setSyncDashboardVisible] = useState<boolean>(false);
+
   // Load persistence on mount from AsyncStorage
   useEffect(() => {
     async function loadIndexedData() {
       try {
+        // Delete all demo patients data exactly once on first load
+        const demoCleared = await AsyncStorage.getItem('has_wiped_demo_patients_v4');
+        if (!demoCleared) {
+          await dbClearAllData();
+          await AsyncStorage.setItem('has_wiped_demo_patients_v4', 'true');
+        }
+
+        // Restore user session if present
+        const savedEmail = await AsyncStorage.getItem('oci_user_email');
+        const savedIsGoogle = await AsyncStorage.getItem('oci_is_google');
+        if (savedEmail) {
+          setUserEmail(savedEmail);
+          setIsGoogleUser(savedIsGoogle === 'true');
+        }
+
         const assessments = await dbGetAssessments();
         if (assessments && assessments.length > 0) {
           setSavedAssessments(assessments);
+        } else {
+          setSavedAssessments([]);
         }
 
         const storedWeights = await dbGetSetting<OciWeights>('oci_weights', DEFAULT_WEIGHTS);
@@ -86,6 +114,21 @@ export default function App() {
     loadIndexedData();
   }, []);
 
+  const handleLoginSuccess = async (email: string, isGoogle: boolean) => {
+    setUserEmail(email);
+    setIsGoogleUser(isGoogle);
+    await AsyncStorage.setItem('oci_user_email', email);
+    await AsyncStorage.setItem('oci_is_google', isGoogle ? 'true' : 'false');
+  };
+
+  const handleLogout = async () => {
+    setUserEmail(null);
+    setIsGoogleUser(false);
+    await AsyncStorage.removeItem('oci_user_email');
+    await AsyncStorage.removeItem('oci_is_google');
+    setScreen('home'); // Reset screen stack
+  };
+
   const toggleDarkMode = async () => {
     const nextDark = !darkMode;
     setDarkMode(nextDark);
@@ -93,6 +136,7 @@ export default function App() {
   };
 
   const handleStartNewAssessment = () => {
+    setEditingAssessmentId(null);
     setActivePatient(null);
     setActiveCeph(null);
     setActiveResult(null);
@@ -130,42 +174,117 @@ export default function App() {
   const handleSaveAssessment = async (aiSummaryText: string) => {
     if (!activePatient || !activeCeph || !activeResult) return;
 
-    // Create a robust GUID
-    const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    if (editingAssessmentId) {
+      // Update existing record
+      const updatedAssessment: Assessment = {
+        id: editingAssessmentId,
+        patientDetails: activePatient,
+        cephalometricInput: activeCeph,
+        ociResult: activeResult,
+        aiSummary: aiSummaryText,
+        createdAt: new Date().toISOString()
+      };
 
-    const newAssessment: Assessment = {
-      id: uuid,
-      patientDetails: activePatient,
-      cephalometricInput: activeCeph,
-      ociResult: activeResult,
-      aiSummary: aiSummaryText,
-      createdAt: new Date().toISOString()
-    };
+      const nextAssessments = savedAssessments.map(a => a.id === editingAssessmentId ? updatedAssessment : a);
+      setSavedAssessments(nextAssessments);
+      await dbSaveAssessment(updatedAssessment);
+      setEditingAssessmentId(null);
+      
+      // Also automatically update Google Drive backup if connected
+      const connected = await AsyncStorage.getItem('oci_gdrive_connected') === 'true';
+      if (connected) {
+        const payloadStr = await AsyncStorage.getItem('oci_gdrive_backup_payload');
+        if (payloadStr) {
+          const payload = JSON.parse(payloadStr);
+          const updatedCloud = (payload.assessments as Assessment[]).map(a => a.id === editingAssessmentId ? updatedAssessment : a);
+          payload.assessments = updatedCloud;
+          await AsyncStorage.setItem('oci_gdrive_backup_payload', JSON.stringify(payload));
+        }
+      }
 
-    const nextAssessments = [newAssessment, ...savedAssessments];
-    setSavedAssessments(nextAssessments);
-    await dbSaveAssessment(newAssessment);
-    
-    Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally.");
+      Alert.alert("Assessment Updated", "The patient record has been successfully updated in-place.");
+    } else {
+      // Create a robust GUID
+      const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+      const newAssessment: Assessment = {
+        id: uuid,
+        patientDetails: activePatient,
+        cephalometricInput: activeCeph,
+        ociResult: activeResult,
+        aiSummary: aiSummaryText,
+        createdAt: new Date().toISOString()
+      };
+
+      const nextAssessments = [newAssessment, ...savedAssessments];
+      setSavedAssessments(nextAssessments);
+      await dbSaveAssessment(newAssessment);
+      
+      Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally.");
+    }
   };
 
   const handleDeleteAssessment = async (id: string) => {
     const nextAssessments = savedAssessments.filter(a => a.id !== id);
     setSavedAssessments(nextAssessments);
     await dbDeleteAssessment(id);
+
+    // Also automatically update Google Drive backup if connected
+    const connected = await AsyncStorage.getItem('oci_gdrive_connected') === 'true';
+    if (connected) {
+      const payloadStr = await AsyncStorage.getItem('oci_gdrive_backup_payload');
+      if (payloadStr) {
+        const payload = JSON.parse(payloadStr);
+        const filteredCloud = (payload.assessments as Assessment[]).filter(a => a.id !== id);
+        payload.assessments = filteredCloud;
+        await AsyncStorage.setItem('oci_gdrive_backup_payload', JSON.stringify(payload));
+        await AsyncStorage.setItem('oci_gdrive_backed_count', String(filteredCloud.length));
+      }
+    }
   };
 
-  const handleDuplicateAssessment = (assessment: Assessment) => {
-    const duplicatedPatient: PatientDetails = {
-      ...assessment.patientDetails,
-      name: `${assessment.patientDetails.name} (Copy)`,
-      caseNumber: `${assessment.patientDetails.caseNumber}-DUP`,
-      date: new Date().toISOString().split('T')[0]
+  const handleDuplicateAssessment = async (assessment: Assessment) => {
+    const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    const duplicatedAssessment: Assessment = {
+      id: uuid,
+      patientDetails: {
+        ...assessment.patientDetails,
+        name: `${assessment.patientDetails.name} (Copy)`,
+        caseNumber: `${assessment.patientDetails.caseNumber}-DUP`,
+        date: new Date().toISOString().split('T')[0]
+      },
+      cephalometricInput: { ...assessment.cephalometricInput },
+      ociResult: { ...assessment.ociResult },
+      aiSummary: assessment.aiSummary,
+      createdAt: new Date().toISOString()
     };
-    setActivePatient(duplicatedPatient);
+
+    const nextAssessments = [duplicatedAssessment, ...savedAssessments];
+    setSavedAssessments(nextAssessments);
+    await dbSaveAssessment(duplicatedAssessment);
+
+    // Also automatically update Google Drive backup if connected
+    const connected = await AsyncStorage.getItem('oci_gdrive_connected') === 'true';
+    if (connected) {
+      const payloadStr = await AsyncStorage.getItem('oci_gdrive_backup_payload');
+      if (payloadStr) {
+        const payload = JSON.parse(payloadStr);
+        const updatedCloud = [duplicatedAssessment, ...payload.assessments];
+        payload.assessments = updatedCloud;
+        await AsyncStorage.setItem('oci_gdrive_backup_payload', JSON.stringify(payload));
+        await AsyncStorage.setItem('oci_gdrive_backed_count', String(updatedCloud.length));
+      }
+    }
+
+    Alert.alert("Record Duplicated", `Successfully created copy: ${duplicatedAssessment.patientDetails.name}`);
+  };
+
+  const handleEditAssessment = (assessment: Assessment) => {
+    setEditingAssessmentId(assessment.id);
+    setActivePatient(assessment.patientDetails);
     setActiveCeph(assessment.cephalometricInput);
     setActiveResult(assessment.ociResult);
-    setScreen('ceph-input');
+    setScreen('patient-form');
   };
 
   const handleUpdateWeights = async (newWeights: OciWeights) => {
@@ -215,8 +334,8 @@ export default function App() {
           <Splash onFinish={() => setScreen('home')} />
         )}
 
-        {/* 2. Top Navigation Bar (Hidden during Splash) */}
-        {screen !== 'splash' && (
+        {/* 2. Top Navigation Bar (Hidden during Splash or if Not Authenticated) */}
+        {screen !== 'splash' && userEmail && (
           <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3.5 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
               <View style={tw`w-9 h-9 bg-[#14B8A6] rounded-xl items-center justify-center mr-2.5 shadow-md`}>
@@ -241,147 +360,155 @@ export default function App() {
 
         {/* 3. Screen Switch Board */}
         {screen !== 'splash' && (
-          <View style={tw`flex-1`}>
-            
-            {screen === 'home' && (
-              <Home 
-                onNewAssessment={handleStartNewAssessment}
-                onViewHistory={() => setScreen('history')}
-                onViewSettings={() => setScreen('settings')}
-                onViewAbout={() => setScreen('about')}
-                savedAssessments={savedAssessments}
-              />
-            )}
+          !userEmail ? (
+            <LoginScreen onLoginSuccess={handleLoginSuccess} />
+          ) : (
+            <View style={tw`flex-1`}>
+              
+              {screen === 'home' && (
+                <Home 
+                  onNewAssessment={handleStartNewAssessment}
+                  onViewHistory={() => setScreen('history')}
+                  onViewSettings={() => setScreen('settings')}
+                  onViewAbout={() => setScreen('about')}
+                  savedAssessments={savedAssessments}
+                />
+              )}
 
-            {screen === 'patient-form' && (
-              <PatientForm
-                initialDetails={activePatient || undefined}
-                onNext={handlePatientSubmit}
-                onCancel={() => setScreen('home')}
-              />
-            )}
+              {screen === 'patient-form' && (
+                <PatientForm
+                  initialDetails={activePatient || undefined}
+                  onNext={handlePatientSubmit}
+                  onCancel={() => setScreen('home')}
+                />
+              )}
 
-            {screen === 'ceph-input' && activePatient && (
-              <CephInput
-                initialInput={activeCeph || undefined}
-                patientDetails={activePatient}
-                diagnosis={activePatient.diagnosis}
-                onCalculate={handleCephSubmit}
-                onBack={() => setScreen('patient-form')}
-              />
-            )}
+              {screen === 'ceph-input' && activePatient && (
+                <CephInput
+                  initialInput={activeCeph || undefined}
+                  patientDetails={activePatient}
+                  diagnosis={activePatient.diagnosis}
+                  onCalculate={handleCephSubmit}
+                  onBack={() => setScreen('patient-form')}
+                />
+              )}
 
-            {screen === 'results' && activePatient && activeCeph && activeResult && (
-              <ResultsDashboard
-                patientDetails={activePatient}
-                cephalometricInput={activeCeph}
-                ociResult={activeResult}
-                onSaveAssessment={handleSaveAssessment}
-                onOpenPdf={(editedSummaryText) => {
-                  setPdfReportAssessment({
-                    id: 'preview',
-                    patientDetails: activePatient,
-                    cephalometricInput: activeCeph,
-                    ociResult: activeResult,
-                    aiSummary: editedSummaryText,
-                    createdAt: new Date().toISOString()
-                  });
-                }}
-                onBack={() => setScreen('ceph-input')}
-              />
-            )}
+              {screen === 'results' && activePatient && activeCeph && activeResult && (
+                <ResultsDashboard
+                  patientDetails={activePatient}
+                  cephalometricInput={activeCeph}
+                  ociResult={activeResult}
+                  onSaveAssessment={handleSaveAssessment}
+                  onOpenPdf={(editedSummaryText) => {
+                    setPdfReportAssessment({
+                      id: 'preview',
+                      patientDetails: activePatient,
+                      cephalometricInput: activeCeph,
+                      ociResult: activeResult,
+                      aiSummary: editedSummaryText,
+                      createdAt: new Date().toISOString()
+                    });
+                  }}
+                  onBack={() => setScreen('ceph-input')}
+                />
+              )}
 
-            {screen === 'history' && (
-              <HistoryList
-                assessments={savedAssessments}
-                onSelect={(item) => {
-                  setActivePatient(item.patientDetails);
-                  setActiveCeph(item.cephalometricInput);
-                  setActiveResult(item.ociResult);
-                  setScreen('results');
-                }}
-                onDuplicate={handleDuplicateAssessment}
-                onDelete={handleDeleteAssessment}
-                onNewAssessment={handleStartNewAssessment}
-              />
-            )}
+              {screen === 'history' && (
+                <HistoryList
+                  assessments={savedAssessments}
+                  onSelect={(item) => {
+                    setActivePatient(item.patientDetails);
+                    setActiveCeph(item.cephalometricInput);
+                    setActiveResult(item.ociResult);
+                    setScreen('results');
+                  }}
+                  onDuplicate={handleDuplicateAssessment}
+                  onDelete={handleDeleteAssessment}
+                  onEdit={handleEditAssessment}
+                  onOpenSyncDashboard={() => setSyncDashboardVisible(true)}
+                  onNewAssessment={handleStartNewAssessment}
+                />
+              )}
 
-            {screen === 'settings' && (
-              <SettingsPanel
-                weights={weights}
-                onUpdateWeights={handleUpdateWeights}
-                onImportData={handleImportDatabase}
-                onExportData={handleExportDatabase}
-                onResetDatabase={handleResetDatabase}
-                darkMode={darkMode}
-                onToggleDarkMode={toggleDarkMode}
-              />
-            )}
+              {screen === 'settings' && (
+                <SettingsPanel
+                  weights={weights}
+                  onUpdateWeights={handleUpdateWeights}
+                  onImportData={handleImportDatabase}
+                  onExportData={handleExportDatabase}
+                  onResetDatabase={handleResetDatabase}
+                  darkMode={darkMode}
+                  onToggleDarkMode={toggleDarkMode}
+                  onLogout={handleLogout}
+                  onOpenSyncDashboard={() => setSyncDashboardVisible(true)}
+                />
+              )}
 
-            {screen === 'treatment-planning' && (
-              <TreatmentPlanning
-                savedAssessments={savedAssessments}
-              />
-            )}
+              {screen === 'treatment-planning' && (
+                <TreatmentPlanning
+                  savedAssessments={savedAssessments}
+                />
+              )}
 
-            {screen === 'reports' && (
-              <ReportsPanel
-                savedAssessments={savedAssessments}
-              />
-            )}
+              {screen === 'reports' && (
+                <ReportsPanel
+                  savedAssessments={savedAssessments}
+                />
+              )}
 
-            {screen === 'about' && (
-              <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
-                <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
-                  <Text style={tw`text-lg font-black text-slate-900 dark:text-white`}>
-                    Orthodontic Compensation Index (OCI) Guidelines
-                  </Text>
-                  
-                  <Text style={tw`text-xs text-slate-600 dark:text-slate-300 leading-normal`}>
-                    Dentoalveolar compensation is the physiological system's natural reaction to skeletal sagittal discrepancies. In individuals with Class II or Class III jaw mismatches, teeth tip and glide to establish stable occlusal contacts, masking the true severity of the skeletal pattern.
-                  </Text>
-                  
-                  <View style={tw`p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10`}>
-                    <Text style={tw`font-bold text-amber-700 dark:text-amber-300 text-xs`}>Class II Compensatory Archetype</Text>
-                    <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
-                      • Retroclined maxillary incisors (U1-SN tipped backward)
-                      {"\n"}• Proclined mandibular incisors (IMPA flared forward)
-                      {"\n"}• Increased Curve of Spee in lower arch
+              {screen === 'about' && (
+                <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
+                  <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
+                    <Text style={tw`text-lg font-black text-slate-900 dark:text-white`}>
+                      Orthodontic Compensation Index (OCI) Guidelines
                     </Text>
-                  </View>
-
-                  <View style={tw`p-4 bg-teal-500/5 rounded-2xl border border-teal-500/10`}>
-                    <Text style={tw`font-bold text-teal-700 dark:text-teal-300 text-xs`}>Class III Compensatory Archetype</Text>
-                    <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
-                      • Proclined maxillary incisors (U1-SN flared forward)
-                      {"\n"}• Retroclined mandibular incisors (IMPA uprighted/backward)
-                      {"\n"}• Flattened lower Curve of Spee
+                    
+                    <Text style={tw`text-xs text-slate-600 dark:text-slate-300 leading-normal`}>
+                      Dentoalveolar compensation is the physiological system's natural reaction to skeletal sagittal discrepancies. In individuals with Class II or Class III jaw mismatches, teeth tip and glide to establish stable occlusal contacts, masking the true severity of the skeletal pattern.
                     </Text>
-                  </View>
-
-                  <Text style={tw`font-bold text-slate-800 dark:text-slate-100 text-sm mt-2`}>Clinical Index Severity Ranges</Text>
-                  <View style={tw`space-y-1.5`}>
-                    <Text style={tw`text-[11px] text-slate-500`}>• 0–20: Minimal Compensation. Teeth aligned naturally over skeletal base.</Text>
-                    <Text style={tw`text-[11px] text-slate-500`}>• 21–40: Mild Compensation. Camouflage orthodontic alignment is highly predictable.</Text>
-                    <Text style={tw`text-[11px] text-slate-500`}>• 41–60: Moderate Compensation. Dental limits are stretched. Careful examination of periodontal bone plate is required.</Text>
-                    <Text style={tw`text-[11px] text-slate-500`}>• 61–80: Severe Compensation. Camouflage carries substantial periodontal risks. Surgical options indicated.</Text>
-                    <Text style={tw`text-[11px] text-slate-500`}>• 81–100: Extreme Compensation. Surgical decompensation is highly recommended.</Text>
-                  </View>
-
-                  <View style={tw`mt-4 pt-4 border-t border-slate-150 dark:border-slate-800 flex-row justify-between items-center`}>
-                    <View>
-                      <Text style={tw`text-[8px] text-slate-400 font-mono uppercase`}>Clinical Supervisor</Text>
-                      <Text style={tw`text-xs font-extrabold text-slate-800 dark:text-slate-100`}>Dr. Salman MDS Orthodontist</Text>
+                    
+                    <View style={tw`p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10`}>
+                      <Text style={tw`font-bold text-amber-700 dark:text-amber-300 text-xs`}>Class II Compensatory Archetype</Text>
+                      <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                        • Retroclined maxillary incisors (U1-SN tipped backward)
+                        {"\n"}• Proclined mandibular incisors (IMPA flared forward)
+                        {"\n"}• Increased Curve of Spee in lower arch
+                      </Text>
                     </View>
-                    <View style={tw`px-2.5 py-1.5 bg-teal-500/10 rounded-xl`}>
-                      <Text style={tw`text-[9px] font-black text-teal-600 uppercase`}>Research Edition</Text>
+
+                    <View style={tw`p-4 bg-teal-500/5 rounded-2xl border border-teal-500/10`}>
+                      <Text style={tw`font-bold text-teal-700 dark:text-teal-300 text-xs`}>Class III Compensatory Archetype</Text>
+                      <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                        • Proclined maxillary incisors (U1-SN flared forward)
+                        {"\n"}• Retroclined mandibular incisors (IMPA uprighted/backward)
+                        {"\n"}• Flattened lower Curve of Spee
+                      </Text>
+                    </View>
+
+                    <Text style={tw`font-bold text-slate-800 dark:text-slate-100 text-sm mt-2`}>Clinical Index Severity Ranges</Text>
+                    <View style={tw`space-y-1.5`}>
+                      <Text style={tw`text-[11px] text-slate-500`}>• 0–20: Minimal Compensation. Teeth aligned naturally over skeletal base.</Text>
+                      <Text style={tw`text-[11px] text-slate-500`}>• 21–40: Mild Compensation. Camouflage orthodontic alignment is highly predictable.</Text>
+                      <Text style={tw`text-[11px] text-slate-500`}>• 41–60: Moderate Compensation. Dental limits are stretched. Careful examination of periodontal bone plate is required.</Text>
+                      <Text style={tw`text-[11px] text-slate-500`}>• 61–80: Severe Compensation. Camouflage carries substantial periodontal risks. Surgical options indicated.</Text>
+                      <Text style={tw`text-[11px] text-slate-500`}>• 81–100: Extreme Compensation. Surgical decompensation is highly recommended.</Text>
+                    </View>
+
+                    <View style={tw`mt-4 pt-4 border-t border-slate-150 dark:border-slate-800 flex-row justify-between items-center`}>
+                      <View>
+                        <Text style={tw`text-[8px] text-slate-400 font-mono uppercase`}>Clinical Supervisor</Text>
+                        <Text style={tw`text-xs font-extrabold text-slate-800 dark:text-slate-100`}>Dr. Salman MDS Orthodontist</Text>
+                      </View>
+                      <View style={tw`px-2.5 py-1.5 bg-teal-500/10 rounded-xl`}>
+                        <Text style={tw`text-[9px] font-black text-teal-600 uppercase`}>Research Edition</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </ScrollView>
-            )}
+                </ScrollView>
+              )}
 
-          </View>
+            </View>
+          )
         )}
 
         {/* 4. PDF Fullscreen Overlay Modal (Placed inside mobile container for ideal viewport alignment) */}
@@ -392,8 +519,19 @@ export default function App() {
           />
         )}
 
+        {/* Google Drive Synchronization Dashboard Modal */}
+        <GoogleDriveSync
+          visible={syncDashboardVisible}
+          onClose={() => setSyncDashboardVisible(false)}
+          assessments={savedAssessments}
+          onRefreshList={async () => {
+            const loaded = await dbGetAssessments();
+            setSavedAssessments(loaded);
+          }}
+        />
+
         {/* 5. Floating Bottom Navigation for Mobile Devices */}
-        {screen !== 'splash' && (
+        {screen !== 'splash' && userEmail && (
           <View style={tw`bg-[#111827]/95 border-t border-white/10 flex-row justify-around py-3 px-2`}>
             {[
               { id: 'home', label: 'Dashboard', icon: HomeIcon },

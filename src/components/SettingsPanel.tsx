@@ -14,7 +14,8 @@ import {
   Sun,
   Database,
   Cpu,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -26,6 +27,8 @@ interface SettingsPanelProps {
   onResetDatabase: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  onLogout?: () => void;
+  onOpenSyncDashboard?: () => void;
 }
 
 export default function SettingsPanel({
@@ -35,7 +38,9 @@ export default function SettingsPanel({
   onExportData,
   onResetDatabase,
   darkMode,
-  onToggleDarkMode
+  onToggleDarkMode,
+  onLogout,
+  onOpenSyncDashboard
 }: SettingsPanelProps) {
   const [localWeights, setLocalWeights] = useState<OciWeights>({ ...weights });
   const [successMsg, setSuccessMsg] = useState('');
@@ -139,6 +144,16 @@ export default function SettingsPanel({
               </View>
 
               <View style={tw`space-y-2`}>
+                {onOpenSyncDashboard && (
+                  <Pressable
+                    onPress={onOpenSyncDashboard}
+                    style={tw`flex-row justify-between items-center p-4 bg-[#14B8A6]/10 rounded-2xl border border-[#14B8A6]/25`}
+                  >
+                    <Text style={tw`text-xs font-black text-teal-400 uppercase tracking-widest`}>Google Drive Cloud Backup</Text>
+                    <RefreshCw size={13} color="#14B8A6" />
+                  </Pressable>
+                )}
+
                 <Pressable
                   onPress={triggerExport}
                   style={tw`flex-row justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/10`}
@@ -156,7 +171,7 @@ export default function SettingsPanel({
                 </Pressable>
               </View>
 
-              <View style={tw`border-t border-white/5 pt-4`}>
+              <View style={tw`border-t border-white/5 pt-4 flex-col space-y-3`}>
                 <Pressable
                   onPress={triggerReset}
                   style={tw`flex-row justify-between items-center p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20`}
@@ -164,6 +179,16 @@ export default function SettingsPanel({
                   <Text style={tw`text-xs font-black text-rose-400 uppercase tracking-wider`}>Destructive DB Reset</Text>
                   <Trash2 size={13} color="#EF4444" />
                 </Pressable>
+
+                {onLogout && (
+                  <Pressable
+                    onPress={onLogout}
+                    style={tw`flex-row justify-between items-center p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20`}
+                  >
+                    <Text style={tw`text-xs font-black text-amber-400 uppercase tracking-wider`}>Sign Out Practitioner</Text>
+                    <LogOut size={13} color="#F59E0B" />
+                  </Pressable>
+                )}
               </View>
             </View>
           </View>
