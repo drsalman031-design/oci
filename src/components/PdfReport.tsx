@@ -376,7 +376,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
               <!-- Cover page footer directive (every page matching branding rules) -->
               <div class="print-footer mt-8">
-                Generated using OCI Analyzer | Developed by Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
+                Generated using OCI Analyzer | Developed by: Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
               </div>
             </div>
 
@@ -533,7 +533,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
               <!-- Page Footer -->
               <div class="print-footer">
-                Generated using OCI Analyzer | Developed by Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
+                Generated using OCI Analyzer | Developed by: Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
               </div>
             </div>
 
@@ -614,7 +614,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
               <!-- Page Footer -->
               <div class="print-footer">
-                Generated using OCI Analyzer | Developed by Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
+                Generated using OCI Analyzer | Developed by: Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
               </div>
             </div>
 
@@ -721,7 +721,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
               <!-- Page Footer -->
               <div class="print-footer">
-                Generated using OCI Analyzer | Developed by Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
+                Generated using OCI Analyzer | Developed by: Dr. Salman, MDS (Orthodontics) | AI-Powered Orthodontic Diagnosis & Treatment Planning System | © OCI Analyzer. All Rights Reserved.
               </div>
             </div>
 
@@ -920,7 +920,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           <View style={tw`border-t border-white/10 pt-4 flex-row justify-between items-end`}>
             <View>
               <Text style={tw`text-[8px] text-slate-500 font-mono`}>Software: OCI Analyzer v1.0</Text>
-              <Text style={tw`text-[8px] text-slate-500 font-mono mt-0.5`}>Developed by Dr. Salman, MDS (Orthodontics)</Text>
+              <Text style={tw`text-[8px] text-slate-500 font-mono mt-0.5`}>Developed by: Dr. Salman, MDS (Orthodontics)</Text>
             </View>
             <View style={tw`items-end`}>
               <TextInput

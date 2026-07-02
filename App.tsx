@@ -8,8 +8,7 @@ import {
   OciWeights 
 } from './src/types';
 import { calculateOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
-import { parseCSV, mapRowToAssessment } from './src/lib/csvParser';
-import { RAW_DATASET } from './src/lib/rawDataset';
+import { DEMO_PATIENTS } from './src/lib/demoPatients';
 
 // Async Storage DB Helpers
 import {
@@ -37,6 +36,8 @@ import PdfReport from './src/components/PdfReport';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ReportsPanel from './src/components/ReportsPanel';
 import GoogleDriveSync from './src/components/GoogleDriveSync';
+import RemindersPanel from './src/components/RemindersPanel';
+import { autoGenerateFollowupsForPatient } from './src/lib/reminders';
 
 // Icons
 import { 
@@ -49,13 +50,14 @@ import {
   Sun,
   Users,
   Brain,
-  Award
+  Award,
+  Bell
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
 export default function App() {
   // Core Navigation
-  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'treatment-planning' | 'reports' | 'reminders'>('splash');
   
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -98,22 +100,45 @@ export default function App() {
         }
 
         let assessments = await dbGetAssessments();
+
+        // Database Migration: Automatically detect and clean up the old 100 synthetic dataset cases
+        const hasOldSeededCases = assessments.some(a => 
+          a.id.startsWith('seeded_') || 
+          (a.patientDetails.caseNumber && a.patientDetails.caseNumber.startsWith('OCI-C-')) || 
+          (a.patientDetails.caseNumber && a.patientDetails.caseNumber.startsWith('OCI-') && !a.patientDetails.caseNumber.startsWith('OCI-DEMO-'))
+        );
+
+        if (hasOldSeededCases) {
+          console.log('Migration: Detected old synthetic/seeded database cases. Filtering them out automatically...');
+          const filtered = assessments.filter(a => {
+            const isOldSeeded = a.id.startsWith('seeded_') || 
+              (a.patientDetails.caseNumber && a.patientDetails.caseNumber.startsWith('OCI-C-')) || 
+              (a.patientDetails.caseNumber && a.patientDetails.caseNumber.startsWith('OCI-') && !a.patientDetails.caseNumber.startsWith('OCI-DEMO-'));
+            return !isOldSeeded;
+          });
+
+          // Ensure exactly the 3 correct demo patients exist in the list
+          const existingMap = new Map<string, Assessment>();
+          filtered.forEach(a => existingMap.set(a.id, a));
+          
+          DEMO_PATIENTS.forEach(dp => {
+            if (!existingMap.has(dp.id)) {
+              existingMap.set(dp.id, dp);
+            }
+          });
+
+          const migratedList = Array.from(existingMap.values());
+          await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(migratedList));
+          assessments = migratedList;
+          console.log(`Migration complete. Active cases count: ${assessments.length}`);
+        }
+
         if (!assessments || assessments.length === 0) {
           try {
-            console.log('Seeding OCI Gold Standard Database from memory module...');
-            const parsed = parseCSV(RAW_DATASET);
-            const seededList: Assessment[] = [];
-            for (const row of parsed) {
-              const mapped = mapRowToAssessment(row);
-              if (mapped) {
-                seededList.push(mapped);
-              }
-            }
-            if (seededList.length > 0) {
-              await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(seededList));
-              assessments = seededList;
-              console.log(`Seeded ${seededList.length} gold-standard cases successfully.`);
-            }
+            console.log('Seeding OCI Database with 3 professional cases...');
+            await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(DEMO_PATIENTS));
+            assessments = DEMO_PATIENTS;
+            console.log(`Seeded ${DEMO_PATIENTS.length} professional cases successfully.`);
           } catch (seedErr) {
             console.error('Seeding error:', seedErr);
           }
@@ -243,7 +268,17 @@ export default function App() {
       setSavedAssessments(nextAssessments);
       await dbSaveAssessment(newAssessment);
       
-      Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally.");
+      // Automatically generate daily and monthly clinical follow-up tasks for this patient
+      const isGrowing = activePatient && activePatient.age !== '' ? Number(activePatient.age) < 16 : false;
+      await autoGenerateFollowupsForPatient(
+        uuid,
+        activePatient?.name || 'Anonymous',
+        activePatient?.caseNumber || 'N/A',
+        activePatient?.diagnosis || 'Class I',
+        isGrowing
+      );
+
+      Alert.alert("Assessment Saved", "The patient record has been compiled and saved locally, and clinical follow-up tasks have been added to your schedule.");
     }
   };
 
@@ -341,8 +376,9 @@ export default function App() {
 
   const handleResetDatabase = async () => {
     await dbClearAllData();
-    setSavedAssessments([]);
-    Alert.alert("Database Reset", "All local clinical history has been successfully wiped.");
+    await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(DEMO_PATIENTS));
+    setSavedAssessments(DEMO_PATIENTS);
+    Alert.alert("Database Reset", "All local clinical history has been successfully reset to the 3 professional demo cases.");
   };
 
   return (
@@ -479,6 +515,12 @@ export default function App() {
                 />
               )}
 
+              {screen === 'reminders' && (
+                <RemindersPanel
+                  savedAssessments={savedAssessments}
+                />
+              )}
+
               {screen === 'about' && (
                 <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
                   <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
@@ -561,6 +603,7 @@ export default function App() {
               { id: 'history', label: 'Patients', icon: Users },
               { id: 'patient-form', label: 'Analysis', icon: Activity, action: handleStartNewAssessment },
               { id: 'treatment-planning', label: 'Treatment', icon: Brain },
+              { id: 'reminders', label: 'Reminders', icon: Bell },
               { id: 'reports', label: 'Reports', icon: FileText },
               { id: 'settings', label: 'Settings', icon: SettingsIcon }
             ].map((item) => {
