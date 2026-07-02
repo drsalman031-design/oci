@@ -11,7 +11,9 @@
     "lint": "tsc --noEmit",
     "expo:start": "npx expo start",
     "expo:android": "npx expo start --android",
-    "expo:web": "npx expo start --web --port 3000"
+    "expo:web": "npx expo start --web --port 3000",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/metro-runtime": "^56.0.15",

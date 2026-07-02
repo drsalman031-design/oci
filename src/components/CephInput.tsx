@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
-import { CephalometricInput } from '../types';
+import { CephalometricInput, PatientDetails } from '../types';
 import { Norms } from '../scoringEngine';
 import { 
   ArrowLeft, 
@@ -11,12 +11,15 @@ import {
   Cpu,
   BookmarkCheck,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Zap
 } from 'lucide-react-native';
 import tw from 'twrnc';
+import CephAnalyzer from './CephAnalyzer';
 
 interface CephInputProps {
   initialInput?: CephalometricInput;
+  patientDetails: PatientDetails;
   diagnosis: 'Class I' | 'Class II' | 'Class III' | '';
   onCalculate: (input: CephalometricInput) => void;
   onBack: () => void;
@@ -55,7 +58,8 @@ const PRESETS = {
   }
 };
 
-export default function CephInput({ initialInput, diagnosis, onCalculate, onBack }: CephInputProps) {
+export default function CephInput({ initialInput, patientDetails, diagnosis, onCalculate, onBack }: CephInputProps) {
+  const [showAiAnalyzer, setShowAiAnalyzer] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'skeletal' | 'dental' | 'soft' | 'clinical'>('skeletal');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [form, setForm] = useState<CephalometricInput>(initialInput || {
@@ -67,6 +71,11 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
     molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
     posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
   });
+
+  const handleApplyAiAnalysis = (computedMeasurements: CephalometricInput) => {
+    setForm(computedMeasurements);
+    setShowAiAnalyzer(false);
+  };
 
   const handleFieldChange = (key: keyof CephalometricInput, val: any) => {
     setValidationError(null);
@@ -190,6 +199,16 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
     );
   };
 
+  if (showAiAnalyzer) {
+    return (
+      <CephAnalyzer
+        patientDetails={patientDetails}
+        onApplyAnalysis={handleApplyAiAnalysis}
+        onCancel={() => setShowAiAnalyzer(false)}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
@@ -233,6 +252,20 @@ export default function CephInput({ initialInput, diagnosis, onCalculate, onBack
               <Trash2 size={13} color="#F43F5E" />
             </Pressable>
           </View>
+
+          <Pressable
+            onPress={() => setShowAiAnalyzer(true)}
+            style={tw`px-4 py-3 bg-gradient-to-r from-teal-500/15 to-cyan-500/15 rounded-xl border border-teal-500/25 flex-row items-center justify-between mt-1`}
+          >
+            <View style={tw`flex-row items-center space-x-2.5`}>
+              <Cpu size={14} color="#14B8A6" />
+              <View>
+                <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider`}>AI Cephalometric Radiograph Scan</Text>
+                <Text style={tw`text-[8px] text-teal-400 font-bold uppercase`}>Zero manual tracing required • Step 1-10 Automatic</Text>
+              </View>
+            </View>
+            <Sparkles size={12} color="#22D3EE" />
+          </Pressable>
         </View>
 
         {/* Progress Bar */}

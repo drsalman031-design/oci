@@ -264,6 +264,7 @@ export default function App() {
             {screen === 'ceph-input' && activePatient && (
               <CephInput
                 initialInput={activeCeph || undefined}
+                patientDetails={activePatient}
                 diagnosis={activePatient.diagnosis}
                 onCalculate={handleCephSubmit}
                 onBack={() => setScreen('patient-form')}
