@@ -78,6 +78,59 @@ export interface OciResult {
   };
 }
 
+export interface AdvancedClinicalIntelligence {
+  cvmStage?: string;
+  growthStatus?: string;
+  skeletalMaturity?: string;
+  extractionRecommendation?: string;
+  extractionProbability?: string;
+  extractionReason?: string;
+  surgeryRecommendation?: string;
+  surgeryProbability?: string;
+  surgeryReason?: string;
+  anchorageRequirement?: string;
+  suggestedAnchorage?: string;
+  difficultyScore?: string;
+  complexity?: string;
+  estimatedDuration?: string;
+  estimatedAppointments?: string;
+  estimatedRetention?: string;
+  relapseRisk?: string;
+  relapseProbability?: string;
+  relapseReason?: string;
+  ociSkeletalContribution?: string;
+  ociDentalContribution?: string;
+  ociSoftTissueContribution?: string;
+  ociScoreExplanation?: string;
+  diagnosticConfidence?: string;
+  treatmentConfidence?: string;
+  borderlineCategory?: string;
+  borderlineReason?: string;
+  skeletalProblems?: string;
+  dentalProblems?: string;
+  softTissueProblems?: string;
+  functionalProblems?: string;
+  primaryObjectives?: string;
+  secondaryObjectives?: string;
+  longTermObjectives?: string;
+  treatmentSequence?: string;
+  contraindications?: string;
+  contraindicationReason?: string;
+  primaryPlanOption?: string;
+  alternativePlan1?: string;
+  alternativePlan2?: string;
+  overallPrognosis?: string;
+  skeletalCorrectionPotential?: string;
+  dentalCorrectionPotential?: string;
+  softTissueImprovement?: string;
+  longTermStability?: string;
+  successProbability?: string;
+  explanationWhy?: string;
+  decisionTrace?: string;
+  riskAlerts?: string;
+  finalClinicalSummary?: string;
+}
+
 export interface Assessment {
   id: string;
   patientDetails: PatientDetails;
@@ -85,6 +138,7 @@ export interface Assessment {
   ociResult: OciResult;
   aiSummary: string;
   createdAt: string;
+  advanced?: AdvancedClinicalIntelligence;
 }
 
 export interface NormativeRange {

@@ -8,6 +8,8 @@ import {
   OciWeights 
 } from './src/types';
 import { calculateOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
+import { parseCSV, mapRowToAssessment } from './src/lib/csvParser';
+import { RAW_DATASET } from './src/lib/rawDataset';
 
 // Async Storage DB Helpers
 import {
@@ -80,11 +82,11 @@ export default function App() {
   useEffect(() => {
     async function loadIndexedData() {
       try {
-        // Delete all demo patients data exactly once on first load
-        const demoCleared = await AsyncStorage.getItem('has_wiped_demo_patients_v4');
-        if (!demoCleared) {
+        // Clear all database records exactly once on v5 reset to seed correct gold-standard cases
+        const v5Cleared = await AsyncStorage.getItem('has_wiped_demo_patients_v5');
+        if (!v5Cleared) {
           await dbClearAllData();
-          await AsyncStorage.setItem('has_wiped_demo_patients_v4', 'true');
+          await AsyncStorage.setItem('has_wiped_demo_patients_v5', 'true');
         }
 
         // Restore user session if present
@@ -95,7 +97,28 @@ export default function App() {
           setIsGoogleUser(savedIsGoogle === 'true');
         }
 
-        const assessments = await dbGetAssessments();
+        let assessments = await dbGetAssessments();
+        if (!assessments || assessments.length === 0) {
+          try {
+            console.log('Seeding OCI Gold Standard Database from memory module...');
+            const parsed = parseCSV(RAW_DATASET);
+            const seededList: Assessment[] = [];
+            for (const row of parsed) {
+              const mapped = mapRowToAssessment(row);
+              if (mapped) {
+                seededList.push(mapped);
+              }
+            }
+            if (seededList.length > 0) {
+              await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(seededList));
+              assessments = seededList;
+              console.log(`Seeded ${seededList.length} gold-standard cases successfully.`);
+            }
+          } catch (seedErr) {
+            console.error('Seeding error:', seedErr);
+          }
+        }
+
         if (assessments && assessments.length > 0) {
           setSavedAssessments(assessments);
         } else {

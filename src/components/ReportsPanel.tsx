@@ -8,7 +8,6 @@ import {
   Award,
   Layers,
   AlertTriangle,
-  Brain,
   ChevronDown,
   Sparkles
 } from 'lucide-react-native';
@@ -85,17 +84,6 @@ export default function ReportsPanel({ savedAssessments }: ReportsPanelProps) {
     if (numVal >= norm.min && numVal <= norm.max) return 'text-emerald-400 font-extrabold';
     return 'text-amber-400 font-extrabold';
   };
-
-  const isClassIII = patientDetails.diagnosis === 'Class III' || (cephalometricInput.anb !== '' && Number(cephalometricInput.anb) < 0);
-  const isClassII = patientDetails.diagnosis === 'Class II' || (cephalometricInput.anb !== '' && Number(cephalometricInput.anb) > 4);
-  const isGrowing = (typeof patientDetails.age === 'number' ? patientDetails.age : 12) <= 14;
-
-  const objectives = [
-    'Establish Class I canine and molar relationships.',
-    'Optimize incisor inclinations (Target IMPA ~90°).',
-    'Achieve functional overjet/overbite and seal.',
-    'Establish stable facial profile harmony.'
-  ];
 
   const handleExportCSV = () => {
     Alert.alert("Database Export", "Clinical Exam report compiled and saved to clipboard / local database successfully.");
@@ -208,23 +196,6 @@ export default function ReportsPanel({ savedAssessments }: ReportsPanelProps) {
                   <Text style={tw`text-xs text-slate-400`}>Sagittal Pattern (ANB):</Text>
                   <Text style={tw`text-xs font-black font-mono text-white`}>{cephalometricInput.anb !== '' ? `${cephalometricInput.anb}°` : 'N/A'}</Text>
                 </View>
-              </View>
-            </View>
-
-            {/* Strategic Treatment Goals */}
-            <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-              <View style={tw`flex-row items-center border-b border-white/5 pb-2.5`}>
-                <Brain size={15} color="#14B8A6" style={tw`mr-2`} />
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Strategic Goals</Text>
-              </View>
-
-              <View style={tw`space-y-2.5`}>
-                {objectives.map((obj, i) => (
-                  <View key={i} style={tw`flex-row items-start`}>
-                    <View style={tw`w-1.5 h-1.5 rounded-full bg-teal-400 mr-2.5 mt-1.5`} />
-                    <Text style={tw`text-xs text-slate-300 leading-relaxed flex-1`}>{obj}</Text>
-                  </View>
-                ))}
               </View>
             </View>
 
