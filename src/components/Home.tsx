@@ -450,16 +450,17 @@ export default function Home({
         )}
 
         {/* Footer info disclaimer & developer credit */}
-        <View style={tw`pt-8 pb-6 items-center space-y-2`}>
-          <Text style={tw`text-[9px] text-slate-600 font-mono text-center uppercase tracking-widest`}>
+        <View style={tw`pt-12 pb-16 items-center space-y-3 border-t border-white/5 mt-4`}>
+          <Text style={tw`text-[8px] text-slate-500 font-mono text-center uppercase tracking-widest`}>
             OCI Analyzer™ • SECURE HIPAA-COMPLIANT CLINICAL PROTOCOLS
           </Text>
-          <View style={tw`flex-row items-center space-x-1.5`}>
-            <View style={tw`w-1 h-1 rounded-full bg-cyan-400`} />
-            <Text style={tw`text-[10px] text-slate-400 font-sans font-black tracking-wider text-center uppercase`}>
-              Developed & Innovated by - Dr. Salman MDS Orthodontist
+          <View style={tw`flex-col items-center space-y-1.5`}>
+            <Text style={tw`text-[9px] text-slate-400 font-bold uppercase tracking-widest text-center`}>
+              Developed & Innovated by
             </Text>
-            <View style={tw`w-1 h-1 rounded-full bg-cyan-400`} />
+            <Text style={tw`text-xs font-black text-teal-400 tracking-wider text-center uppercase`}>
+              Dr. Salman, MDS (Orthodontist)
+            </Text>
           </View>
         </View>
 
