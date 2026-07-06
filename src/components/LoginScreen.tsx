@@ -495,7 +495,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           {/* Header Branding */}
           <Animated.View style={[{ opacity: fadeAnim }, tw`items-center mb-4`]}>
             <Image 
-              source={require('../../assets/logo_icon.jpg')} 
+              source={require('../../assets/login_logo.jpg')} 
               style={tw`w-56 h-56 rounded-3xl border border-white/5 bg-white mb-4`} 
               resizeMode="contain" 
             />
