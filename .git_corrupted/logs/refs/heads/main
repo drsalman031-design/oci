@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 49e84d6ad901a4db65ad9d0c7f24f023608d81b4 AI Studio Agent <agent@aistudio.google.com> 1783316667 +0000	commit (initial): Configure legacy packaging to fix Android startup crash
+49e84d6ad901a4db65ad9d0c7f24f023608d81b4 9e6a9a392d219dc14417bf2938f35666074c997d AI Studio Agent <agent@aistudio.google.com> 1783319304 +0000	commit: Add android:extractNativeLibs=true to fix Android startup crash
+9e6a9a392d219dc14417bf2938f35666074c997d 45285e866e7869e25e1756c902bacd9af3246428 AI Studio Agent <agent@aistudio.google.com> 1783319316 +0000	commit: Update default admin/dev emails in db.ts to match ociclinic.ai
