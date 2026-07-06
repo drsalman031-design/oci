@@ -122,19 +122,7 @@ export default function Home({
     >
       <View style={tw`space-y-6 mt-5 max-w-4xl mx-auto w-full`}>
         
-        {/* ====================================================
-            APP HEADER (Premium Medical branding - No Logo)
-           ==================================================== */}
-        <View style={tw`flex-row justify-between items-center pt-2 pb-3 border-b border-white/5`}>
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`space-y-0.5`}>
-              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI ANALYZER</Text>
-              <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase tracking-wider font-mono`}>
-                AI DECISION SYSTEM
-              </Text>
-            </View>
-          </View>
-        </View>
+
 
         {/* ====================================================
             HERO SECTION: START NEW OCI ANALYSIS
