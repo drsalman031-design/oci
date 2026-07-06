@@ -270,19 +270,19 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   const riskVal = treatmentPlan?.treatmentComplexity === 'Severe / Surgical' ? 75 : 30;
 
   return (
-    <ScrollView style={tw`flex-1 bg-[#F8FAFC]`} contentContainerStyle={tw`pb-20`}>
+    <ScrollView style={tw`flex-1 bg-[#050814]`} contentContainerStyle={tw`pb-20`}>
       <View style={tw`p-4 md:p-6 space-y-6 max-w-3xl mx-auto w-full`}>
         
         {/* ====================================================
             HEADER BAR & PATIENT SELECTOR
            ==================================================== */}
-        <View style={tw`flex-col justify-between items-start gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm`}>
+        <View style={tw`flex-col justify-between items-start gap-3 bg-[#0B1020]/40 p-5 rounded-3xl border border-white/5 shadow-xl`}>
           <View style={tw`space-y-1`}>
             <View style={tw`flex-row items-center space-x-2`}>
-              <Layers size={14} color="#2563EB" />
-              <Text style={tw`text-[10px] font-black text-blue-600 font-mono uppercase tracking-wider`}>Orthodontic Clinical Decision Support System</Text>
+              <Layers size={14} color="#14B8A6" />
+              <Text style={tw`text-[10px] font-black text-teal-400 font-mono uppercase tracking-wider`}>Orthodontic Clinical Decision Support System</Text>
             </View>
-            <Text style={tw`text-lg font-black text-slate-900`}>Treatment Planner & Biomechanics Engine</Text>
+            <Text style={tw`text-lg font-black text-white`}>Treatment Planner & Biomechanics Engine</Text>
           </View>
 
           {/* Patient dropdown selection */}
@@ -295,23 +295,23 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setShowPatientSelect(!showPatientSelect);
               }}
-              style={tw`w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex-row justify-between items-center`}
+              style={tw`w-full bg-[#0B1226] border border-white/10 rounded-2xl px-4 py-3 flex-row justify-between items-center`}
             >
               <View style={tw`flex-row items-center space-x-2.5`}>
                 <User size={14} color="#64748B" />
-                <Text style={tw`text-xs font-extrabold text-slate-800`}>
+                <Text style={tw`text-xs font-extrabold text-white`}>
                   {activeAssessment ? activeAssessment.patientDetails.name : 'Select Patient'}
                 </Text>
               </View>
               {showPatientSelect ? (
-                <ChevronUp size={14} color="#2563EB" />
+                <ChevronUp size={14} color="#14B8A6" />
               ) : (
-                <ChevronDown size={14} color="#2563EB" />
+                <ChevronDown size={14} color="#14B8A6" />
               )}
             </Pressable>
  
             {showPatientSelect && (
-              <View style={tw`mt-2 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg`}>
+              <View style={tw`mt-2 bg-[#0B1020] border border-white/10 rounded-2xl overflow-hidden shadow-2xl`}>
                 {savedAssessments.map((item) => (
                   <Pressable
                     key={item.id}
@@ -323,13 +323,13 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                       setSelectedId(item.id);
                       setShowPatientSelect(false);
                     }}
-                    style={tw`px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 flex-row justify-between items-center`}
+                    style={tw`px-4 py-3.5 border-b border-white/5 hover:bg-white/3 flex-row justify-between items-center`}
                   >
                     <View>
-                      <Text style={tw`text-xs font-black text-slate-800`}>{item.patientDetails.name}</Text>
+                      <Text style={tw`text-xs font-black text-white`}>{item.patientDetails.name}</Text>
                       <Text style={tw`text-[9px] text-slate-500 mt-0.5`}>ID: {item.patientDetails.caseNumber || 'N/A'}</Text>
                     </View>
-                    {selectedId === item.id && <Check size={12} color="#2563EB" />}
+                    {selectedId === item.id && <Check size={12} color="#14B8A6" />}
                   </Pressable>
                 ))}
               </View>
@@ -341,15 +341,15 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
           <View style={tw`space-y-6`}>
 
             {/* Adjusted Options Card */}
-            <View style={tw`bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4`}>
-              <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-100 pb-2`}>
+            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-4`}>
+              <Text style={tw`text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-white/5 pb-2`}>
                 Diagnostic Variables
               </Text>
               
               <View style={tw`flex-row gap-4`}>
                 <View style={tw`flex-1 space-y-1`}>
-                  <Text style={tw`text-[10px] text-slate-500 font-bold`}>Timing Target</Text>
-                  <View style={tw`flex-row bg-slate-50 p-1 rounded-xl border border-slate-200`}>
+                  <Text style={tw`text-[10px] text-slate-400 font-bold`}>Timing Target</Text>
+                  <View style={tw`flex-row bg-black/40 p-1 rounded-xl border border-white/5`}>
                     {[
                       { key: 'growing', label: 'Growing' },
                       { key: 'adult', label: 'Adult' }
@@ -357,17 +357,17 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                       <Pressable 
                         key={opt.key}
                         onPress={() => setAgeGroup(opt.key as any)}
-                        style={tw`flex-1 py-1.5 rounded-lg items-center ${ageGroup === opt.key ? 'bg-blue-600 shadow-sm' : ''}`}
+                        style={tw`flex-1 py-1.5 rounded-lg items-center ${ageGroup === opt.key ? 'bg-teal-500/25 border border-teal-500/30' : ''}`}
                       >
-                        <Text style={tw`text-[10px] font-black ${ageGroup === opt.key ? 'text-white' : 'text-slate-600'}`}>{opt.label}</Text>
+                        <Text style={tw`text-[10px] font-black ${ageGroup === opt.key ? 'text-[#22D3EE]' : 'text-slate-400'}`}>{opt.label}</Text>
                       </Pressable>
                     ))}
                   </View>
                 </View>
 
                 <View style={tw`flex-1 space-y-1`}>
-                  <Text style={tw`text-[10px] text-slate-500 font-bold`}>Mandibular Crowding</Text>
-                  <View style={tw`flex-row bg-slate-50 p-1 rounded-xl border border-slate-200`}>
+                  <Text style={tw`text-[10px] text-slate-400 font-bold`}>Mandibular Crowding</Text>
+                  <View style={tw`flex-row bg-black/40 p-1 rounded-xl border border-white/5`}>
                     {['none', 'mild', 'mod', 'sev'].map((lvl) => {
                       const fullLvl = lvl === 'mod' ? 'moderate' : lvl === 'sev' ? 'severe' : lvl;
                       return (
@@ -377,9 +377,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                             setCrowdingSeverity(fullLvl as any);
                             setSpacingSeverity('none');
                           }}
-                          style={tw`flex-1 py-1.5 rounded-lg items-center ${crowdingSeverity === fullLvl ? 'bg-blue-600 shadow-sm' : ''}`}
+                          style={tw`flex-1 py-1.5 rounded-lg items-center ${crowdingSeverity === fullLvl ? 'bg-teal-500/25 border border-teal-500/30' : ''}`}
                         >
-                          <Text style={tw`text-[8px] font-black uppercase ${crowdingSeverity === fullLvl ? 'text-white' : 'text-slate-600'}`}>{lvl}</Text>
+                          <Text style={tw`text-[8px] font-black uppercase ${crowdingSeverity === fullLvl ? 'text-[#22D3EE]' : 'text-slate-400'}`}>{lvl}</Text>
                         </Pressable>
                       );
                     })}
@@ -391,20 +391,20 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 1: BIOMECHANICS ENGINE
                ==================================================== */}
-            <View style={tw`bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-slate-100 pb-3`}>
+            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
+              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Activity size={18} color="#2563EB" />
-                  <Text style={tw`text-sm font-black text-slate-900`}>Biomechanics Engine</Text>
+                  <Activity size={18} color="#22D3EE" />
+                  <Text style={tw`text-sm font-black text-white`}>Biomechanics Engine</Text>
                 </View>
-                <View style={tw`bg-blue-50 px-2.5 py-1 rounded-full`}>
-                  <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>AI Simulation Mode</Text>
+                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
+                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>AI Simulation Mode</Text>
                 </View>
               </View>
 
               {/* A) Force Distribution Dashboard */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>A) Force Distribution Dashboard (0-100 Scale)</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>A) Force Distribution Dashboard</Text>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Retraction Force', val: retractionForce },
@@ -415,11 +415,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   ].map((item, idx) => (
                     <View key={idx} style={tw`space-y-1`}>
                       <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-semibold text-slate-700`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-blue-600`}>{item.val}/100 cN</Text>
+                        <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
+                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}/100 cN</Text>
                       </View>
-                      <View style={tw`w-full h-2 bg-slate-100 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-blue-600 rounded-full`, { width: `${item.val}%` }]} />
+                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
                       </View>
                     </View>
                   ))}
@@ -428,20 +428,20 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* B) Biomechanics Complexity Index */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>B) Biomechanics Complexity Index</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Biomechanics Complexity Index</Text>
                 <View style={tw`flex-row flex-wrap gap-2`}>
                   {[
-                    { label: 'Anchorage Demand', val: anchorageDemand, color: 'text-amber-600 bg-amber-50' },
-                    { label: 'Root Control', val: rootControl, color: 'text-blue-600 bg-blue-50' },
-                    { label: 'Torque Req.', val: torqueReq, color: 'text-indigo-600 bg-indigo-50' },
-                    { label: 'Compliance Dep.', val: complianceDep, color: 'text-rose-600 bg-rose-50' },
-                    { label: 'Appliance Comp.', val: applianceComplexity, color: 'text-purple-600 bg-purple-50' },
+                    { label: 'Anchorage Demand', val: anchorageDemand },
+                    { label: 'Root Control', val: rootControl },
+                    { label: 'Torque Req.', val: torqueReq },
+                    { label: 'Compliance Dep.', val: complianceDep },
+                    { label: 'Appliance Comp.', val: applianceComplexity },
                   ].map((item, idx) => (
-                    <View key={idx} style={tw`flex-1 min-w-[120px] p-3 rounded-xl border border-slate-100 bg-slate-50/50 justify-between`}>
-                      <Text style={tw`text-[10px] font-bold text-slate-500`}>{item.label}</Text>
+                    <View key={idx} style={tw`flex-1 min-w-[120px] p-3 rounded-xl border border-white/5 bg-black/25 justify-between`}>
+                      <Text style={tw`text-[10px] font-bold text-slate-400`}>{item.label}</Text>
                       <View style={tw`flex-row justify-between items-baseline mt-2`}>
-                        <Text style={tw`text-base font-black text-slate-800`}>{item.val}%</Text>
-                        <View style={tw`w-1.5 h-1.5 rounded-full bg-blue-500`} />
+                        <Text style={tw`text-base font-black text-white`}>{item.val}%</Text>
+                        <View style={tw`w-1.5 h-1.5 rounded-full bg-teal-400`} />
                       </View>
                     </View>
                   ))}
@@ -450,12 +450,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* C) Force Zones Map */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>C) Force Zones Map</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Force Zones Map</Text>
                 <View style={tw`flex-row space-x-2`}>
                   {[
-                    { key: 'Light', label: 'Light Force Zone', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700' },
-                    { key: 'Medium', label: 'Medium Force Zone', color: 'bg-amber-500/10 border-amber-500/20 text-amber-700' },
-                    { key: 'High', label: 'High Force Zone', color: 'bg-rose-500/10 border-rose-500/20 text-rose-700' },
+                    { key: 'Light', label: 'Light Force Zone', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+                    { key: 'Medium', label: 'Medium Force Zone', color: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
+                    { key: 'High', label: 'High Force Zone', color: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
                   ].map((zone) => {
                     const isActive = forceZone === zone.key;
                     return (
@@ -472,13 +472,13 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* D) Tooth Movement Visualization */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>D) Tooth Movement Vectors</Text>
-                <View style={tw`grid grid-cols-3 gap-2 flex-row`}>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Tooth Movement Vectors</Text>
+                <View style={tw`flex-row gap-2`}>
                   {movements.map((m, idx) => (
-                    <View key={idx} style={tw`flex-1 p-3 rounded-xl border border-slate-100 bg-slate-50 items-center space-y-1`}>
+                    <View key={idx} style={tw`flex-1 p-3 rounded-xl border border-white/5 bg-black/25 items-center space-y-1`}>
                       <Text style={tw`text-lg`}>{m.direction}</Text>
-                      <Text style={tw`text-[10px] font-bold text-slate-800`}>{m.label}</Text>
-                      <Text style={tw`text-[9px] font-mono text-blue-600 uppercase font-black`}>{m.intensity} Intensity</Text>
+                      <Text style={tw`text-[10px] font-bold text-slate-300`}>{m.label}</Text>
+                      <Text style={tw`text-[9px] font-mono text-[#22D3EE] uppercase font-black`}>{m.intensity} Intensity</Text>
                     </View>
                   ))}
                 </View>
@@ -488,37 +488,37 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 2: TREATMENT PLANNER
                ==================================================== */}
-            <View style={tw`bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-slate-100 pb-3`}>
+            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
+              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Compass size={18} color="#2563EB" />
-                  <Text style={tw`text-sm font-black text-slate-900`}>Treatment Planner</Text>
+                  <Compass size={18} color="#22D3EE" />
+                  <Text style={tw`text-sm font-black text-white`}>Treatment Planner</Text>
                 </View>
-                <View style={tw`bg-blue-50 px-2.5 py-1 rounded-full`}>
-                  <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>Interactive Scheduler</Text>
+                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
+                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Interactive Scheduler</Text>
                 </View>
               </View>
 
               {/* A) Treatment Strategy Card (Hero) */}
-              <View style={tw`bg-blue-600 rounded-2xl p-4 shadow-md space-y-3`}>
-                <Text style={tw`text-[8px] font-black text-blue-100 uppercase tracking-wider font-mono`}>A) Treatment Strategy Blueprint</Text>
-                <View style={tw`grid grid-cols-2 gap-4 flex-row`}>
+              <View style={tw`bg-teal-500/10 border border-teal-500/20 rounded-2xl p-4 shadow-md space-y-3`}>
+                <Text style={tw`text-[8px] font-black text-[#22D3EE] uppercase tracking-wider font-mono`}>A) Treatment Strategy Blueprint</Text>
+                <View style={tw`flex-row gap-4`}>
                   <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-blue-200 font-bold`}>Extraction Plan</Text>
+                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Extraction Plan</Text>
                     <Text style={tw`text-lg font-black text-white`}>{extractionDecision}</Text>
                   </View>
                   <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-blue-200 font-bold`}>Complexity Level</Text>
+                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Complexity Level</Text>
                     <Text style={tw`text-lg font-black text-white`}>{treatmentPlan.treatmentComplexity.split(' ')[0]}</Text>
                   </View>
                 </View>
-                <View style={tw`grid grid-cols-2 gap-4 flex-row pt-1`}>
+                <View style={tw`flex-row gap-4 pt-1`}>
                   <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-blue-200 font-bold`}>Estimated Duration</Text>
+                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Estimated Duration</Text>
                     <Text style={tw`text-lg font-black text-white`}>{estimatedDuration}</Text>
                   </View>
                   <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-blue-200 font-bold`}>Growth Influence</Text>
+                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Growth Influence</Text>
                     <Text style={tw`text-lg font-black text-white`}>{growthInfluence}</Text>
                   </View>
                 </View>
@@ -526,23 +526,23 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* B) Treatment Phase Flow */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>B) Treatment Phase Flow (Timeline)</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Treatment Phase Flow (Timeline)</Text>
                 <View style={tw`space-y-3`}>
                   {[
                     { phase: 'Phase 1: Levelling & Alignment', force: 'Light Continuous', risk: 'Low Risk', icon: '🦷' },
                     { phase: 'Phase 2: Space Closure / Sagittal', force: 'Medium Intermittent', risk: 'Moderate Risk', icon: '🔗' },
                     { phase: 'Phase 3: Finishing & Retention', force: 'Light Segmented', risk: 'Low Risk', icon: '✨' },
                   ].map((p, idx) => (
-                    <View key={idx} style={tw`flex-row items-center space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100`}>
-                      <View style={tw`w-8 h-8 rounded-full bg-blue-50 items-center justify-center`}>
+                    <View key={idx} style={tw`flex-row items-center space-x-3 bg-black/25 p-3 rounded-xl border border-white/5`}>
+                      <View style={tw`w-8 h-8 rounded-full bg-slate-950 items-center justify-center`}>
                         <Text style={tw`text-xs`}>{p.icon}</Text>
                       </View>
                       <View style={tw`flex-1`}>
-                        <Text style={tw`text-[11px] font-black text-slate-800`}>{p.phase}</Text>
-                        <Text style={tw`text-[9px] text-slate-500 mt-0.5`}>Force: {p.force} • {p.risk}</Text>
+                        <Text style={tw`text-[11px] font-black text-white`}>{p.phase}</Text>
+                        <Text style={tw`text-[9px] text-slate-400 mt-0.5`}>Force: {p.force} • {p.risk}</Text>
                       </View>
-                      <View style={tw`bg-emerald-50 px-2 py-0.5 rounded-md`}>
-                        <Text style={tw`text-[8px] font-black text-emerald-600`}>Active</Text>
+                      <View style={tw`bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md`}>
+                        <Text style={tw`text-[8px] font-black text-emerald-400`}>Active</Text>
                       </View>
                     </View>
                   ))}
@@ -551,7 +551,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* C) Alternative Plan Cards */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>C) Alternative Strategy Presets</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Alternative Strategy Presets</Text>
                 <View style={tw`flex-row space-x-2`}>
                   {[
                     { title: 'Non-Extraction', desc: 'Camouflage strategy', active: extractionDecision === 'No' },
@@ -560,10 +560,10 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   ].map((item, idx) => (
                     <View 
                       key={idx} 
-                      style={tw`flex-1 p-3 rounded-xl border bg-slate-50 ${item.active ? 'border-blue-500 bg-blue-50/20' : 'border-slate-200'}`}
+                      style={tw`flex-1 p-3 rounded-xl border bg-black/25 ${item.active ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'}`}
                     >
-                      <Text style={tw`text-[10px] font-black text-slate-800`}>{item.title}</Text>
-                      <Text style={tw`text-[8px] text-slate-500 mt-1`}>{item.desc}</Text>
+                      <Text style={tw`text-[10px] font-black text-white`}>{item.title}</Text>
+                      <Text style={tw`text-[8px] text-slate-400 mt-1`}>{item.desc}</Text>
                     </View>
                   ))}
                 </View>
@@ -571,7 +571,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* D) Outcome Prediction Chart */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>D) Treatment Outcome Predictions</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Treatment Outcome Predictions</Text>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Long-term Stability', val: stabilityVal },
@@ -581,11 +581,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   ].map((item, idx) => (
                     <View key={idx} style={tw`space-y-1`}>
                       <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-semibold text-slate-700`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-blue-600`}>{item.val}%</Text>
+                        <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
+                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}%</Text>
                       </View>
-                      <View style={tw`w-full h-2 bg-slate-100 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-blue-600 rounded-full`, { width: `${item.val}%` }]} />
+                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
                       </View>
                     </View>
                   ))}
@@ -596,20 +596,20 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 3: ORTHODONTIC CLINICAL DECISION FORCE SYSTEM
                ==================================================== */}
-            <View style={tw`bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-slate-100 pb-3`}>
+            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
+              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Layers size={18} color="#2563EB" />
-                  <Text style={tw`text-sm font-black text-slate-900`}>Orthodontic Clinical Decision Force System</Text>
+                  <Layers size={18} color="#22D3EE" />
+                  <Text style={tw`text-sm font-black text-white`}>Orthodontic Clinical Decision Force System</Text>
                 </View>
-                <View style={tw`bg-blue-50 px-2.5 py-1 rounded-full`}>
-                  <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>CDSS Engine</Text>
+                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
+                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>CDSS Engine</Text>
                 </View>
               </View>
 
               {/* A) Force Decision Dashboard */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>A) Live Biomechanics Force System Vector (0-100 Scale)</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>A) Live Biomechanics Force System Vector (0-100 Scale)</Text>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Retraction Mechanics', val: retractionForce },
@@ -620,11 +620,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   ].map((item, idx) => (
                     <View key={idx} style={tw`space-y-1`}>
                       <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-semibold text-slate-700`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-blue-600`}>{item.val}/100 cN</Text>
+                        <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
+                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}/100 cN</Text>
                       </View>
-                      <View style={tw`w-full h-2 bg-slate-100 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-blue-600 rounded-full`, { width: `${item.val}%` }]} />
+                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
                       </View>
                     </View>
                   ))}
@@ -633,13 +633,13 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* B) Anchorage Risk Indicator */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>B) Anchorage Risk Indicator</Text>
-                <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3`}>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Anchorage Risk Indicator</Text>
+                <View style={tw`p-4 rounded-2xl bg-black/25 border border-white/5 space-y-3`}>
                   <View style={tw`flex-row justify-between items-center`}>
-                    <Text style={tw`text-xs font-bold text-slate-700`}>Anchorage Demand Risk Index</Text>
-                    <Text style={tw`text-xs font-black text-rose-600`}>{anchorageDemand}/100</Text>
+                    <Text style={tw`text-xs font-bold text-slate-300`}>Anchorage Demand Risk Index</Text>
+                    <Text style={tw`text-xs font-black text-rose-400`}>{anchorageDemand}/100</Text>
                   </View>
-                  <View style={tw`w-full h-3 bg-slate-200 rounded-full overflow-hidden`}>
+                  <View style={tw`w-full h-3 bg-slate-950 rounded-full overflow-hidden`}>
                     <View style={[tw`h-full bg-rose-500 rounded-full`, { width: `${anchorageDemand}%` }]} />
                   </View>
                   <View style={tw`flex-row justify-between items-center pt-1`}>
@@ -648,8 +648,8 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                       { key: 'Mod', label: 'Moderate Anchorage', active: anchorageDemand >= 40 && anchorageDemand < 70 },
                       { key: 'High', label: 'High Anchorage', active: anchorageDemand >= 70 },
                     ].map((item, idx) => (
-                      <View key={idx} style={tw`px-2 py-0.5 rounded bg-slate-100 ${item.active ? 'bg-rose-50 border border-rose-200' : ''}`}>
-                        <Text style={tw`text-[8px] font-bold ${item.active ? 'text-rose-700 font-black' : 'text-slate-400'}`}>{item.label}</Text>
+                      <View key={idx} style={tw`px-2 py-0.5 rounded bg-black/25 ${item.active ? 'bg-rose-500/10 border border-rose-500/20' : ''}`}>
+                        <Text style={tw`text-[8px] font-bold ${item.active ? 'text-rose-400 font-black' : 'text-slate-500'}`}>{item.label}</Text>
                       </View>
                     ))}
                   </View>
@@ -658,21 +658,21 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* C) Clinical Decision Output Card */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>C) Generated Clinical Decision Output</Text>
-                <View style={tw`p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3`}>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Generated Clinical Decision Output</Text>
+                <View style={tw`p-4 bg-black/25 rounded-2xl border border-white/5 space-y-3`}>
                   <View style={tw`flex-row items-center space-x-2`}>
-                    <Zap size={14} color="#2563EB" />
-                    <Text style={tw`text-xs font-black text-slate-800`}>Mechanics: {anchorageDemand > 70 ? 'Segmented Force Mechanics' : 'Continuous Light-Force Wire'}</Text>
+                    <Zap size={14} color="#22D3EE" />
+                    <Text style={tw`text-xs font-black text-white`}>Mechanics: {anchorageDemand > 70 ? 'Segmented Force Mechanics' : 'Continuous Light-Force Wire'}</Text>
                   </View>
                   <View style={tw`flex-row flex-wrap gap-2 pt-1`}>
-                    <View style={tw`bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100`}>
-                      <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>Continuous Mode</Text>
+                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
+                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Continuous Mode</Text>
                     </View>
-                    <View style={tw`bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100`}>
-                      <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>Intermittent Mode</Text>
+                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
+                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Intermittent Mode</Text>
                     </View>
-                    <View style={tw`bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100`}>
-                      <Text style={tw`text-[9px] font-black text-blue-600 uppercase`}>Segmented Mechanics</Text>
+                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
+                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Segmented Mechanics</Text>
                     </View>
                   </View>
                 </View>
@@ -680,12 +680,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
               {/* D) Biomechanical Safety Zone */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono`}>D) Biomechanical Safety Zone status</Text>
+                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Biomechanical Safety Zone status</Text>
                 <View style={tw`flex-row space-x-2`}>
                   {[
-                    { key: 'Safe', label: 'Safe Zone (Light force)', active: averageForce < 45, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700' },
-                    { key: 'Controlled', label: 'Controlled Zone (Mod force)', active: averageForce >= 45 && averageForce < 75, color: 'bg-blue-500/10 border-blue-500/20 text-blue-700' },
-                    { key: 'Risk', label: 'Risk Zone (Heavy force)', active: averageForce >= 75, color: 'bg-rose-500/10 border-rose-500/20 text-rose-700' },
+                    { key: 'Safe', label: 'Safe Zone (Light force)', active: averageForce < 45, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+                    { key: 'Controlled', label: 'Controlled Zone (Mod force)', active: averageForce >= 45 && averageForce < 75, color: 'bg-teal-500/10 border-teal-500/20 text-teal-400' },
+                    { key: 'Risk', label: 'Risk Zone (Heavy force)', active: averageForce >= 75, color: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
                   ].map((zone, idx) => (
                     <View 
                       key={idx} 
@@ -698,8 +698,8 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* Clinician Overrides & Override Save */}
-              <View style={tw`p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3`}>
-                <Text style={tw`text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-slate-200 pb-1`}>
+              <View style={tw`p-4 bg-black/25 rounded-2xl border border-white/5 space-y-3`}>
+                <Text style={tw`text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-white/5 pb-1`}>
                   Clinician Notes & Directives
                 </Text>
                 <TextInput
@@ -707,9 +707,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   onChangeText={setClinicianOverride}
                   multiline
                   numberOfLines={2}
-                  placeholder="Enter clinical objectives, diagnostic caveats, or patient-specific instructions..."
-                  placeholderTextColor="#94A3B8"
-                  style={[tw`w-full px-3 py-2 bg-white text-slate-800 font-sans text-xs rounded-xl border border-slate-200 focus:border-blue-500`, { minHeight: 60 }]}
+                  placeholder="Enter clinical objectives, diagnostic caveats, or patient-specific instructions to save changes..."
+                  placeholderTextColor="#475569"
+                  style={[tw`w-full px-3 py-2 bg-black/45 text-white font-sans text-xs rounded-xl border border-white/10 focus:border-teal-500`, { minHeight: 60 }]}
                 />
 
                 <Pressable
@@ -719,13 +719,13 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   <View style={tw`flex-row items-center space-x-1.5`}>
                     {isSaving ? (
                       <>
-                        <ActivityIndicator size="small" color="#D97706" />
-                        <Text style={tw`text-[10px] font-black text-amber-700 uppercase tracking-widest`}>Saving System...</Text>
+                        <ActivityIndicator size="small" color="#F59E0B" />
+                        <Text style={tw`text-[10px] font-black text-amber-500 uppercase tracking-widest`}>Saving System...</Text>
                       </>
                     ) : (
                       <>
-                        <CheckCircle size={12} color="#059669" />
-                        <Text style={tw`text-[10px] font-black text-emerald-700 uppercase tracking-widest`}>AI Parameters Sync Completed</Text>
+                        <CheckCircle size={12} color="#10B981" />
+                        <Text style={tw`text-[10px] font-black text-emerald-500 uppercase tracking-widest`}>AI Parameters Sync Completed</Text>
                       </>
                     )}
                   </View>
