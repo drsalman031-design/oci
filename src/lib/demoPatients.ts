@@ -99,7 +99,7 @@ const advanced1: AdvancedClinicalIntelligence = {
   explanationWhy: 'Highly compliant age group with ideal biological response, zero skeletal discrepancies, and mild crowding.',
   decisionTrace: 'Class I skeletal -> Mild crowding -> Non-extraction pathway.',
   riskAlerts: 'No significant risks identified. Normal risk of root resorption and decalcification if hygiene is poor.',
-  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class I, Average growth pattern, Mild crowding. 2. Etiology: Minor dental-arch discrepancy. 3. Growth Status: CS4 (Post-Peak). 4. OCI Severity: Minimal (8). 5. Recommended Treatment: Clear aligners or fixed braces, non-extraction. 6. Prognosis: Excellent.'
+  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class I, Average growth pattern, Mild crowding. 2. Etiology: Minor dental-arch discrepancy. 3. Growth Status: CS4 (Post-Peak). 4. OCI Severity: Normal (0.8/10). 5. Recommended Treatment: Clear aligners or fixed braces, non-extraction. 6. Prognosis: Excellent.'
 };
 
 const demo1: Assessment = {
@@ -211,7 +211,7 @@ const advanced2: AdvancedClinicalIntelligence = {
   explanationWhy: 'Perfect timing relative to peak growth velocity. Twin Block appliance is highly reliable in compliant patients.',
   decisionTrace: 'Growing Class II mandibular retrusion -> Twin Block functional orthopedic pathway.',
   riskAlerts: 'Patient compliance with functional appliances is critical; lack of wear results in failure of skeletal correction. Monitor for dental tipping.',
-  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class II Div 1, Mandibular retrusion, Active growth. 2. Etiology: Skeletal-driven retrognathia. 3. Growth Status: CS3 (Pre-Peak). 4. OCI Severity: Moderate (38). 5. Recommended Treatment: Phase 1 Twin Block, Phase 2 fixed braces. 6. Prognosis: Very Good.'
+  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class II Div 1, Mandibular retrusion, Active growth. 2. Etiology: Skeletal-driven retrognathia. 3. Growth Status: CS3 (Pre-Peak). 4. OCI Severity: Moderate (3.8/10). 5. Recommended Treatment: Phase 1 Twin Block, Phase 2 fixed braces. 6. Prognosis: Very Good.'
 };
 
 const demo2: Assessment = {
@@ -323,7 +323,7 @@ const advanced3: AdvancedClinicalIntelligence = {
   explanationWhy: 'Requires highly precise multi-disciplinary coordination between the orthodontist and oral maxillofacial surgeon.',
   decisionTrace: 'Adult Class III -> CS6 -> Severe skeletal discrepancy -> Decompensation -> BSSO + LeFort I Orthognathic Surgery.',
   riskAlerts: 'Surgical risks include nerve parasthesia (lower lip numbness), relapse of mandibular setback, and TMJ adaptation problems. Decompensation temporarily worsens aesthetics before surgery.',
-  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class III, Mandibular prognathism, Maxillary retrusion, Growth Complete. 2. Etiology: Combined skeletal sagittal discrepancy. 3. Growth Status: CS6 (Mature). 4. OCI Severity: Difficult/Surgical (78). 5. Recommended Treatment: Combined Orthognathic Surgery. 6. Prognosis: Good.'
+  finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class III, Mandibular prognathism, Maxillary retrusion, Growth Complete. 2. Etiology: Combined skeletal sagittal discrepancy. 3. Growth Status: CS6 (Mature). 4. OCI Severity: Surgical-level (7.8/10). 5. Recommended Treatment: Combined Orthognathic Surgery. 6. Prognosis: Good.'
 };
 
 const demo3: Assessment = {

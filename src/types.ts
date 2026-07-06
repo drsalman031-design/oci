@@ -41,6 +41,9 @@ export interface CephalometricInput {
   lowerLipELine: number | '';
   nasolabialAngle: number | '';
   facialConvexity: number | '';
+  yAxis?: number | '';
+  coA?: number | '';
+  coGn?: number | '';
 
   // Occlusion
   molarRelation: 'Class I' | 'Class II' | 'Class III' | '';
@@ -67,7 +70,8 @@ export interface CategoryScore {
 
 export interface OciResult {
   totalScore: number;
-  interpretation: 'Minimal Compensation' | 'Mild Compensation' | 'Moderate Compensation' | 'Severe Compensation' | 'Extreme Compensation';
+  rawScore?: number;
+  interpretation: string;
   recommendation: string;
   categoryScores: CategoryScore[];
   severityMap: {
@@ -77,6 +81,12 @@ export interface OciResult {
     occlusion: 'green' | 'yellow' | 'orange' | 'red';
     transverse: 'green' | 'yellow' | 'orange' | 'red';
   };
+  skeletalClassification?: string;
+  maxillaMandibleStatus?: string;
+  sizeBalance?: string;
+  verticalPattern?: string;
+  compensationLevel?: string;
+  treatmentSuggestion?: string;
 }
 
 export interface AdvancedClinicalIntelligence {

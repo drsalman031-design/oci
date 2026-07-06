@@ -32,6 +32,7 @@ const PRESETS = {
     impa: 90, l1NbDeg: 25, l1NbMm: 4,
     interincisalAngle: 135, overjet: 2.5, overbite: 2.5,
     upperLipELine: -2, lowerLipELine: 0, nasolabialAngle: 102, facialConvexity: 12,
+    yAxis: 59, coA: 85, coGn: 110,
     molarRelation: 'Class I' as const, canineRelation: 'Class I' as const, crossbite: 'None' as const,
     deepBite: 2, openBite: 0, curveOfSpee: 1, midlineDeviation: 0,
     posteriorCrossbite: 'None' as const, archWidthDifference: 0, dentalMidlineDev: 0
@@ -42,6 +43,7 @@ const PRESETS = {
     impa: 102, l1NbDeg: 34, l1NbMm: 7,
     interincisalAngle: 145, overjet: 3.5, overbite: 4.5,
     upperLipELine: 1, lowerLipELine: 3, nasolabialAngle: 90, facialConvexity: 22,
+    yAxis: 62, coA: 88, coGn: 106,
     molarRelation: 'Class II' as const, canineRelation: 'Class II' as const, crossbite: 'None' as const,
     deepBite: 5, openBite: 0, curveOfSpee: 3, midlineDeviation: 1,
     posteriorCrossbite: 'None' as const, archWidthDifference: -1, dentalMidlineDev: 0.5
@@ -52,6 +54,7 @@ const PRESETS = {
     impa: 76, l1NbDeg: 14, l1NbMm: 1,
     interincisalAngle: 122, overjet: 1.0, overbite: 0.5,
     upperLipELine: -5, lowerLipELine: 2, nasolabialAngle: 115, facialConvexity: 3,
+    yAxis: 56, coA: 81, coGn: 115,
     molarRelation: 'Class III' as const, canineRelation: 'Class III' as const, crossbite: 'Anterior' as const,
     deepBite: 0, openBite: 1, curveOfSpee: 0.5, midlineDeviation: 1.5,
     posteriorCrossbite: 'Unilateral' as const, archWidthDifference: -4, dentalMidlineDev: 2
@@ -68,6 +71,7 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
     impa: '', l1NbDeg: '', l1NbMm: '',
     interincisalAngle: '', overjet: '', overbite: '',
     upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+    yAxis: '', coA: '', coGn: '',
     molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
     posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
   });
@@ -342,6 +346,9 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
                 {renderInputField('wits', 'Wits Appraisal (mm)', true)}
                 {renderInputField('snMp', 'SN-MP Angle (°)', false)}
                 {renderInputField('fma', 'FMA Angle (°)', false)}
+                {renderInputField('yAxis', 'Y-Axis Angle (°)', false)}
+                {renderInputField('coA', 'Co-A Length (mm)', false)}
+                {renderInputField('coGn', 'Co-Gn Length (mm)', false)}
               </View>
             )}
 

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, Alert, Platform, Share } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { Assessment, PatientDetails, CephalometricInput, OciResult } from '../types';
 import { 
   Printer, 
@@ -1046,7 +1048,31 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
   // Direct high-fidelity PDF generator via html2canvas & jsPDF
   const handleDownloadPdf = async () => {
     if (Platform.OS !== 'web') {
-      await handleMobileShareOrPrint();
+      try {
+        setIsGeneratingPdf(true);
+        setPdfProgress('Compiling native report vectors...');
+        
+        let scoreColor = '#10B981'; // green
+        let bgLight = '#ECFDF5';
+        if (total > 80) { scoreColor = '#06B6D4'; bgLight = '#F0FDFD'; }
+        else if (total > 60) { scoreColor = '#22D3EE'; bgLight = '#ECFEFF'; }
+        else if (total > 40) { scoreColor = '#14B8A6'; bgLight = '#F0FDFA'; }
+        else if (total > 20) { scoreColor = '#34D399'; bgLight = '#F0FDF4'; }
+
+        const printHtml = getHtmlTemplate(scoreColor, bgLight);
+        
+        setPdfProgress('Generating PDF document...');
+        const { uri } = await Print.printToFileAsync({ html: printHtml });
+        
+        setPdfProgress('Saving report to device storage...');
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: `OCI_Report_${patientID}` });
+      } catch (err) {
+        console.error('Error generating mobile PDF:', err);
+        Alert.alert('Export Error', 'Failed to compile and save PDF report to device storage.');
+      } finally {
+        setIsGeneratingPdf(false);
+        setPdfProgress('');
+      }
       return;
     }
 
@@ -1242,29 +1268,10 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
         {/* Top Header Controls */}
         <View style={tw`px-6 py-4 bg-black/40 border-b border-white/5 flex-row justify-between items-center`}>
           <View style={tw`flex-1 pr-4`}>
-            <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-1`}>
-              <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
-              <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-widest font-mono`}>Report Dossier Suite</Text>
-            </View>
-            <View style={tw`flex-row items-center mt-1`}>
-              <ShieldCheck size={14} color="#14B8A6" style={tw`mr-1.5`} />
-              <Text style={tw`font-black text-xs text-white uppercase tracking-wider`}>OCI Analyzer Dossier (v2.0)</Text>
-            </View>
+            <Text style={tw`font-black text-xs text-white uppercase tracking-wider`}>Clinical Assessment Report</Text>
           </View>
           
           <View style={tw`flex-row items-center space-x-2`}>
-            {/* System Print Button */}
-            <Pressable
-              onPress={handleSystemPrint}
-              style={({ pressed }) => [
-                tw`px-4 py-2 bg-slate-800 rounded-xl flex-row items-center justify-center border border-slate-700`,
-                pressed ? tw`opacity-90 scale-98` : null
-              ]}
-            >
-              <Printer size={13} color="#22D3EE" style={tw`mr-1.5`} />
-              <Text style={tw`text-[10px] font-black text-[#22D3EE] uppercase tracking-widest`}>System Print</Text>
-            </Pressable>
-
             {/* Main Download Button */}
             <Pressable
               onPress={handleDownloadPdf}

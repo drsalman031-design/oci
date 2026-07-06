@@ -42,215 +42,158 @@ export function calculateOCI(input: CephalometricInput, weights: OciWeights = DE
   const categoryScores: CategoryScore[] = [];
 
   // Extract variables with default fallback to normative means
+  const anb = input.anb !== '' ? Number(input.anb) : 2;
   const sna = input.sna !== '' ? Number(input.sna) : 82;
   const snb = input.snb !== '' ? Number(input.snb) : 80;
-  const anb = input.anb !== '' ? Number(input.anb) : 2;
-  const wits = input.wits !== '' ? Number(input.wits) : 0;
+  const wits = input.wits !== '' ? Number(input.wits) : -1;
+  const fma = input.fma !== '' ? Number(input.fma) : 25;
+  const snMp = input.snMp !== '' ? Number(input.snMp) : 32;
 
   const u1Sn = input.u1Sn !== '' ? Number(input.u1Sn) : 104;
-  const u1NaDeg = input.u1NaDeg !== '' ? Number(input.u1NaDeg) : 22;
-  const u1NaMm = input.u1NaMm !== '' ? Number(input.u1NaMm) : 4;
-
   const impa = input.impa !== '' ? Number(input.impa) : 90;
-  const l1NbDeg = input.l1NbDeg !== '' ? Number(input.l1NbDeg) : 25;
-  const l1NbMm = input.l1NbMm !== '' ? Number(input.l1NbMm) : 4;
-
-  const interincisalAngle = input.interincisalAngle !== '' ? Number(input.interincisalAngle) : 135;
   const overjet = input.overjet !== '' ? Number(input.overjet) : 2.5;
-  const overbite = input.overbite !== '' ? Number(input.overbite) : 2.5;
 
-  const upperLipELine = input.upperLipELine !== '' ? Number(input.upperLipELine) : -2;
-  const lowerLipELine = input.lowerLipELine !== '' ? Number(input.lowerLipELine) : 0;
-  const nasolabialAngle = input.nasolabialAngle !== '' ? Number(input.nasolabialAngle) : 102;
+  // Layer 1: Normalization (Convert cephalometrics to Z-scores)
+  const zSna = (sna - 82) / 2;
+  const zSnb = (snb - 80) / 2;
+  const zAnb = (anb - 2) / 2;
+  const zWits = (wits - (-1)) / 2;
+  const zFma = (fma - 25) / 3;
+  const zSnMp = (snMp - 32) / 3;
 
-  // 1. Determine Skeletal Pattern (Class I, II, or III)
-  let skeletalPattern: 'Class I' | 'Class II' | 'Class III' = 'Class I';
-  if (anb < 0) {
-    skeletalPattern = 'Class III';
-  } else if (anb > 4.5) {
-    skeletalPattern = 'Class II';
-  } else {
-    skeletalPattern = 'Class I';
-  }
+  // Approximate or read yAxis, coA, and coGn
+  const yAxis = input.yAxis !== '' && input.yAxis !== undefined ? Number(input.yAxis) : 59 + (fma - 25) * 1.0;
+  const coA = input.coA !== '' && input.coA !== undefined ? Number(input.coA) : 85 + (sna - 82) * 1.5;
+  const coGn = input.coGn !== '' && input.coGn !== undefined ? Number(input.coGn) : 110 + (snb - 80) * 2.0;
 
-  // 1. Skeletal Compensation (Max: 20)
-  // Evaluates sagittal discrepancies (ANB, Wits) and jaw imbalances.
-  const anbDev = Math.abs(anb - 2);
-  const anbScore = Math.min(Math.max(0, anbDev - 2) * 2.5, 10); // max 10
+  const zYaxis = (yAxis - 59) / 3;
+  const zCoA = (coA - 85) / 3;
+  const zCoGn = (coGn - 110) / 4;
 
-  const witsDev = Math.abs(wits - 0);
-  const witsScore = Math.min(Math.max(0, witsDev - 2) * 2, 6); // max 6
+  // Layer 2: Module Analysis
+  const ms = 0.5 * zSna;
+  const mns = 0.5 * zSnb;
+  const srs = (zAnb + zWits) / 2;
 
-  const snaDev = Math.abs(sna - 82);
-  const snbDev = Math.abs(snb - 80);
-  const snaSnbScore = Math.min((Math.max(0, snaDev - 2) + Math.max(0, snbDev - 2)) * 1.0, 4); // max 4
+  // Layer 3: Vertical Growth
+  const vcs = (zFma + zSnMp + zYaxis) / 3;
 
-  const skeletalScore = Math.round(anbScore + witsScore + snaSnbScore);
+  // Layer 4: Size Discrepancy
+  const sds = zCoGn - zCoA;
 
+  // Layer 5: Compensation Engine
+  const si = Math.max(0, (Math.abs(srs) * 2.0) + (Math.abs(vcs) * 1.0)); // Skeletal Severity Index
+  const sc = Math.abs(sds) * 1.5; // Size Discrepancy Index
+
+  // Compensation Modifier (CM) based on dental compensation (U1-SN, IMPA, Overjet)
+  const zU1Sn = (u1Sn - 104) / 5;
+  const zImpa = (impa - 90) / 5;
+  const zOverjet = (overjet - 2.5) / 1;
+  const cm = Math.max(0, (Math.abs(zU1Sn) + Math.abs(zImpa) + Math.abs(zOverjet)) / 3 * 0.15);
+
+  // Final OCI score calculation (clamped to 0 - 10)
+  let rawScore = (si + sc) * (1 + cm);
+  rawScore = Math.min(10.0, Math.max(0.0, rawScore));
+  
+  const totalScore = Math.round(rawScore * 10); // Scale out of 100 for backward compatibility
+
+  // Determine Interpretation based on 5-tier Clinical Meaning scale
+  let interpretation = 'Normal';
+  if (rawScore <= 2.0) interpretation = 'Normal';
+  else if (rawScore <= 4.0) interpretation = 'Mild';
+  else if (rawScore <= 6.0) interpretation = 'Moderate';
+  else if (rawScore <= 8.0) interpretation = 'Severe';
+  else interpretation = 'Surgical-level';
+
+  // 1. Skeletal Classification
+  let skeletalClassification = 'Class I Normal Sagittal Relationship';
+  if (anb > 4.5) skeletalClassification = `Class II Malocclusion (ANB: ${anb}°)`;
+  else if (anb < 0) skeletalClassification = `Class III Malocclusion (ANB: ${anb}°)`;
+
+  // 2. Maxilla/Mandible Status
+  const maxStatus = zSna > 1.5 ? 'Protrusive Maxilla' : zSna < -1.5 ? 'Retrusive Maxilla' : 'Normal Maxillary position';
+  const mandStatus = zSnb > 1.5 ? 'Protrusive Mandible' : zSnb < -1.5 ? 'Retrusive Mandible' : 'Normal Mandibular position';
+  const maxillaMandibleStatus = `${maxStatus}, ${mandStatus}`;
+
+  // 3. Size Balance
+  const sizeBalance = Math.abs(sds) > 1.5 
+    ? `${sds > 0 ? 'Mandibular' : 'Maxillary'} dominance (Discrepancy: ${sds.toFixed(1)} SD)`
+    : 'Harmonious Maxillo-Mandibular Size Balance';
+
+  // 4. Vertical Pattern
+  const verticalPattern = vcs > 1.0 
+    ? `Hyperdivergent growth pattern (VCS: ${vcs.toFixed(1)} SD)`
+    : vcs < -1.0 
+      ? `Hypodivergent growth pattern (VCS: ${vcs.toFixed(1)} SD)`
+      : 'Normodivergent vertical growth pattern';
+
+  // 5. Compensation Level
+  const compensationLevel = cm > 0.4 
+    ? `High dentoalveolar compensation (CM: ${cm.toFixed(2)})`
+    : cm > 0.15 
+      ? `Moderate dentoalveolar compensation (CM: ${cm.toFixed(2)})`
+      : `Minimal dentoalveolar compensation (CM: ${cm.toFixed(2)})`;
+
+  // 6. Treatment Suggestion
+  let treatmentSuggestion = 'Conventional Orthodontics';
+  if (rawScore <= 2.0) treatmentSuggestion = 'No active skeletal therapy required; minor alignment only.';
+  else if (rawScore <= 4.0) treatmentSuggestion = 'Orthodontic alignment with light mechanics (non-extraction).';
+  else if (rawScore <= 6.0) treatmentSuggestion = 'Dentoalveolar camouflage therapy using intermaxillary elastics or selective extractions.';
+  else if (rawScore <= 8.0) treatmentSuggestion = 'Skeletal correction with absolute anchorage (TADs) or functional appliances.';
+  else treatmentSuggestion = 'Combined Orthognathic Surgery and Orthodontic decompensation is indicated.';
+
+  const recommendation = treatmentSuggestion;
+
+  // Build the three main category scores representing the engine layers
+  const skeletalScoreVal = Math.round(Math.min(5.0, si) * 10);
   categoryScores.push({
-    name: 'Skeletal Compensation',
-    score: skeletalScore,
+    name: 'Skeletal Severity (SI)',
+    score: skeletalScoreVal,
+    maxScore: 50,
+    severity: getSeverity(skeletalScoreVal, 50),
+    details: `Skeletal Pattern: ${skeletalClassification}. Sagittal SRS: ${srs.toFixed(2)} SD, Vertical VCS: ${vcs.toFixed(2)} SD.`
+  });
+
+  const sizeScoreVal = Math.round(Math.min(2.0, sc) * 10);
+  categoryScores.push({
+    name: 'Size Discrepancy (SC)',
+    score: sizeScoreVal,
     maxScore: 20,
-    severity: getSeverity(skeletalScore, 20),
-    details: `Skeletal Pattern Class ${skeletalPattern}. ANB: ${anb}° (Norm: 2°), Wits: ${wits}mm (Norm: 0mm), SNA: ${sna}°/SNB: ${snb}°.`
+    severity: getSeverity(sizeScoreVal, 20),
+    details: `Maxillo-Mandibular Size Discrepancy: ${sds.toFixed(2)} SD. ${sizeBalance}.`
   });
 
-  // 2. Maxillary Dental Compensation (Max: 15)
-  // Measures tipping and displacement of maxillary incisors relative to anterior skull base and maxilla.
-  const u1SnDev = Math.abs(u1Sn - 104);
-  const u1SnScore = Math.min(Math.max(0, u1SnDev - 5) * 1.0, 6); // max 6
-
-  const u1NaDegDev = Math.abs(u1NaDeg - 22);
-  const u1NaDegScore = Math.min(Math.max(0, u1NaDegDev - 5) * 1.0, 5); // max 5
-
-  const u1NaMmDev = Math.abs(u1NaMm - 4);
-  const u1NaMmScore = Math.min(Math.max(0, u1NaMmDev - 2) * 1.5, 4); // max 4
-
-  const maxillaryScore = Math.round(u1SnScore + u1NaDegScore + u1NaMmScore);
-
+  const compScoreVal = Math.round(Math.min(0.3, cm) * 100);
   categoryScores.push({
-    name: 'Maxillary Dental Compensation',
-    score: maxillaryScore,
-    maxScore: 15,
-    severity: getSeverity(maxillaryScore, 15),
-    details: `U1-SN: ${u1Sn}° (Norm: 104°), U1-NA: ${u1NaDeg}° / ${u1NaMm}mm. Shows compensatory tipping of the maxillary incisors.`
+    name: 'Compensation Modifier (CM)',
+    score: compScoreVal,
+    maxScore: 30,
+    severity: getSeverity(compScoreVal, 30),
+    details: `Dental Camouflage Offset: ${compensationLevel}. U1-SN z-score: ${zU1Sn.toFixed(2)}, IMPA z-score: ${zImpa.toFixed(2)}.`
   });
-
-  // 3. Mandibular Dental Compensation (Max: 20)
-  // Evaluates position and proclination of lower incisors relative to the mandibular plane.
-  const impaDev = Math.abs(impa - 90);
-  const impaScore = Math.min(Math.max(0, impaDev - 5) * 1.25, 8); // max 8
-
-  const l1NbDegDev = Math.abs(l1NbDeg - 25);
-  const l1NbDegScore = Math.min(Math.max(0, l1NbDegDev - 5) * 1.25, 7); // max 7
-
-  const l1NbMmDev = Math.abs(l1NbMm - 4);
-  const l1NbMmScore = Math.min(Math.max(0, l1NbMmDev - 2) * 1.5, 5); // max 5
-
-  const mandibularScore = Math.round(impaScore + l1NbDegScore + l1NbMmScore);
-
-  categoryScores.push({
-    name: 'Mandibular Dental Compensation',
-    score: mandibularScore,
-    maxScore: 20,
-    severity: getSeverity(mandibularScore, 20),
-    details: `IMPA: ${impa}° (Norm: 90°), L1-NB: ${l1NbDeg}° / ${l1NbMm}mm. Displays lower incisor tilt masking skeletal sagittal gaps.`
-  });
-
-  // 4. Interincisal Relationship (Max: 10)
-  // Reflects combined tipping status.
-  const interincisalDev = Math.abs(interincisalAngle - 135);
-  const interincisalScore = Math.round(Math.min(Math.max(0, interincisalDev - 5) * 0.5, 10)); // max 10
-
-  categoryScores.push({
-    name: 'Interincisal Relationship',
-    score: interincisalScore,
-    maxScore: 10,
-    severity: getSeverity(interincisalScore, 10),
-    details: `Interincisal Angle: ${interincisalAngle}° (Norm: 135°). Reveals bimaxillary protrusion (<125°) or upright retroclination (>140°).`
-  });
-
-  // 5. Overjet/Overbite Compensation (Max: 10)
-  // Compares anterior occlusion relative to skeletal pattern limits.
-  const ojDev = Math.abs(overjet - 2.5);
-  const ojScore = Math.min(Math.max(0, ojDev - 1.0) * 1.25, 5); // max 5
-
-  const overbiteMm = overbite > 10 ? overbite * 0.08 : overbite; // percentage conversion fallback
-  const obDev = Math.abs(overbiteMm - 2.5);
-  const obScore = Math.min(Math.max(0, obDev - 1.0) * 1.25, 5); // max 5
-
-  const overjetOverbiteScore = Math.round(ojScore + obScore);
-
-  categoryScores.push({
-    name: 'Overjet/Overbite Compensation',
-    score: overjetOverbiteScore,
-    maxScore: 10,
-    severity: getSeverity(overjetOverbiteScore, 10),
-    details: `Overjet: ${overjet}mm (Norm: 2.5mm), Overbite: ${overbite}${overbite > 10 ? '%' : 'mm'} (Norm: 2.5mm / 30%).`
-  });
-
-  // 6. Soft Tissue Compensation (Max: 15)
-  // Evaluates upper and lower lip profiles relative to E-Line and nasolabial angle.
-  const upperLipDev = Math.abs(upperLipELine - (-2));
-  const upperLipScore = Math.min(Math.max(0, upperLipDev - 2) * 1.5, 5); // max 5
-
-  const lowerLipDev = Math.abs(lowerLipELine - 0);
-  const lowerLipScore = Math.min(Math.max(0, lowerLipDev - 2) * 1.5, 5); // max 5
-
-  const nasolabialDev = Math.abs(nasolabialAngle - 102);
-  const nasolabialScore = Math.min(Math.max(0, nasolabialDev - 8) * 0.4, 5); // max 5
-
-  const softTissueScore = Math.round(upperLipScore + lowerLipScore + nasolabialScore);
-
-  categoryScores.push({
-    name: 'Soft Tissue Compensation',
-    score: softTissueScore,
-    maxScore: 15,
-    severity: getSeverity(softTissueScore, 15),
-    details: `Upper Lip to E-line: ${upperLipELine}mm (Norm: -2mm), Lower Lip to E-line: ${lowerLipELine}mm (Norm: 0mm), Nasolabial: ${nasolabialAngle}° (Norm: 102°).`
-  });
-
-  // 7. Overall Harmony/Compensation (Max: 10)
-  // Measures the degree of general dental-skeletal balance.
-  const overallScore = Math.round((skeletalScore / 20 * 3) + (maxillaryScore / 15 * 3) + (mandibularScore / 20 * 4));
-
-  categoryScores.push({
-    name: 'Overall Harmony/Compensation',
-    score: overallScore,
-    maxScore: 10,
-    severity: getSeverity(overallScore, 10),
-    details: `Weighted index aggregation representing total holistic facial balance and compensation load.`
-  });
-
-  // Calculate Total Score (Sum of categories, guaranteed <= 100)
-  const totalScore = Math.min(
-    categoryScores.reduce((sum, item) => sum + item.score, 0),
-    100
-  );
-
-  // Determine Interpretation
-  let interpretation: OciResult['interpretation'] = 'Minimal Compensation';
-  if (totalScore <= 20) interpretation = 'Minimal Compensation';
-  else if (totalScore <= 40) interpretation = 'Mild Compensation';
-  else if (totalScore <= 60) interpretation = 'Moderate Compensation';
-  else if (totalScore <= 80) interpretation = 'Severe Compensation';
-  else interpretation = 'Extreme Compensation';
-
-  // Determine Recommendation based on OCI & Skeletal Discrepancy
-  let recommendation = 'Conventional Orthodontics';
-  const isSevereSkeletal = anb > 6 || anb < -2;
-
-  if (totalScore <= 20) {
-    recommendation = 'Conventional Orthodontics (Excellent candidate for direct biomechanical alignment with minimal compensation)';
-  } else if (totalScore <= 40) {
-    recommendation = 'Camouflage Highly Feasible (Dentoalveolar system has reasonable adaptive capacity; standard orthodontics is recommended)';
-  } else if (totalScore <= 60) {
-    if (isSevereSkeletal) {
-      recommendation = 'Borderline Camouflage Case (Camouflage vs. Surgical Option depends heavily on soft tissue profile & patient aesthetics)';
-    } else {
-      recommendation = 'Conventional Orthodontics with minor extractions/IPR or active torque management';
-    }
-  } else if (totalScore <= 80) {
-    recommendation = 'Orthognathic Consultation Suggested (Skeletal limit reached; orthognathic surgical planning is highly advisable)';
-  } else {
-    recommendation = 'Presurgical Decompensation Recommended (Highly compromised dentoalveolar system; must reverse compensations before surgery)';
-  }
 
   // Calculate severity map colors for schematic face heatmap
   const severityMap: OciResult['severityMap'] = {
-    upperIncisors: getSeverityColor(maxillaryScore, 15),
-    lowerIncisors: getSeverityColor(mandibularScore, 20),
-    softTissue: getSeverityColor(softTissueScore, 15),
-    occlusion: getSeverityColor(overjetOverbiteScore, 10),
-    transverse: getSeverityColor(overallScore, 10),
+    upperIncisors: Math.abs(zU1Sn) < 1.0 ? 'green' : Math.abs(zU1Sn) < 2.0 ? 'yellow' : Math.abs(zU1Sn) < 3.0 ? 'orange' : 'red',
+    lowerIncisors: Math.abs(zImpa) < 1.0 ? 'green' : Math.abs(zImpa) < 2.0 ? 'yellow' : Math.abs(zImpa) < 3.0 ? 'orange' : 'red',
+    softTissue: Math.abs(zYaxis) < 1.0 ? 'green' : Math.abs(zYaxis) < 2.0 ? 'yellow' : Math.abs(zYaxis) < 3.0 ? 'orange' : 'red',
+    occlusion: Math.abs(zOverjet) < 1.0 ? 'green' : Math.abs(zOverjet) < 2.0 ? 'yellow' : Math.abs(zOverjet) < 3.0 ? 'orange' : 'red',
+    transverse: rawScore < 2.0 ? 'green' : rawScore < 5.0 ? 'yellow' : rawScore < 8.0 ? 'orange' : 'red',
   };
 
   return {
     totalScore,
+    rawScore,
     interpretation,
     recommendation,
     categoryScores,
     severityMap,
+    skeletalClassification,
+    maxillaMandibleStatus,
+    sizeBalance,
+    verticalPattern,
+    compensationLevel,
+    treatmentSuggestion,
   };
 }
 

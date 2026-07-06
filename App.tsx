@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert, Image } from 'react-native';
 import { 
   PatientDetails, 
   CephalometricInput, 
@@ -22,7 +22,9 @@ import {
   dbImportBackup,
   dbClearAllData,
   dbGetProfile,
-  dbSeedAdmin
+  dbSeedAdmin,
+  dbSetActiveUser,
+  dbGetActiveUser
 } from './src/lib/db';
 
 // Components
@@ -126,12 +128,17 @@ export default function App() {
         const savedEmail = await AsyncStorage.getItem('oci_user_email');
         const savedIsGoogle = await AsyncStorage.getItem('oci_is_google');
         if (savedEmail) {
+          dbSetActiveUser(savedEmail);
           setUserEmail(savedEmail);
           setIsGoogleUser(savedIsGoogle === 'true');
           await fetchUserRole(savedEmail);
+        } else {
+          dbSetActiveUser(null);
         }
 
         let assessments = await dbGetAssessments();
+        const activeEmail = dbGetActiveUser();
+        const key = activeEmail ? `oci_clinical_db_assessments_${activeEmail}` : 'oci_clinical_db_assessments_guest';
 
         // Database Migration: Automatically detect and clean up the old 100 synthetic dataset cases
         const hasOldSeededCases = assessments.some(a => 
@@ -160,7 +167,7 @@ export default function App() {
           });
 
           const migratedList = Array.from(existingMap.values());
-          await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(migratedList));
+          await AsyncStorage.setItem(key, JSON.stringify(migratedList));
           assessments = migratedList;
           console.log(`Migration complete. Active cases count: ${assessments.length}`);
         }
@@ -168,7 +175,7 @@ export default function App() {
         if (!assessments || assessments.length === 0) {
           try {
             console.log('Seeding OCI Database with 3 professional cases...');
-            await AsyncStorage.setItem('oci_clinical_db_assessments', JSON.stringify(DEMO_PATIENTS));
+            await AsyncStorage.setItem(key, JSON.stringify(DEMO_PATIENTS));
             assessments = DEMO_PATIENTS;
             console.log(`Seeded ${DEMO_PATIENTS.length} professional cases successfully.`);
           } catch (seedErr) {
@@ -195,20 +202,26 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = async (email: string, isGoogle: boolean) => {
+    dbSetActiveUser(email);
     setUserEmail(email);
     setIsGoogleUser(isGoogle);
     await AsyncStorage.setItem('oci_user_email', email);
     await AsyncStorage.setItem('oci_is_google', isGoogle ? 'true' : 'false');
     await fetchUserRole(email);
+    const loaded = await dbGetAssessments();
+    setSavedAssessments(loaded);
   };
 
   const handleLogout = async () => {
+    dbSetActiveUser(null);
     setUserEmail(null);
     setIsGoogleUser(false);
     setUserRole(null);
     setIsDevPinVerified(false);
     await AsyncStorage.removeItem('oci_user_email');
     await AsyncStorage.removeItem('oci_is_google');
+    const guestData = await dbGetAssessments();
+    setSavedAssessments(guestData);
     setScreen('home'); // Reset screen stack
   };
 
@@ -459,18 +472,18 @@ export default function App() {
         {screen !== 'splash' && userEmail && (
           <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3.5 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
-              <View style={tw`w-9 h-9 bg-[#14B8A6] rounded-xl items-center justify-center mr-2.5 shadow-md`}>
-                <Activity size={18} color="#ffffff" />
-              </View>
+              <Image 
+                source={require('./assets/logo_icon.jpg')} 
+                style={tw`w-9 h-9 rounded-xl border border-white/10 mr-2.5`}
+                resizeMode="cover"
+              />
               <View>
                 <Text style={tw`font-extrabold text-sm text-white tracking-wide`}>
-                  OCI CLINIC
+                  OCI
                 </Text>
-                <Text style={tw`text-[8px] font-bold uppercase text-teal-400 tracking-wider`}>AI Decision System</Text>
+                <Text style={tw`text-[8px] font-bold uppercase text-[#22D3EE] tracking-wider`}>AI DECISION SYSTEM</Text>
               </View>
             </Pressable>
-
-
           </View>
         )}
 

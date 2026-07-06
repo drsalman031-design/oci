@@ -129,27 +129,16 @@ export default function Home({
           <View style={tw`flex-row items-center space-x-3.5`}>
             {/* OCI rounded square logo image */}
             <Image
-              source={require('../../assets/logo.jpg')}
+              source={require('../../assets/logo_icon.jpg')}
               style={tw`w-14 h-14 rounded-2xl border border-white/10`}
               resizeMode="cover"
             />
 
             <View style={tw`space-y-0.5`}>
-              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI <Text style={tw`text-cyan-400`}>ANALYZER</Text></Text>
-              <Text style={tw`text-[11px] text-slate-400 font-bold font-sans`}>
-                Orthodontic Compensation Index
+              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI</Text>
+              <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase tracking-wider font-mono`}>
+                AI DECISION SYSTEM
               </Text>
-              <Text style={tw`text-[9px] text-teal-400 font-black uppercase tracking-widest font-mono`}>
-                Artificial Intelligence Analysis Engine
-              </Text>
-            </View>
-          </View>
-          
-          <View style={tw`flex-row items-center space-x-3`}>
-            {/* Notification Badge */}
-            <View style={tw`w-10 h-10 bg-[#0B1226]/80 border border-white/10 rounded-[16px] items-center justify-center relative shadow-inner`}>
-              <Bell size={16} color="#14B8A6" />
-              <View style={tw`absolute top-3 right-3 w-1.5 h-1.5 bg-rose-500 rounded-full`} />
             </View>
           </View>
         </View>
