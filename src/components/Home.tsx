@@ -55,7 +55,7 @@ export default function Home({
   const avgOciVal = totalReports > 0 
     ? Math.round(savedAssessments.reduce((sum, item) => sum + item.ociResult.totalScore, 0) / totalReports)
     : 0;
-  const averageOciDisplay = `${avgOciVal}%`;
+  const averageOciDisplay = totalReports > 0 ? `${(avgOciVal / 10).toFixed(1)}/10 (${avgOciVal}%)` : '0.0/10 (0%)';
 
   let avgSeverityLabel = 'None';
   if (avgOciVal > 75) avgSeverityLabel = 'Surgical';
@@ -202,7 +202,7 @@ export default function Home({
           <View style={tw`flex-row flex-wrap gap-3.5`}>
             
             {/* 1. Total Analyses */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-5 shadow-xl space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-6 shadow-xl space-y-2`}>
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   <View style={tw`w-5 h-5 bg-teal-500/10 rounded-lg items-center justify-center border border-teal-500/20`}>
@@ -220,7 +220,7 @@ export default function Home({
             </View>
 
             {/* 2. Average OCI Score */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-5 shadow-xl space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-6 shadow-xl space-y-2`}>
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   <View style={tw`w-5 h-5 bg-amber-500/10 rounded-lg items-center justify-center border border-amber-500/20`}>
@@ -233,8 +233,8 @@ export default function Home({
                 <Text style={tw`text-2xl font-black text-white font-mono`}>
                   {averageOciDisplay}
                 </Text>
-                <View style={tw`bg-amber-500/15 px-1.5 py-0.5 rounded-lg border border-amber-500/25`}>
-                  <Text style={tw`text-[7px] font-black text-amber-400 font-mono uppercase`}>
+                <View style={tw`bg-teal-500/15 px-1.5 py-0.5 rounded-lg border border-teal-500/25`}>
+                  <Text style={tw`text-[7px] font-black text-teal-400 font-mono uppercase`}>
                     {avgSeverityLabel}
                   </Text>
                 </View>
@@ -245,7 +245,7 @@ export default function Home({
             </View>
 
             {/* 3. AI Recommendation Accuracy */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-5 shadow-xl space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-6 shadow-xl space-y-2`}>
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   <View style={tw`w-5 h-5 bg-cyan-500/10 rounded-lg items-center justify-center border border-cyan-500/20`}>
@@ -263,7 +263,7 @@ export default function Home({
             </View>
 
             {/* 4. Clinical Confidence Index */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-5 shadow-xl space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#0B1020] border border-white/5 rounded-3xl p-6 shadow-xl space-y-2`}>
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   <View style={tw`w-5 h-5 bg-emerald-500/10 rounded-lg items-center justify-center border border-emerald-500/20`}>
@@ -286,7 +286,7 @@ export default function Home({
         {/* ====================================================
             OCI SEVERITY DISTRIBUTION CHART
            ==================================================== */}
-        <View style={tw`bg-[#0B1020] border border-white/5 rounded-[28px] p-5 shadow-xl space-y-4`}>
+        <View style={tw`bg-[#0B1020] border border-white/5 rounded-[28px] p-6 shadow-xl space-y-4`}>
           <View style={tw`flex-row justify-between items-center`}>
             <Text style={tw`text-sm font-black text-white`}>
               OCI Severity Distribution
@@ -299,11 +299,11 @@ export default function Home({
           {/* Progress Rows exactly matching the design */}
           <View style={tw`space-y-3`}>
             {[
-              { label: 'Minimal', pct: minPct, count: minimalCount, color: 'bg-emerald-400' },
-              { label: 'Mild', pct: mldPct, count: mildCount, color: 'bg-emerald-300' },
-              { label: 'Moderate', pct: modPct, count: moderateCount, color: 'bg-yellow-400' },
-              { label: 'Severe', pct: svrPct, count: severeCount, color: 'bg-orange-400' },
-              { label: 'Extreme', pct: extPct, count: extremeCount, color: 'bg-rose-500' },
+              { label: 'Minimal', pct: minPct, count: minimalCount, color: 'bg-emerald-500' },
+              { label: 'Mild', pct: mldPct, count: mildCount, color: 'bg-emerald-400' },
+              { label: 'Moderate', pct: modPct, count: moderateCount, color: 'bg-teal-500' },
+              { label: 'Severe', pct: svrPct, count: severeCount, color: 'bg-cyan-400' },
+              { label: 'Extreme', pct: extPct, count: extremeCount, color: 'bg-cyan-600' },
             ].map((item, idx) => (
               <View key={idx} style={tw`flex-row items-center justify-between gap-3`}>
                 <View style={tw`flex-row items-center space-x-2 w-20`}>
@@ -326,7 +326,7 @@ export default function Home({
         {/* ====================================================
             AI CLINICAL INSIGHTS (Vertical tiles as 4 columns)
            ==================================================== */}
-        <View style={tw`bg-[#0B1020] border border-white/5 rounded-[28px] p-5 shadow-xl space-y-4`}>
+        <View style={tw`bg-[#0B1020] border border-white/5 rounded-[28px] p-6 shadow-xl space-y-4`}>
           <View style={tw`flex-row justify-between items-center`}>
             <Text style={tw`text-sm font-black text-white`}>
               AI Clinical Insights
@@ -349,8 +349,8 @@ export default function Home({
 
             {/* Tile 2: Compensation frequency */}
             <View style={tw`bg-black/35 rounded-2xl p-3 items-center justify-center flex-1 space-y-2 border border-white/5`}>
-              <View style={tw`w-8 h-8 rounded-full bg-purple-500/10 items-center justify-center`}>
-                <BarChart3 size={14} color="#C084FC" />
+              <View style={tw`w-8 h-8 rounded-full bg-teal-500/10 items-center justify-center`}>
+                <BarChart3 size={14} color="#14B8A6" />
               </View>
               <Text style={tw`text-[7px] text-slate-500 font-black uppercase text-center tracking-wider leading-tight`}>Most Common Compensation</Text>
               <Text style={tw`text-[10px] font-black text-teal-400 font-mono text-center`}>Moderate (30%)</Text>
@@ -409,8 +409,8 @@ export default function Home({
                 pressed ? tw`bg-white/5 scale-98` : null
               ]}
             >
-              <View style={tw`w-12 h-12 bg-purple-500/15 rounded-full items-center justify-center border border-purple-500/20`}>
-                <Compass size={18} color="#C084FC" />
+              <View style={tw`w-12 h-12 bg-teal-500/15 rounded-full items-center justify-center border border-teal-500/20`}>
+                <Compass size={18} color="#14B8A6" />
               </View>
               <Text style={tw`text-[9px] font-black text-slate-300 text-center tracking-wide leading-tight`}>Treatment Planning</Text>
             </Pressable>
@@ -423,8 +423,8 @@ export default function Home({
                 pressed ? tw`bg-white/5 scale-98` : null
               ]}
             >
-              <View style={tw`w-12 h-12 bg-blue-500/15 rounded-full items-center justify-center border border-blue-500/20`}>
-                <FileText size={18} color="#3B82F6" />
+              <View style={tw`w-12 h-12 bg-emerald-500/15 rounded-full items-center justify-center border border-emerald-500/20`}>
+                <FileText size={18} color="#10B981" />
               </View>
               <Text style={tw`text-[9px] font-black text-slate-300 text-center tracking-wide leading-tight`}>Reports</Text>
             </Pressable>
@@ -437,8 +437,8 @@ export default function Home({
                 pressed ? tw`bg-white/5 scale-98` : null
               ]}
             >
-              <View style={tw`w-12 h-12 bg-amber-500/15 rounded-full items-center justify-center border border-amber-500/20`}>
-                <BarChart3 size={18} color="#F59E0B" />
+              <View style={tw`w-12 h-12 bg-cyan-500/15 rounded-full items-center justify-center border border-cyan-500/20`}>
+                <BarChart3 size={18} color="#22D3EE" />
               </View>
               <Text style={tw`text-[9px] font-black text-slate-300 text-center tracking-wide leading-tight`}>Analytics</Text>
             </Pressable>

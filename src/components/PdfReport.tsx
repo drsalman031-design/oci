@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, Pressable, TextInput, ScrollView, Alert, Platform, Share } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Assessment, PatientDetails, CephalometricInput, OciResult } from '../types';
 import { 
@@ -893,19 +893,19 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           <div class="space-y-2">
             <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400">AI Clinical Summary & Diagnostic Breakdown</h4>
             <div class="grid grid-cols-2 gap-3 text-[10px] leading-relaxed">
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-amber-500 border-slate-100 space-y-1">
+              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-teal-500 border-slate-100 space-y-1">
                 <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">1. Overall Compensation Pattern</p>
                 <p class="font-bold text-slate-800">Skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} with Dentoalveolar Camouflage</p>
               </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-blue-500 border-slate-100 space-y-1">
+              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-cyan-500 border-slate-100 space-y-1">
                 <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">2. Dominant Compensation Type</p>
                 <p class="font-bold text-slate-800">${dominantCompType} (${dominantCompVal}%)</p>
               </div>
               <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-slate-100 space-y-1" style="border-left-color: ${scoreColor}">
                 <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">3. Compensation Severity</p>
-                <p class="font-bold text-teal-600" style="color: ${scoreColor}">${severityLabel} Compensation (Score: ${total})</p>
+                <p class="font-bold text-teal-600" style="color: ${scoreColor}">${severityLabel} Compensation (Score: ${(total/10).toFixed(1)}/10 [${total}%])</p>
               </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-blue-500 border-slate-100 space-y-1">
+              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-cyan-500 border-slate-100 space-y-1">
                 <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">4. Facial Esthetic Impact</p>
                 <p class="font-semibold text-slate-700">${profileVal} Profile, compromised chin-lip projection, muscular tension.</p>
               </div>
@@ -1017,14 +1017,36 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
     `;
   };
 
+  const handleMobileShareOrPrint = async () => {
+    const formattedScore = `${(total/10).toFixed(1)}/10 (${total}%)`;
+    const shareMessage = `OCI Analyzer™ Clinical Report
+Patient Name: ${assessment.patientDetails.name}
+Case ID: ${assessment.patientDetails.caseNumber || 'N/A'}
+OCI score: ${formattedScore}
+Skeletal Diagnosis: Skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} with Dentoalveolar Camouflage
+Growth Status: ${report.growthStatus}
+Extraction Recommended: ${report.extractionRecommendation}
+Surgical Indication: ${report.surgeryRecommendation}
+
+Clinical Summary:
+${assessment.aiSummary}
+
+Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
+
+    try {
+      await Share.share({
+        title: `OCI Report: ${assessment.patientDetails.name}`,
+        message: shareMessage,
+      });
+    } catch (e) {
+      console.warn("Share failed:", e);
+    }
+  };
+
   // Direct high-fidelity PDF generator via html2canvas & jsPDF
   const handleDownloadPdf = async () => {
     if (Platform.OS !== 'web') {
-      try {
-        Alert.alert("Feature Unavailable", "High-fidelity PDF generation is available in the Web version of the app. Please use the Web browser version to download PDF reports.");
-      } catch (e) {
-        console.log("Alert failed", e);
-      }
+      await handleMobileShareOrPrint();
       return;
     }
 
@@ -1117,11 +1139,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
   // High-fidelity vector system printing & PDF export fallback
   const handleSystemPrint = () => {
     if (Platform.OS !== 'web') {
-      try {
-        Alert.alert("Feature Unavailable", "System print is available in the Web version of the app. Please use the Web browser version to print reports.");
-      } catch (e) {
-        console.log("Alert failed", e);
-      }
+      handleMobileShareOrPrint();
       return;
     }
 
@@ -1214,14 +1232,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
   };
 
   const handleShare = () => {
-    try {
-      Alert.alert(
-        "Clinical Share Protocol",
-        `The clinical files for OCI case ${assessment.patientDetails.caseNumber} have been compiled. Shared link is active for Dr. Salman.`
-      );
-    } catch (e) {
-      console.log("Share Alert blocked. Protocol compiled successfully.");
-    }
+    handleMobileShareOrPrint();
   };
 
   return (
