@@ -121,8 +121,18 @@ export default function Home({
       showsVerticalScrollIndicator={false}
     >
       <View style={tw`space-y-6 mt-5 max-w-4xl mx-auto w-full`}>
-        
-
+        {/* ====================================================
+            APP HEADER (Official OCI Analyzer rectangular branding)
+           ==================================================== */}
+        <View style={tw`flex-row justify-between items-center pt-2 pb-3 border-b border-white/5`}>
+          <View style={tw`flex-row items-center`}>
+            <Image
+              source={require('../../assets/logo.jpg')}
+              style={tw`w-36 h-10`}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
 
         {/* ====================================================
             HERO SECTION: START NEW OCI ANALYSIS
@@ -155,14 +165,12 @@ export default function Home({
             </View>
           </View>
 
-          {/* Rounded circle logo container on the right side of the hero card */}
-          <View style={tw`w-28 h-28 rounded-full border-2 border-[#22D3EE]/35 bg-[#0B1020] overflow-hidden items-center justify-center relative shadow-lg shadow-cyan-500/10`}>
-            <Image
-              source={require('../../assets/logo_icon.jpg')}
-              style={tw`w-22 h-22`}
-              resizeMode="contain"
-            />
-          </View>
+          {/* Square official OCI logo_icon image matching the user screenshot */}
+          <Image
+            source={require('../../assets/logo_icon.jpg')}
+            style={tw`w-28 h-28 rounded-2xl border border-white/5`}
+            resizeMode="cover"
+          />
         </View>
 
         {/* ====================================================
