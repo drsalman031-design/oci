@@ -391,20 +391,23 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 1: BIOMECHANICS ENGINE
                ==================================================== */}
-            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
+            <View style={tw`space-y-5 mb-6`}>
+              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Activity size={18} color="#22D3EE" />
-                  <Text style={tw`text-sm font-black text-white`}>Biomechanics Engine</Text>
+                  <Activity size={16} color="#22D3EE" style={tw`mr-1`} />
+                  <Text style={tw`text-base font-black text-white`}>Biomechanics Engine</Text>
                 </View>
                 <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
                   <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>AI Simulation Mode</Text>
                 </View>
               </View>
 
-              {/* A) Force Distribution Dashboard */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>A) Force Distribution Dashboard</Text>
+              {/* A) Force Distribution Card */}
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>A) Force Distribution Dashboard</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time mechanical loading index</Text>
+                </View>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Retraction Force', val: retractionForce },
@@ -426,9 +429,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
               </View>
 
-              {/* B) Biomechanics Complexity Index */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Biomechanics Complexity Index</Text>
+              {/* B) Biomechanics Complexity Card */}
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Biomechanics Complexity Index</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Biological response requirements</Text>
+                </View>
                 <View style={tw`flex-row flex-wrap gap-2`}>
                   {[
                     { label: 'Anchorage Demand', val: anchorageDemand },
@@ -437,7 +443,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                     { label: 'Compliance Dep.', val: complianceDep },
                     { label: 'Appliance Comp.', val: applianceComplexity },
                   ].map((item, idx) => (
-                    <View key={idx} style={tw`flex-1 min-w-[120px] p-3 rounded-xl border border-white/5 bg-black/25 justify-between`}>
+                    <View key={idx} style={tw`flex-1 min-w-[110px] p-3.5 rounded-xl border border-white/5 bg-black/25 justify-between`}>
                       <Text style={tw`text-[10px] font-bold text-slate-400`}>{item.label}</Text>
                       <View style={tw`flex-row justify-between items-baseline mt-2`}>
                         <Text style={tw`text-base font-black text-white`}>{item.val}%</Text>
@@ -448,9 +454,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
               </View>
 
-              {/* C) Force Zones Map */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Force Zones Map</Text>
+              {/* C) Force Zones Map Card */}
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Force Zones Map</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Safety velocity envelopes</Text>
+                </View>
                 <View style={tw`flex-row space-x-2`}>
                   {[
                     { key: 'Light', label: 'Light Force Zone', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
@@ -461,7 +470,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                     return (
                       <View 
                         key={zone.key} 
-                        style={tw`flex-1 py-2 px-1.5 rounded-xl border items-center justify-center ${zone.color} ${isActive ? 'border-2 shadow-sm' : 'opacity-40'}`}
+                        style={tw`flex-1 py-2.5 px-1.5 rounded-xl border items-center justify-center ${zone.color} ${isActive ? 'border-2 shadow-sm' : 'opacity-40'}`}
                       >
                         <Text style={tw`text-[10px] font-black text-center`}>{zone.label}</Text>
                       </View>
@@ -470,12 +479,15 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
               </View>
 
-              {/* D) Tooth Movement Visualization */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Tooth Movement Vectors</Text>
+              {/* D) Tooth Movement Card */}
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Tooth Movement Vectors</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Simulated movement vectors</Text>
+                </View>
                 <View style={tw`flex-row gap-2`}>
                   {movements.map((m, idx) => (
-                    <View key={idx} style={tw`flex-1 p-3 rounded-xl border border-white/5 bg-black/25 items-center space-y-1`}>
+                    <View key={idx} style={tw`flex-1 p-3.5 rounded-xl border border-white/5 bg-black/25 items-center space-y-1`}>
                       <Text style={tw`text-lg`}>{m.direction}</Text>
                       <Text style={tw`text-[10px] font-bold text-slate-300`}>{m.label}</Text>
                       <Text style={tw`text-[9px] font-mono text-[#22D3EE] uppercase font-black`}>{m.intensity} Intensity</Text>
@@ -488,11 +500,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 2: TREATMENT PLANNER
                ==================================================== */}
-            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
+            <View style={tw`space-y-5 mb-6`}>
+              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Compass size={18} color="#22D3EE" />
-                  <Text style={tw`text-sm font-black text-white`}>Treatment Planner</Text>
+                  <Compass size={16} color="#22D3EE" style={tw`mr-1`} />
+                  <Text style={tw`text-base font-black text-white`}>Treatment Planner</Text>
                 </View>
                 <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
                   <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Interactive Scheduler</Text>
@@ -500,8 +512,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* A) Treatment Strategy Card (Hero) */}
-              <View style={tw`bg-teal-500/10 border border-teal-500/20 rounded-2xl p-4 shadow-md space-y-3`}>
-                <Text style={tw`text-[8px] font-black text-[#22D3EE] uppercase tracking-wider font-mono`}>A) Treatment Strategy Blueprint</Text>
+              <View style={tw`bg-teal-500/10 border border-teal-500/20 rounded-[24px] p-5 shadow-xl space-y-4`}>
+                <View style={tw`border-b border-teal-500/20 pb-2`}>
+                  <Text style={tw`text-xs font-black text-[#22D3EE] uppercase tracking-wider`}>A) Treatment Strategy Blueprint</Text>
+                  <Text style={tw`text-[8px] text-slate-400 font-bold uppercase mt-0.5`}>Primary clinical extraction decisions</Text>
+                </View>
                 <View style={tw`flex-row gap-4`}>
                   <View style={tw`flex-1 space-y-0.5`}>
                     <Text style={tw`text-[9px] text-slate-400 font-bold`}>Extraction Plan</Text>
@@ -525,15 +540,18 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* B) Treatment Phase Flow */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Treatment Phase Flow (Timeline)</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Treatment Phase Flow</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Dynamic mechanical timeline steps</Text>
+                </View>
                 <View style={tw`space-y-3`}>
                   {[
                     { phase: 'Phase 1: Levelling & Alignment', force: 'Light Continuous', risk: 'Low Risk', icon: '🦷' },
                     { phase: 'Phase 2: Space Closure / Sagittal', force: 'Medium Intermittent', risk: 'Moderate Risk', icon: '🔗' },
                     { phase: 'Phase 3: Finishing & Retention', force: 'Light Segmented', risk: 'Low Risk', icon: '✨' },
                   ].map((p, idx) => (
-                    <View key={idx} style={tw`flex-row items-center space-x-3 bg-black/25 p-3 rounded-xl border border-white/5`}>
+                    <View key={idx} style={tw`flex-row items-center space-x-3 bg-black/25 p-3.5 rounded-xl border border-white/5`}>
                       <View style={tw`w-8 h-8 rounded-full bg-slate-950 items-center justify-center`}>
                         <Text style={tw`text-xs`}>{p.icon}</Text>
                       </View>
@@ -550,8 +568,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* C) Alternative Plan Cards */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Alternative Strategy Presets</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Alternative Strategy Presets</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Dynamic mechanical preset paths</Text>
+                </View>
                 <View style={tw`flex-row space-x-2`}>
                   {[
                     { title: 'Non-Extraction', desc: 'Camouflage strategy', active: extractionDecision === 'No' },
@@ -560,7 +581,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                   ].map((item, idx) => (
                     <View 
                       key={idx} 
-                      style={tw`flex-1 p-3 rounded-xl border bg-black/25 ${item.active ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'}`}
+                      style={tw`flex-1 p-3.5 rounded-xl border bg-black/25 ${item.active ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'}`}
                     >
                       <Text style={tw`text-[10px] font-black text-white`}>{item.title}</Text>
                       <Text style={tw`text-[8px] text-slate-400 mt-1`}>{item.desc}</Text>
@@ -570,8 +591,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* D) Outcome Prediction Chart */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Treatment Outcome Predictions</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Treatment Outcome Predictions</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Simulated aesthetic & stability projections</Text>
+                </View>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Long-term Stability', val: stabilityVal },
@@ -596,11 +620,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             {/* ====================================================
                 🧠 MODULE 3: ORTHODONTIC CLINICAL DECISION FORCE SYSTEM
                ==================================================== */}
-            <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-3`}>
+            <View style={tw`space-y-5 mb-6`}>
+              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <Layers size={18} color="#22D3EE" />
-                  <Text style={tw`text-sm font-black text-white`}>Orthodontic Clinical Decision Force System</Text>
+                  <Layers size={16} color="#22D3EE" style={tw`mr-1`} />
+                  <Text style={tw`text-base font-black text-white`}>Orthodontic Clinical Decision Force System</Text>
                 </View>
                 <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
                   <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>CDSS Engine</Text>
@@ -608,8 +632,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* A) Force Decision Dashboard */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>A) Live Biomechanics Force System Vector (0-100 Scale)</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>A) Live Biomechanics Force System Vector</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time mechanical loading index</Text>
+                </View>
                 <View style={tw`space-y-3`}>
                   {[
                     { label: 'Retraction Mechanics', val: retractionForce },
@@ -632,8 +659,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* B) Anchorage Risk Indicator */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>B) Anchorage Risk Indicator</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Anchorage Risk Indicator</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Clinical risk demand status</Text>
+                </View>
                 <View style={tw`p-4 rounded-2xl bg-black/25 border border-white/5 space-y-3`}>
                   <View style={tw`flex-row justify-between items-center`}>
                     <Text style={tw`text-xs font-bold text-slate-300`}>Anchorage Demand Risk Index</Text>
@@ -657,8 +687,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* C) Clinical Decision Output Card */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>C) Generated Clinical Decision Output</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Generated Clinical Decision Output</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>AI recommendations & wire sequence</Text>
+                </View>
                 <View style={tw`p-4 bg-black/25 rounded-2xl border border-white/5 space-y-3`}>
                   <View style={tw`flex-row items-center space-x-2`}>
                     <Zap size={14} color="#22D3EE" />
@@ -679,8 +712,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* D) Biomechanical Safety Zone */}
-              <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono`}>D) Biomechanical Safety Zone status</Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Biomechanical Safety Zone Status</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Force load verification</Text>
+                </View>
                 <View style={tw`flex-row space-x-2`}>
                   {[
                     { key: 'Safe', label: 'Safe Zone (Light force)', active: averageForce < 45, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
@@ -698,10 +734,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               </View>
 
               {/* Clinician Overrides & Override Save */}
-              <View style={tw`p-4 bg-black/25 rounded-2xl border border-white/5 space-y-3`}>
-                <Text style={tw`text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-white/5 pb-1`}>
-                  Clinician Notes & Directives
-                </Text>
+              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-3`}>
+                <View style={tw`border-b border-white/5 pb-2`}>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Clinician Notes & Directives</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Case Override logs</Text>
+                </View>
                 <TextInput
                   value={clinicianOverride}
                   onChangeText={setClinicianOverride}
