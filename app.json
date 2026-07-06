@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Orthodontic Compensation Index (OCI)",
+    "name": "OCI ANALYZER",
     "slug": "ocianalyzer",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0d9488"
+        "backgroundColor": "#ffffff"
       },
       "package": "com.dr.salman.oci"
     },
