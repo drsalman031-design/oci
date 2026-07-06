@@ -271,21 +271,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
   return (
     <ScrollView style={tw`flex-1 bg-[#050814]`} contentContainerStyle={tw`pb-20`}>
-      <View style={tw`p-4 md:p-6 space-y-6 max-w-3xl mx-auto w-full`}>
+      <View style={tw`p-4 md:p-6 space-y-7 max-w-3xl mx-auto w-full`}>
         
         {/* ====================================================
-            HEADER BAR & PATIENT SELECTOR
+            PATIENT SELECTOR (NO BRANDING HEADER)
            ==================================================== */}
         <View style={tw`flex-col justify-between items-start gap-3 bg-[#0B1020]/40 p-5 rounded-3xl border border-white/5 shadow-xl`}>
-          <View style={tw`space-y-1`}>
-            <View style={tw`flex-row items-center space-x-2`}>
-              <Layers size={14} color="#14B8A6" />
-              <Text style={tw`text-[10px] font-black text-teal-400 font-mono uppercase tracking-wider`}>Orthodontic Clinical Decision Support System</Text>
-            </View>
-            <Text style={tw`text-lg font-black text-white`}>Treatment Planner & Biomechanics Engine</Text>
-          </View>
-
-          {/* Patient dropdown selection */}
           <View style={tw`w-full`}>
             <Pressable
               onPress={() => {
@@ -338,11 +329,11 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
         </View>
 
         {activeAssessment && treatmentPlan && (
-          <View style={tw`space-y-6`}>
+          <View style={tw`space-y-7`}>
 
-            {/* Adjusted Options Card */}
+            {/* Diagnostic Options Card */}
             <View style={tw`bg-[#0B1020] rounded-3xl border border-white/5 shadow-xl p-5 space-y-4`}>
-              <Text style={tw`text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-white/5 pb-2`}>
+              <Text style={tw`text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono border-b border-white/5 pb-2`}>
                 Diagnostic Variables
               </Text>
               
@@ -389,386 +380,219 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             </View>
 
             {/* ====================================================
-                🧠 MODULE 1: BIOMECHANICS ENGINE
+                📊 1. FORCE DISTRIBUTION DASHBOARD
                ==================================================== */}
-            <View style={tw`space-y-5 mb-6`}>
-              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
-                <View style={tw`flex-row items-center space-x-2`}>
-                  <Activity size={16} color="#22D3EE" style={tw`mr-1`} />
-                  <Text style={tw`text-base font-black text-white`}>Biomechanics Engine</Text>
-                </View>
-                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
-                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>AI Simulation Mode</Text>
-                </View>
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+              <View style={tw`border-b border-white/5 pb-2`}>
+                <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Force Distribution Dashboard</Text>
+                <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time mechanical loading index</Text>
               </View>
-
-              {/* A) Force Distribution Card */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>A) Force Distribution Dashboard</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time mechanical loading index</Text>
-                </View>
-                <View style={tw`space-y-3`}>
-                  {[
-                    { label: 'Retraction Force', val: retractionForce },
-                    { label: 'Intrusion Force', val: intrusionForce },
-                    { label: 'Expansion Force', val: expansionForce },
-                    { label: 'Torque Control', val: torqueControl },
-                    { label: 'Rotation Correction', val: rotationCorrection },
-                  ].map((item, idx) => (
-                    <View key={idx} style={tw`space-y-1`}>
-                      <View style={tw`flex-row justify-between items-center`}>
+              <View style={tw`space-y-3.5`}>
+                {[
+                  { label: 'Retraction Force', val: 35, color: '#1E88FF', intensity: 'Controlled Loading' },
+                  { label: 'Intrusion Force', val: 50, color: '#8E44AD', intensity: 'Optimum Intrusion' },
+                  { label: 'Expansion Force', val: 65, color: '#2ECC71', intensity: 'Active Arch Widening' },
+                  { label: 'Torque Control', val: 100, color: '#F39C12', intensity: 'Maximum Boundary' },
+                  { label: 'Rotation Correction', val: 70, color: '#E74C3C', intensity: 'Heavy Derotation' },
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <View style={tw`flex-row items-center space-x-1.5`}>
+                        <View style={[tw`w-2 h-2 rounded-full`, { backgroundColor: item.color }]} />
                         <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}/100 cN</Text>
                       </View>
-                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* B) Biomechanics Complexity Card */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Biomechanics Complexity Index</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Biological response requirements</Text>
-                </View>
-                <View style={tw`flex-row flex-wrap gap-2`}>
-                  {[
-                    { label: 'Anchorage Demand', val: anchorageDemand },
-                    { label: 'Root Control', val: rootControl },
-                    { label: 'Torque Req.', val: torqueReq },
-                    { label: 'Compliance Dep.', val: complianceDep },
-                    { label: 'Appliance Comp.', val: applianceComplexity },
-                  ].map((item, idx) => (
-                    <View key={idx} style={tw`flex-1 min-w-[110px] p-3.5 rounded-xl border border-white/5 bg-black/25 justify-between`}>
-                      <Text style={tw`text-[10px] font-bold text-slate-400`}>{item.label}</Text>
-                      <View style={tw`flex-row justify-between items-baseline mt-2`}>
-                        <Text style={tw`text-base font-black text-white`}>{item.val}%</Text>
-                        <View style={tw`w-1.5 h-1.5 rounded-full bg-teal-400`} />
+                      <View style={tw`flex-row items-center space-x-2`}>
+                        <Text style={tw`text-[8px] font-black text-slate-500 uppercase tracking-wide`}>{item.intensity}</Text>
+                        <Text style={tw`text-xs font-black text-white`}>{item.val}/100 cN</Text>
                       </View>
                     </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* C) Force Zones Map Card */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Force Zones Map</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Safety velocity envelopes</Text>
-                </View>
-                <View style={tw`flex-row space-x-2`}>
-                  {[
-                    { key: 'Light', label: 'Light Force Zone', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-                    { key: 'Medium', label: 'Medium Force Zone', color: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
-                    { key: 'High', label: 'High Force Zone', color: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
-                  ].map((zone) => {
-                    const isActive = forceZone === zone.key;
-                    return (
-                      <View 
-                        key={zone.key} 
-                        style={tw`flex-1 py-2.5 px-1.5 rounded-xl border items-center justify-center ${zone.color} ${isActive ? 'border-2 shadow-sm' : 'opacity-40'}`}
-                      >
-                        <Text style={tw`text-[10px] font-black text-center`}>{zone.label}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* D) Tooth Movement Card */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Tooth Movement Vectors</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Simulated movement vectors</Text>
-                </View>
-                <View style={tw`flex-row gap-2`}>
-                  {movements.map((m, idx) => (
-                    <View key={idx} style={tw`flex-1 p-3.5 rounded-xl border border-white/5 bg-black/25 items-center space-y-1`}>
-                      <Text style={tw`text-lg`}>{m.direction}</Text>
-                      <Text style={tw`text-[10px] font-bold text-slate-300`}>{m.label}</Text>
-                      <Text style={tw`text-[9px] font-mono text-[#22D3EE] uppercase font-black`}>{m.intensity} Intensity</Text>
+                    <View style={tw`w-full h-2.5 bg-slate-950 rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.color }]} />
                     </View>
-                  ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* ====================================================
+                🧠 2. FORCE ZONES (BADGES ONLY)
+               ==================================================== */}
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+              <View style={tw`border-b border-white/5 pb-2`}>
+                <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Force Zones Status Map</Text>
+                <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time biological reaction safety</Text>
+              </View>
+              <View style={tw`flex-row flex-wrap gap-2.5`}>
+                <View style={tw`bg-[#2ECC71]/15 border border-[#2ECC71]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#2ECC71]`} />
+                  <Text style={tw`text-[10px] font-black text-[#2ECC71] uppercase`}>Safe Zone (Light force)</Text>
+                </View>
+
+                <View style={tw`bg-[#F1C40F]/15 border border-[#F1C40F]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#F1C40F]`} />
+                  <Text style={tw`text-[10px] font-black text-[#F1C40F] uppercase`}>Controlled Zone (Moderate force)</Text>
+                </View>
+
+                <View style={tw`bg-[#E74C3C]/15 border border-[#E74C3C]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#E74C3C]`} />
+                  <Text style={tw`text-[10px] font-black text-[#E74C3C] uppercase`}>Risk Zone (Heavy force)</Text>
+                </View>
+
+                <View style={tw`bg-[#1E88FF]/10 border border-[#1E88FF]/20 px-3 py-1.5 rounded-xl`}>
+                  <Text style={tw`text-[10px] font-black text-[#1E88FF] uppercase`}>Light Force Zone</Text>
+                </View>
+
+                <View style={tw`bg-[#8E44AD]/10 border border-[#8E44AD]/20 px-3 py-1.5 rounded-xl`}>
+                  <Text style={tw`text-[10px] font-black text-[#8E44AD] uppercase`}>Medium Force Zone</Text>
+                </View>
+
+                <View style={tw`bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl`}>
+                  <Text style={tw`text-[10px] font-black text-rose-400 uppercase`}>High Force Zone</Text>
                 </View>
               </View>
             </View>
 
             {/* ====================================================
-                🧠 MODULE 2: TREATMENT PLANNER
+                ⚙️ 4. LIVE BIOMECHANICS FORCE VECTOR SYSTEM
                ==================================================== */}
-            <View style={tw`space-y-5 mb-6`}>
-              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
-                <View style={tw`flex-row items-center space-x-2`}>
-                  <Compass size={16} color="#22D3EE" style={tw`mr-1`} />
-                  <Text style={tw`text-base font-black text-white`}>Treatment Planner</Text>
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+              <View style={tw`border-b border-white/5 pb-2 flex-row justify-between items-center`}>
+                <View>
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Live Biomechanics Force Vector System</Text>
+                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Vector mapping & movement intensities</Text>
                 </View>
-                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
-                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Interactive Scheduler</Text>
-                </View>
-              </View>
-
-              {/* A) Treatment Strategy Card (Hero) */}
-              <View style={tw`bg-teal-500/10 border border-teal-500/20 rounded-[24px] p-5 shadow-xl space-y-4`}>
-                <View style={tw`border-b border-teal-500/20 pb-2`}>
-                  <Text style={tw`text-xs font-black text-[#22D3EE] uppercase tracking-wider`}>A) Treatment Strategy Blueprint</Text>
-                  <Text style={tw`text-[8px] text-slate-400 font-bold uppercase mt-0.5`}>Primary clinical extraction decisions</Text>
-                </View>
-                <View style={tw`flex-row gap-4`}>
-                  <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Extraction Plan</Text>
-                    <Text style={tw`text-lg font-black text-white`}>{extractionDecision}</Text>
-                  </View>
-                  <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Complexity Level</Text>
-                    <Text style={tw`text-lg font-black text-white`}>{treatmentPlan.treatmentComplexity.split(' ')[0]}</Text>
-                  </View>
-                </View>
-                <View style={tw`flex-row gap-4 pt-1`}>
-                  <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Estimated Duration</Text>
-                    <Text style={tw`text-lg font-black text-white`}>{estimatedDuration}</Text>
-                  </View>
-                  <View style={tw`flex-1 space-y-0.5`}>
-                    <Text style={tw`text-[9px] text-slate-400 font-bold`}>Growth Influence</Text>
-                    <Text style={tw`text-lg font-black text-white`}>{growthInfluence}</Text>
-                  </View>
+                <View style={tw`flex-row items-center space-x-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20`}>
+                  <View style={tw`w-1.5 h-1.5 rounded-full bg-emerald-400`} />
+                  <Text style={tw`text-[8px] font-black text-emerald-400`}>SIMULATION FEED</Text>
                 </View>
               </View>
 
-              {/* B) Treatment Phase Flow */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Treatment Phase Flow</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Dynamic mechanical timeline steps</Text>
-                </View>
-                <View style={tw`space-y-3`}>
-                  {[
-                    { phase: 'Phase 1: Levelling & Alignment', force: 'Light Continuous', risk: 'Low Risk', icon: '🦷' },
-                    { phase: 'Phase 2: Space Closure / Sagittal', force: 'Medium Intermittent', risk: 'Moderate Risk', icon: '🔗' },
-                    { phase: 'Phase 3: Finishing & Retention', force: 'Light Segmented', risk: 'Low Risk', icon: '✨' },
-                  ].map((p, idx) => (
-                    <View key={idx} style={tw`flex-row items-center space-x-3 bg-black/25 p-3.5 rounded-xl border border-white/5`}>
-                      <View style={tw`w-8 h-8 rounded-full bg-slate-950 items-center justify-center`}>
-                        <Text style={tw`text-xs`}>{p.icon}</Text>
-                      </View>
-                      <View style={tw`flex-1`}>
-                        <Text style={tw`text-[11px] font-black text-white`}>{p.phase}</Text>
-                        <Text style={tw`text-[9px] text-slate-400 mt-0.5`}>Force: {p.force} • {p.risk}</Text>
-                      </View>
-                      <View style={tw`bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md`}>
-                        <Text style={tw`text-[8px] font-black text-emerald-400`}>Active</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* C) Alternative Plan Cards */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Alternative Strategy Presets</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Dynamic mechanical preset paths</Text>
-                </View>
-                <View style={tw`flex-row space-x-2`}>
-                  {[
-                    { title: 'Non-Extraction', desc: 'Camouflage strategy', active: extractionDecision === 'No' },
-                    { title: 'Extraction', desc: 'Premium anchorage', active: extractionDecision === 'Yes' },
-                    { title: 'Orthopedic / Surgical', desc: 'Growth modification', active: treatmentPlan.surgicalOrthodontics.applicable || ageGroup === 'growing' },
-                  ].map((item, idx) => (
-                    <View 
-                      key={idx} 
-                      style={tw`flex-1 p-3.5 rounded-xl border bg-black/25 ${item.active ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'}`}
-                    >
-                      <Text style={tw`text-[10px] font-black text-white`}>{item.title}</Text>
-                      <Text style={tw`text-[8px] text-slate-400 mt-1`}>{item.desc}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* D) Outcome Prediction Chart */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Treatment Outcome Predictions</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Simulated aesthetic & stability projections</Text>
-                </View>
-                <View style={tw`space-y-3`}>
-                  {[
-                    { label: 'Long-term Stability', val: stabilityVal },
-                    { label: 'Facial Esthetics', val: estheticsVal },
-                    { label: 'Treatment Speed', val: timeVal },
-                    { label: 'Relapse Risk Control', val: 100 - riskVal },
-                  ].map((item, idx) => (
-                    <View key={idx} style={tw`space-y-1`}>
-                      <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}%</Text>
-                      </View>
-                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            {/* ====================================================
-                🧠 MODULE 3: ORTHODONTIC CLINICAL DECISION FORCE SYSTEM
-               ==================================================== */}
-            <View style={tw`space-y-5 mb-6`}>
-              <View style={tw`flex-row items-center justify-between px-2 pt-2`}>
-                <View style={tw`flex-row items-center space-x-2`}>
-                  <Layers size={16} color="#22D3EE" style={tw`mr-1`} />
-                  <Text style={tw`text-base font-black text-white`}>Orthodontic Clinical Decision Force System</Text>
-                </View>
-                <View style={tw`bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20`}>
-                  <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>CDSS Engine</Text>
-                </View>
-              </View>
-
-              {/* A) Force Decision Dashboard */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>A) Live Biomechanics Force System Vector</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time mechanical loading index</Text>
-                </View>
-                <View style={tw`space-y-3`}>
-                  {[
-                    { label: 'Retraction Mechanics', val: retractionForce },
-                    { label: 'Intrusion Force', val: intrusionForce },
-                    { label: 'Expansion Mechanics', val: expansionForce },
-                    { label: 'Torque System Control', val: torqueControl },
-                    { label: 'Rotation Arm Control', val: rotationCorrection },
-                  ].map((item, idx) => (
-                    <View key={idx} style={tw`space-y-1`}>
-                      <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
-                        <Text style={tw`text-xs font-black text-[#22D3EE]`}>{item.val}/100 cN</Text>
-                      </View>
-                      <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-teal-500 rounded-full`, { width: `${item.val}%` }]} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* B) Anchorage Risk Indicator */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>B) Anchorage Risk Indicator</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Clinical risk demand status</Text>
-                </View>
-                <View style={tw`p-4 rounded-2xl bg-black/25 border border-white/5 space-y-3`}>
+              <View style={tw`flex-row flex-wrap gap-3`}>
+                {/* Vector 1 */}
+                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
                   <View style={tw`flex-row justify-between items-center`}>
-                    <Text style={tw`text-xs font-bold text-slate-300`}>Anchorage Demand Risk Index</Text>
-                    <Text style={tw`text-xs font-black text-rose-400`}>{anchorageDemand}/100</Text>
+                    <Text style={tw`text-xs font-black text-white`}>Anterior Retraction</Text>
+                    <Text style={tw`text-lg`}>⬅️</Text>
                   </View>
-                  <View style={tw`w-full h-3 bg-slate-950 rounded-full overflow-hidden`}>
-                    <View style={[tw`h-full bg-rose-500 rounded-full`, { width: `${anchorageDemand}%` }]} />
+                  <View style={tw`w-full h-1 bg-slate-950 rounded-full overflow-hidden`}>
+                    <View style={tw`h-full bg-[#1E88FF] w-3/10`} />
                   </View>
-                  <View style={tw`flex-row justify-between items-center pt-1`}>
-                    {[
-                      { key: 'Low', label: 'Low Anchorage', active: anchorageDemand < 40 },
-                      { key: 'Mod', label: 'Moderate Anchorage', active: anchorageDemand >= 40 && anchorageDemand < 70 },
-                      { key: 'High', label: 'High Anchorage', active: anchorageDemand >= 70 },
-                    ].map((item, idx) => (
-                      <View key={idx} style={tw`px-2 py-0.5 rounded bg-black/25 ${item.active ? 'bg-rose-500/10 border border-rose-500/20' : ''}`}>
-                        <Text style={tw`text-[8px] font-bold ${item.active ? 'text-rose-400 font-black' : 'text-slate-500'}`}>{item.label}</Text>
-                      </View>
-                    ))}
+                  <View style={tw`flex-row justify-between items-center pt-0.5`}>
+                    <Text style={tw`text-[9px] text-[#1E88FF] font-black`}>35 cN</Text>
+                    <Text style={tw`text-[8px] font-black text-emerald-400 uppercase`}>Safe</Text>
+                  </View>
+                </View>
+
+                {/* Vector 2 */}
+                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                  <View style={tw`flex-row justify-between items-center`}>
+                    <Text style={tw`text-xs font-black text-white`}>Vertical Intrusion</Text>
+                    <Text style={tw`text-lg`}>↗️</Text>
+                  </View>
+                  <View style={tw`w-full h-1 bg-slate-950 rounded-full overflow-hidden`}>
+                    <View style={tw`h-full bg-[#8E44AD] w-1/2`} />
+                  </View>
+                  <View style={tw`flex-row justify-between items-center pt-0.5`}>
+                    <Text style={tw`text-[9px] text-[#8E44AD] font-black`}>50 cN</Text>
+                    <Text style={tw`text-[8px] font-black text-emerald-400 uppercase`}>Safe</Text>
+                  </View>
+                </View>
+
+                {/* Vector 3 */}
+                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                  <View style={tw`flex-row justify-between items-center`}>
+                    <Text style={tw`text-xs font-black text-white`}>Transverse Exp.</Text>
+                    <Text style={tw`text-lg`}>➡️</Text>
+                  </View>
+                  <View style={tw`w-full h-1 bg-slate-950 rounded-full overflow-hidden`}>
+                    <View style={tw`h-full bg-[#2ECC71] w-2/3`} />
+                  </View>
+                  <View style={tw`flex-row justify-between items-center pt-0.5`}>
+                    <Text style={tw`text-[9px] text-[#2ECC71] font-black`}>65 cN</Text>
+                    <Text style={tw`text-[8px] font-black text-amber-400 uppercase`}>Optimum</Text>
+                  </View>
+                </View>
+
+                {/* Vector 4 */}
+                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                  <View style={tw`flex-row justify-between items-center`}>
+                    <Text style={tw`text-xs font-black text-white`}>Root Torque</Text>
+                    <Text style={tw`text-lg`}>↘️</Text>
+                  </View>
+                  <View style={tw`w-full h-1 bg-slate-950 rounded-full overflow-hidden`}>
+                    <View style={tw`h-full bg-[#F39C12] w-full`} />
+                  </View>
+                  <View style={tw`flex-row justify-between items-center pt-0.5`}>
+                    <Text style={tw`text-[9px] text-[#F39C12] font-black`}>100 cN</Text>
+                    <Text style={tw`text-[8px] font-black text-rose-400 uppercase`}>Maximum</Text>
                   </View>
                 </View>
               </View>
+            </View>
 
-              {/* C) Clinical Decision Output Card */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>C) Generated Clinical Decision Output</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>AI recommendations & wire sequence</Text>
-                </View>
-                <View style={tw`p-4 bg-black/25 rounded-2xl border border-white/5 space-y-3`}>
-                  <View style={tw`flex-row items-center space-x-2`}>
-                    <Zap size={14} color="#22D3EE" />
-                    <Text style={tw`text-xs font-black text-white`}>Mechanics: {anchorageDemand > 70 ? 'Segmented Force Mechanics' : 'Continuous Light-Force Wire'}</Text>
-                  </View>
-                  <View style={tw`flex-row flex-wrap gap-2 pt-1`}>
-                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
-                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Continuous Mode</Text>
-                    </View>
-                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
-                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Intermittent Mode</Text>
-                    </View>
-                    <View style={tw`bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20`}>
-                      <Text style={tw`text-[9px] font-black text-[#22D3EE] uppercase`}>Segmented Mechanics</Text>
-                    </View>
-                  </View>
-                </View>
+            {/* ====================================================
+                📉 3. TREATMENT OUTCOME PREDICTION
+               ==================================================== */}
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
+              <View style={tw`border-b border-white/5 pb-2`}>
+                <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Treatment Outcome Prediction Projections</Text>
+                <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Simulated aesthetic & stability projections</Text>
               </View>
-
-              {/* D) Biomechanical Safety Zone */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>D) Biomechanical Safety Zone Status</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Force load verification</Text>
-                </View>
-                <View style={tw`flex-row space-x-2`}>
-                  {[
-                    { key: 'Safe', label: 'Safe Zone (Light force)', active: averageForce < 45, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-                    { key: 'Controlled', label: 'Controlled Zone (Mod force)', active: averageForce >= 45 && averageForce < 75, color: 'bg-teal-500/10 border-teal-500/20 text-teal-400' },
-                    { key: 'Risk', label: 'Risk Zone (Heavy force)', active: averageForce >= 75, color: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
-                  ].map((zone, idx) => (
-                    <View 
-                      key={idx} 
-                      style={tw`flex-1 p-2.5 rounded-xl border items-center justify-center ${zone.color} ${zone.active ? 'border-2 shadow-sm' : 'opacity-40'}`}
-                    >
-                      <Text style={tw`text-[9px] font-black text-center`}>{zone.label}</Text>
+              <View style={tw`space-y-3.5`}>
+                {[
+                  { label: 'Stability', val: stabilityVal, color: '#1E88FF' },
+                  { label: 'Esthetics', val: estheticsVal, color: '#2ECC71' },
+                  { label: 'Treatment Efficiency', val: timeVal, color: '#8E44AD' },
+                  { label: 'Risk Level', val: riskVal, color: '#E74C3C' },
+                  { label: 'Anchorage Demand', val: anchorageDemand, color: '#F39C12' },
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <Text style={tw`text-xs font-semibold text-slate-300`}>{item.label}</Text>
+                      <Text style={tw`text-xs font-black text-white`}>{item.val}%</Text>
                     </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* Clinician Overrides & Override Save */}
-              <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-3`}>
-                <View style={tw`border-b border-white/5 pb-2`}>
-                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Clinician Notes & Directives</Text>
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Case Override logs</Text>
-                </View>
-                <TextInput
-                  value={clinicianOverride}
-                  onChangeText={setClinicianOverride}
-                  multiline
-                  numberOfLines={2}
-                  placeholder="Enter clinical objectives, diagnostic caveats, or patient-specific instructions to save changes..."
-                  placeholderTextColor="#475569"
-                  style={[tw`w-full px-3 py-2 bg-black/45 text-white font-sans text-xs rounded-xl border border-white/10 focus:border-teal-500`, { minHeight: 60 }]}
-                />
-
-                <Pressable
-                  disabled={true}
-                  style={tw`w-full py-2.5 rounded-xl items-center justify-center border ${isSaving ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}
-                >
-                  <View style={tw`flex-row items-center space-x-1.5`}>
-                    {isSaving ? (
-                      <>
-                        <ActivityIndicator size="small" color="#F59E0B" />
-                        <Text style={tw`text-[10px] font-black text-amber-500 uppercase tracking-widest`}>Saving System...</Text>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={12} color="#10B981" />
-                        <Text style={tw`text-[10px] font-black text-emerald-500 uppercase tracking-widest`}>AI Parameters Sync Completed</Text>
-                      </>
-                    )}
+                    <View style={tw`w-full h-2.5 bg-slate-950 rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.color }]} />
+                    </View>
                   </View>
-                </Pressable>
+                ))}
               </View>
+            </View>
 
+            {/* Notes overrides and sync */}
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-3`}>
+              <View style={tw`border-b border-white/5 pb-2`}>
+                <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Clinician Notes & Directives</Text>
+                <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Case Override Logs</Text>
+              </View>
+              <TextInput
+                value={clinicianOverride}
+                onChangeText={setClinicianOverride}
+                multiline
+                numberOfLines={2}
+                placeholder="Enter clinical objectives, diagnostic caveats, or patient-specific instructions to save changes..."
+                placeholderTextColor="#475569"
+                style={[tw`w-full px-3 py-2 bg-black/45 text-white font-sans text-xs rounded-xl border border-white/10 focus:border-teal-500`, { minHeight: 60 }]}
+              />
+
+              <Pressable
+                disabled={true}
+                style={tw`w-full py-2.5 rounded-xl items-center justify-center border ${isSaving ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}
+              >
+                <View style={tw`flex-row items-center space-x-1.5`}>
+                  {isSaving ? (
+                    <>
+                      <ActivityIndicator size="small" color="#F59E0B" />
+                      <Text style={tw`text-[10px] font-black text-amber-500 uppercase tracking-widest`}>Saving System...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={12} color="#10B981" />
+                      <Text style={tw`text-[10px] font-black text-emerald-500 uppercase tracking-widest`}>AI Parameters Sync Completed</Text>
+                    </>
+                  )}
+                </View>
+              </Pressable>
             </View>
 
           </View>
