@@ -4,21 +4,17 @@ import { Assessment } from '../types';
 import { 
   FileText, 
   Activity, 
-  Calendar, 
   Award,
   Layers,
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   User,
-  Clock,
   Compass,
-  Info
+  ArrowRight
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import { Norms } from '../scoringEngine';
-import { getReportData, ReactDonutChart, DonutSegment } from './PdfReport';
+import { getReportData } from './PdfReport';
 
 const cleanPercent = (val: string | number | undefined) => {
   if (val === undefined || val === '') return '0%';
@@ -41,7 +37,6 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
     skeletal: true,
     dental: false,
     softTissue: false,
-    synthesis: false,
   });
 
   // Find selected assessment or fallback
@@ -56,7 +51,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   if (savedAssessments.length === 0) {
     return (
       <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
-        <View style={tw`bg-gradient-to-br from-teal-950/40 to-[#0B1020]/40 p-8 rounded-[32px] border border-white/5 shadow-2xl mt-8 items-center text-center space-y-5`}>
+        <View style={tw`bg-[#0B1020]/60 p-8 rounded-[32px] border border-white/5 shadow-2xl mt-8 items-center text-center space-y-5`}>
           <View style={tw`w-16 h-16 bg-[#14B8A6]/10 rounded-full items-center justify-center border border-[#14B8A6]/20 shadow-inner`}>
             <FileText size={30} color="#14B8A6" />
           </View>
@@ -66,18 +61,12 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           <Text style={tw`text-slate-400 max-w-xs text-xs leading-relaxed text-center`}>
             Clinical history database is currently empty. Run an OCI analysis first to store patient parameters before accessing professional clinical reports.
           </Text>
-          <View style={tw`pt-2 items-center`}>
-            <Text style={tw`text-[9px] text-[#22D3EE] font-black font-mono uppercase tracking-widest`}>
-              Clinical Decision Support
-            </Text>
-            <Text style={tw`text-[10px] text-slate-500 mt-1 font-mono uppercase`}>Director: Dr. Salman MDS</Text>
-          </View>
         </View>
       </ScrollView>
     );
   }
 
-  const { patientDetails, cephalometricInput, ociResult } = selectedAssessment;
+  const { patientDetails, cephalometricInput } = selectedAssessment;
 
   const measurementsList = [
     { key: 'sna', name: 'SNA (°)', norm: Norms.sna },
@@ -107,7 +96,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
     return 'text-amber-400 font-extrabold';
   };
 
-  // Upgraded Clinical Report Calculations (synchronized with PdfReport.tsx)
+  // Calculations
   const report = getReportData(selectedAssessment);
   const total = selectedAssessment.ociResult.totalScore;
 
@@ -127,7 +116,6 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
   const isClass1 = selectedAssessment.patientDetails.diagnosis === 'Class I';
   const isClass2 = selectedAssessment.patientDetails.diagnosis === 'Class II' || anbVal > 4.5;
-  const isClass3 = selectedAssessment.patientDetails.diagnosis === 'Class III' || anbVal < 0;
 
   // 1. Skeletal Deviations
   const snaDev = Math.max(0.5, Math.abs(snaVal - 82));
@@ -171,83 +159,33 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   const nasoPct = Math.round((nasoDev / softSum) * 100);
   const convexityPct = 100 - (upperLipPct + lowerLipPct + chinPct + nasoPct);
 
-  // Determine dominant skeletal component
-  let dominantSkeletalComponent = 'Maxillary Position';
-  let dominantSkeletalPct = maxillaPct;
-  if (mandiblePct > dominantSkeletalPct) {
-    dominantSkeletalComponent = 'Mandibular Position';
-    dominantSkeletalPct = mandiblePct;
-  }
-  if (verticalPct > dominantSkeletalPct) {
-    dominantSkeletalComponent = 'Vertical Pattern';
-    dominantSkeletalPct = verticalPct;
-  }
-  if (balancePct > dominantSkeletalPct) {
-    dominantSkeletalComponent = 'Facial Skeletal Balance';
-    dominantSkeletalPct = balancePct;
-  }
-
   // Determine overall categories
   const ociSke = Number(report.ociSkeletalContribution) || (isClass1 ? 25 : isClass2 ? 45 : 50);
   const ociDen = Number(report.ociDentalContribution) || (isClass1 ? 55 : isClass2 ? 35 : 35);
   const ociSof = Number(report.ociSoftTissueContribution) || (isClass1 ? 20 : isClass2 ? 20 : 15);
 
-  let dominantCompType = 'Dental Camouflage';
-  let dominantCompVal = ociDen;
-  if (ociSke > dominantCompVal) {
-    dominantCompType = 'Skeletal Mismatch';
-    dominantCompVal = ociSke;
-  }
-  if (ociSof > dominantCompVal) {
-    dominantCompType = 'Soft Tissue Masking';
-    dominantCompVal = ociSof;
-  }
-
   let severityLabel = 'Mild';
-  let severityColor = '#10B981'; // green
-  if (total > 65) {
+  let severityColor = '#27AE60'; 
+  if (total > 80) {
+    severityLabel = 'Extreme';
+    severityColor = '#E74C3C';
+  } else if (total > 60) {
     severityLabel = 'Severe';
-    severityColor = '#EF4444';
-  } else if (total > 35) {
+    severityColor = '#E67E22';
+  } else if (total > 40) {
     severityLabel = 'Moderate';
-    severityColor = '#F59E0B';
+    severityColor = '#F1C40F';
+  } else if (total <= 20) {
+    severityLabel = 'Minimal';
+    severityColor = '#2ECC71';
   }
 
-  // Build AI summaries & interpretations
-  const skeletalSummary = `Skeletal compensation is clinically classified as ${severityLabel.toLowerCase()}. The dominant loading is driven by the ${dominantSkeletalComponent} (${dominantSkeletalPct}%), reflecting active sagittal base masking. In response, dentoalveolar structures are adapting to maintain aesthetic facial coordinates.`;
-
-  const dentalSummary = `Comprehensive dental analysis indicates major compensatory angulation. Lower incisor inclination (IMPA=${impaVal}°, contributing ${lowerIncisorPct}%) and upper incisors (U1-SN=${u1SnVal}°, contributing ${upperIncisorPct}%) exhibit significant reciprocal tipping. This high-torque masking conceals the skeletal jaw discrepancy but severely limits traditional orthodontic alignment without decompensation or therapeutic extractions.`;
-
-  const softTissueSummary = `The soft tissue envelope is heavily influenced by underlying dental compensations, with ${profileVal} facial profile coordinates. The lips (Upper: ${upperLipELineVal}mm, Lower: ${lowerLipELineVal}mm, contributing ${upperLipPct + lowerLipPct}%) show active tension to overcome skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} disharmony. This masks bone discrepancies but compromises long-term lip competence and chin-neck esthetics.`;
-
-  const overallSegments: DonutSegment[] = [
-    { name: 'Skeletal Compensation', value: ociSke, color: '#F59E0B' },
-    { name: 'Dental Compensation', value: ociDen, color: '#10B981' },
-    { name: 'Soft Tissue Compensation', value: ociSof, color: '#3B82F6' }
-  ];
-
-  const skeletalSegments: DonutSegment[] = [
-    { name: 'Maxilla Position', value: maxillaPct, color: '#EF4444' },
-    { name: 'Mandible Position', value: mandiblePct, color: '#3B82F6' },
-    { name: 'Vertical Pattern', value: verticalPct, color: '#F59E0B' },
-    { name: 'Facial Skeletal Balance', value: balancePct, color: '#10B981' }
-  ];
-
-  const dentalSegments: DonutSegment[] = [
-    { name: 'Upper Incisor', value: upperIncisorPct, color: '#EC4899' },
-    { name: 'Lower Incisor', value: lowerIncisorPct, color: '#8B5CF6' },
-    { name: 'Upper Molar', value: upperMolarPct, color: '#10B981' },
-    { name: 'Lower Molar', value: lowerMolarPct, color: '#3B82F6' },
-    { name: 'Occlusal Plane', value: occlusalPct, color: '#F59E0B' }
-  ];
-
-  const softTissueSegments: DonutSegment[] = [
-    { name: 'Upper Lip', value: upperLipPct, color: '#EF4444' },
-    { name: 'Lower Lip', value: lowerLipPct, color: '#3B82F6' },
-    { name: 'Chin', value: chinPct, color: '#10B981' },
-    { name: 'Nasolabial Angle', value: nasoPct, color: '#F59E0B' },
-    { name: 'Facial Convexity', value: convexityPct, color: '#8B5CF6' }
-  ];
+  // Deconstruct systems
+  const systems = [
+    { name: 'Skeletal System', val: ociSke, color: '#E74C3C', icon: '💀', highlight: 'Skeletal Dominance' },
+    { name: 'Dental System', val: ociDen, color: '#1E88FF', icon: '🦷', highlight: 'Dental Compensation' },
+    { name: 'Soft Tissue System', val: ociSof, color: '#8E44AD', icon: '👄', highlight: 'Soft Tissue Strain' },
+  ].sort((a, b) => b.val - a.val);
 
   const handleExportPDF = () => {
     onOpenPdf(selectedAssessment);
@@ -257,28 +195,21 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
     <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
-        {/* Patient Selection Header */}
+        {/* ====================================
+            PATIENT SELECTION HEADER (NO LOGOS / NO BRANDING HEADERS)
+           ==================================== */}
         <View style={tw`bg-[#0B1226] p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-          <View style={tw`space-y-1`}>
-            <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-1`}>
-              <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
-              <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Diagnostic Archival Report</Text>
-            </View>
-            <Text style={tw`text-xl font-black text-white tracking-tight uppercase`}>
-              Clinical Reports
-            </Text>
-            <Text style={tw`text-xs text-slate-400 mt-1`}>Review cephalometric metric profiles and detailed physiological compensations</Text>
-          </View>
-
-          {/* Selector trigger */}
           <View style={tw`relative`}>
             <Pressable
               onPress={() => setShowActiveSelect(!showActiveSelect)}
               style={tw`flex-row justify-between items-center bg-black/40 px-4 py-3.5 rounded-2xl border border-white/10`}
             >
-              <Text style={tw`text-xs font-black text-slate-200`}>
-                {patientDetails.name || 'Anonymous'} ({patientDetails.caseNumber || 'No Case'})
-              </Text>
+              <View style={tw`flex-row items-center space-x-2`}>
+                <User size={14} color="#14B8A6" />
+                <Text style={tw`text-xs font-black text-slate-200`}>
+                  {patientDetails.name || 'Anonymous'} ({patientDetails.caseNumber || 'No Case'})
+                </Text>
+              </View>
               <ChevronDown size={14} color="#14B8A6" />
             </Pressable>
 
@@ -291,7 +222,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
                       setSelectedId(item.id);
                       setShowActiveSelect(false);
                     }}
-                    style={tw`px-4 py-3.5 border-b border-white/5`}
+                    style={tw`px-4 py-3.5 border-b border-white/5 hover:bg-white/3`}
                   >
                     <Text style={tw`text-xs font-bold text-slate-200`}>
                       {item.patientDetails.name || 'Anonymous'}
@@ -303,9 +234,8 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           </View>
         </View>
 
-        {/* Active Patient Metadata Card */}
+        {/* Demographics Card */}
         <View style={tw`bg-[#0B1226]/60 p-5 rounded-[24px] border border-white/5 shadow-xl`}>
-          <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono mb-3`}>Patient Demographics & Clinical Profile</Text>
           <View style={tw`flex-row flex-wrap gap-3`}>
             <View style={tw`bg-black/30 px-3 py-2 rounded-xl border border-white/5 min-w-[120px] flex-1`}>
               <Text style={tw`text-[8px] text-slate-500 font-bold uppercase tracking-wider`}>Age / Gender</Text>
@@ -326,65 +256,170 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           </View>
         </View>
 
-        {/* Top Score Section: Large animated score and overall donut */}
-        <View style={tw`flex-col md:flex-row gap-5`}>
-          
-          {/* OCI Score Gauge Card */}
-          <View style={tw`flex-1 bg-[#0B1226] rounded-3xl p-6 border border-white/5 items-center justify-center relative overflow-hidden`}>
-            <View style={tw`absolute top-0 right-0 w-24 h-24 border-t border-r border-teal-500/10 rounded-tr-3xl` || {}}></View>
-            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4`}>OCI Compensation Score</Text>
-            
-            <View style={tw`relative w-36 h-36 items-center justify-center`}>
-              <ReactDonutChart segments={[{ name: 'OCI', value: total, color: severityColor }]} size={130} strokeWidth={10} />
-              <View style={tw`absolute flex-col items-center`}>
-                <Text style={tw`text-3xl font-black text-white`}>{total}%</Text>
-                <Text style={tw`text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5`}>OCI Index</Text>
-              </View>
-            </View>
+        {/* ====================================
+            📊 1. OCI SEVERITY DISTRIBUTION (BAR CHART SYSTEM)
+           ==================================== */}
+        <View style={tw`bg-[#0B1226] rounded-3xl p-6 border border-white/5 shadow-2xl space-y-4`}>
+          <View style={tw`border-b border-white/5 pb-2`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>OCI Severity Distribution</Text>
+            <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Current Patient Classification</Text>
+          </View>
 
-            <View style={tw`mt-4 items-center`}>
-              <View style={[tw`px-3.5 py-1 rounded-full border flex-row items-center`, { borderColor: `${severityColor}40`, backgroundColor: `${severityColor}10` }]}>
-                <Text style={[tw`text-[10px] font-black uppercase tracking-wider`, { color: severityColor }]}>
-                  {severityLabel} Compensation
-                </Text>
+          <View style={tw`space-y-3.5`}>
+            {[
+              { label: 'Minimal', range: '0-20%', active: total <= 20, color: '#2ECC71', desc: 'Skeletal base harmony' },
+              { label: 'Mild', range: '21-40%', active: total > 20 && total <= 40, color: '#27AE60', desc: 'Compensatory boundary' },
+              { label: 'Moderate', range: '41-60%', active: total > 40 && total <= 60, color: '#F1C40F', desc: 'Dentoalveolar torque adaptation' },
+              { label: 'Severe', range: '61-80%', active: total > 60 && total <= 80, color: '#E67E22', desc: 'Extensive skeletal base discrepancy' },
+              { label: 'Extreme', range: '81-100%', active: total > 80, color: '#E74C3C', desc: 'Surgical decompensation target boundary' },
+            ].map((cat, idx) => {
+              return (
+                <View key={idx} style={tw`space-y-1`}>
+                  <View style={tw`flex-row justify-between items-center`}>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={[tw`w-2.5 h-2.5 rounded-full`, { backgroundColor: cat.color }]} />
+                      <Text style={[tw`text-xs font-black`, cat.active ? tw`text-white` : tw`text-slate-400`]}>{cat.label}</Text>
+                      <Text style={tw`text-[8px] text-slate-500 font-bold font-mono`}>{cat.range}</Text>
+                    </View>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      {cat.active && (
+                        <View style={tw`bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20`}>
+                          <Text style={tw`text-[8px] font-black text-teal-400 uppercase`}>ACTIVE PATIENT ({total}%)</Text>
+                        </View>
+                      )}
+                      <Text style={tw`text-xs font-black text-slate-300 font-mono`}>{cat.active ? 'Count: 1' : 'Count: 0'}</Text>
+                    </View>
+                  </View>
+                  <View style={tw`w-full h-2.5 bg-slate-950 rounded-full overflow-hidden`}>
+                    <View style={[tw`h-full rounded-full`, { width: cat.active ? `${total}%` : '5%', backgroundColor: cat.color }]} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* ====================================
+            🧠 2. COMPENSATION ANALYSIS MODULE
+           ==================================== */}
+        <View style={tw`bg-[#0B1226] rounded-3xl p-6 border border-white/5 shadow-2xl space-y-5`}>
+          <View style={tw`border-b border-white/5 pb-2`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Orthodontic Compensation Analysis</Text>
+            <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Physiological adaptation deconstruction</Text>
+          </View>
+
+          {/* A) COMPENSATION BALANCE CHART */}
+          <View style={tw`space-y-3 bg-black/35 p-4 rounded-2xl border border-white/5`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>A) Compensation Balance Indices</Text>
+            <View style={tw`space-y-3`}>
+              <View style={tw`space-y-1`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={tw`text-xs font-bold text-slate-300`}>Skeletal Influence</Text>
+                  <Text style={tw`text-xs font-black text-[#E74C3C]`}>{ociSke}%</Text>
+                </View>
+                <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                  <View style={[tw`h-full bg-[#E74C3C]`, { width: `${ociSke}%` }]} />
+                </View>
               </View>
-              <Text style={tw`text-[10px] text-slate-400 text-center mt-2 px-4 leading-normal`}>
-                Quantified severity of physiological compensation masking skeletal Class {anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} mismatch.
-              </Text>
+
+              <View style={tw`space-y-1`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={tw`text-xs font-bold text-slate-300`}>Dental Compensation</Text>
+                  <Text style={tw`text-xs font-black text-[#1E88FF]`}>{ociDen}%</Text>
+                </View>
+                <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                  <View style={[tw`h-full bg-[#1E88FF]`, { width: `${ociDen}%` }]} />
+                </View>
+              </View>
+
+              <View style={tw`space-y-1`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={tw`text-xs font-bold text-slate-300`}>Soft Tissue Adaptation</Text>
+                  <Text style={tw`text-xs font-black text-[#8E44AD]`}>{ociSof}%</Text>
+                </View>
+                <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                  <View style={[tw`h-full bg-[#8E44AD]`, { width: `${ociSof}%` }]} />
+                </View>
+              </View>
             </View>
           </View>
 
-          {/* Overall Allocation Donut Card */}
-          <View style={tw`flex-1 bg-[#0B1226] rounded-3xl p-6 border border-white/5 justify-center`}>
-            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4 text-center md:text-left`}>Overall Compensation Distribution</Text>
-            
-            <View style={tw`flex-col sm:flex-row items-center justify-around gap-4`}>
-              <ReactDonutChart segments={overallSegments} size={130} strokeWidth={12} />
-              
-              <View style={tw`space-y-3`}>
-                <View style={tw`flex-row items-center gap-3`}>
-                  <View style={tw`w-2.5 h-2.5 rounded bg-amber-500`}></View>
-                  <View>
-                    <Text style={tw`text-white font-bold text-xs`}>Skeletal Base ({ociSke}%)</Text>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono`}>Load Factor: {report.ociSkeletalContribution}</Text>
-                  </View>
+          {/* B) DOMINANT PROBLEM IDENTIFIER */}
+          <View style={tw`space-y-3`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>B) Dominant System Classification</Text>
+            <View style={tw`flex-row gap-2.5`}>
+              {[
+                { label: 'Skeletal Dominance', active: ociSke >= ociDen && ociSke >= ociSof, color: 'bg-[#E74C3C]/15 border-[#E74C3C]/35 text-[#E74C3C]', tag: 'Skeletal base mismatch' },
+                { label: 'Dental Compensation', active: ociDen > ociSke && ociDen >= ociSof, color: 'bg-[#1E88FF]/15 border-[#1E88FF]/35 text-[#1E88FF]', tag: 'Torque shift load' },
+                { label: 'Soft Tissue Strain', active: ociSof > ociSke && ociSof > ociDen, color: 'bg-[#8E44AD]/15 border-[#8E44AD]/35 text-[#8E44AD]', tag: 'Labio-mental tension profile' },
+              ].map((sys, idx) => (
+                <View 
+                  key={idx} 
+                  style={tw`flex-1 p-3 rounded-xl border ${sys.color} ${sys.active ? 'border-2 shadow-sm' : 'opacity-30'}`}
+                >
+                  <Text style={tw`text-[10px] font-black text-center`}>{sys.label}</Text>
+                  <Text style={tw`text-[7px] font-bold text-center mt-1 text-slate-400`}>{sys.tag}</Text>
                 </View>
-                <View style={tw`flex-row items-center gap-3`}>
-                  <View style={tw`w-2.5 h-2.5 rounded bg-emerald-500`}></View>
-                  <View>
-                    <Text style={tw`text-white font-bold text-xs`}>Dental Torque ({ociDen}%)</Text>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono`}>Load Factor: {report.ociDentalContribution}</Text>
-                  </View>
-                </View>
-                <View style={tw`flex-row items-center gap-3`}>
-                  <View style={tw`w-2.5 h-2.5 rounded bg-blue-500`}></View>
-                  <View>
-                    <Text style={tw`text-white font-bold text-xs`}>Soft Tissue ({ociSof}%)</Text>
-                    <Text style={tw`text-[9px] text-slate-400 font-mono`}>Load Factor: {report.ociSoftTissueContribution}</Text>
-                  </View>
-                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* C) INTERACTION FLOW VISUAL */}
+          <View style={tw`space-y-3 bg-black/35 p-4 rounded-2xl border border-white/5`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>C) Physiological Interaction Flow</Text>
+            <View style={tw`space-y-2`}>
+              <View style={tw`flex-row items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/5`}>
+                <Text style={tw`text-[10px] font-bold text-[#E74C3C]`}>Skeletal Base Relationship</Text>
+                <ArrowRight size={10} color="#E74C3C" />
+                <Text style={tw`text-[10px] font-bold text-[#1E88FF]`}>Dental compensation bases</Text>
+              </View>
+              <View style={tw`flex-row items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/5`}>
+                <Text style={tw`text-[10px] font-bold text-[#1E88FF]`}>Dental Displacement</Text>
+                <ArrowRight size={10} color="#1E88FF" />
+                <Text style={tw`text-[10px] font-bold text-[#8E44AD]`}>Soft tissue adaptation strain</Text>
+              </View>
+              <View style={tw`flex-row items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/5`}>
+                <Text style={tw`text-[10px] font-bold text-[#8E44AD]`}>Lip/Chin Strain Profile</Text>
+                <ArrowRight size={10} color="#8E44AD" />
+                <Text style={tw`text-[10px] font-bold text-[#E74C3C]`}>Functional skeletal base feedback</Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        {/* ====================================
+            📉 3. PROBLEM SEVERITY HIGHLIGHT (RANKED CARD)
+           ==================================== */}
+        <View style={tw`bg-[#0B1226] rounded-3xl p-6 border border-white/5 shadow-2xl space-y-4`}>
+          <View style={tw`border-b border-white/5 pb-2`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Problem Severity Hierarchy</Text>
+            <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Skeletal ➔ Dental ➔ Soft Tissue Rank</Text>
+          </View>
+
+          <View style={tw`space-y-3`}>
+            {systems.map((sys, idx) => {
+              const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+              const rankName = idx === 0 ? 'Primary System Load' : idx === 1 ? 'Secondary Compensatory Shift' : 'Adaptive Envelope Response';
+              return (
+                <View key={idx} style={tw`flex-row items-center space-x-3.5 bg-black/35 p-3.5 rounded-2xl border border-white/5`}>
+                  <View style={tw`w-9 h-9 rounded-full bg-slate-950 items-center justify-center`}>
+                    <Text style={tw`text-lg`}>{sys.icon}</Text>
+                  </View>
+                  <View style={tw`flex-1`}>
+                    <View style={tw`flex-row items-center space-x-1.5`}>
+                      <Text style={tw`text-[8px] font-mono font-black text-slate-400 uppercase`}>{rankEmoji} {rankName}</Text>
+                    </View>
+                    <Text style={tw`text-xs font-black text-white mt-0.5`}>{sys.name}</Text>
+                    <View style={tw`w-full h-1.5 bg-slate-950 rounded-full mt-2 overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${sys.val}%`, backgroundColor: sys.color }]} />
+                    </View>
+                  </View>
+                  <View style={[tw`px-3 py-1.5 rounded-xl border`, { borderColor: `${sys.color}25`, backgroundColor: `${sys.color}10` }]}>
+                    <Text style={[tw`text-xs font-black font-mono`, { color: sys.color }]}>{sys.val}%</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         </View>
 
@@ -438,9 +473,6 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* Bento Grid: Three separate detailed analytical deconstruction cards */}
-        <Text style={tw`text-[10px] font-black text-[#22D3EE] uppercase tracking-widest font-mono mt-4`}>Multidimensional Deconstruction Cards</Text>
-
-        {/* CARD 1: SKELETAL DECOMPOSITION */}
         <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
           <Pressable 
             onPress={() => setExpandedSections(prev => ({ ...prev, skeletal: !prev.skeletal }))}
@@ -450,57 +482,47 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               <View style={tw`bg-amber-500/10 p-1.5 rounded-lg`}>
                 <Layers size={14} color="#F59E0B" />
               </View>
-              <Text style={tw`text-xs font-black text-white uppercase tracking-wide`}>1. Skeletal Base Allocation</Text>
+              <Text style={tw`text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono`}>Skeletal Base Relationships</Text>
             </View>
-            <View style={tw`flex-row items-center gap-2`}>
-              <Text style={tw`text-xs font-mono font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg`}>{ociSke}%</Text>
+            <View style={tw`flex-row items-center gap-1.5`}>
+              <Text style={tw`text-[9px] font-bold text-slate-400 font-mono`}>
+                {expandedSections.skeletal ? 'COLLAPSE' : 'EXPAND'}
+              </Text>
               <View style={tw`w-5 h-5 rounded-full bg-white/5 items-center justify-center`}>
                 {expandedSections.skeletal ? (
-                  <ChevronUp size={12} color="#14B8A6" />
+                  <ChevronUp size={12} color="#F59E0B" />
                 ) : (
-                  <ChevronDown size={12} color="#14B8A6" />
+                  <ChevronDown size={12} color="#F59E0B" />
                 )}
               </View>
             </View>
           </Pressable>
 
           {expandedSections.skeletal && (
-            <View style={tw`p-6 space-y-4`}>
-              <View style={tw`flex-col lg:flex-row gap-5 items-center`}>
-                <View style={tw`items-center`}>
-                  <ReactDonutChart segments={skeletalSegments} size={110} strokeWidth={10} />
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-2`}>Skeletal Sub-load</Text>
-                </View>
-
-                <View style={tw`flex-1 space-y-3 w-full`}>
-                  <Text style={tw`text-xs text-slate-300 leading-relaxed font-medium`}>{skeletalSummary}</Text>
-                  
-                  {/* Visual Bar Legends */}
-                  <View style={tw`flex-row flex-wrap gap-2 pt-1`}>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[70px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-red-400 font-black uppercase`}>Maxilla</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{maxillaPct}%</Text>
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`space-y-3`}>
+                {[
+                  { name: 'Maxilla Position', val: maxillaPct, color: '#EF4444' },
+                  { name: 'Mandible Position', val: mandiblePct, color: '#3B82F6' },
+                  { name: 'Vertical Pattern', val: verticalPct, color: '#F59E0B' },
+                  { name: 'Facial Skeletal Balance', val: balancePct, color: '#10B981' }
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <Text style={tw`text-xs font-semibold text-slate-300`}>{item.name}</Text>
+                      <Text style={tw`text-xs font-black text-white font-mono`}>{item.val}%</Text>
                     </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[70px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-blue-400 font-black uppercase`}>Mandible</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{mandiblePct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[70px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-amber-400 font-black uppercase`}>Vertical</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{verticalPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[70px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-emerald-400 font-black uppercase`}>Balance</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{balancePct}%</Text>
+                    <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.color }]} />
                     </View>
                   </View>
-                </View>
+                ))}
               </View>
             </View>
           )}
         </View>
 
-        {/* CARD 2: DENTAL DECOMPOSITION */}
+        {/* CARD 2: DENTAL COMPENSATIONS */}
         <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
           <Pressable 
             onPress={() => setExpandedSections(prev => ({ ...prev, dental: !prev.dental }))}
@@ -508,63 +530,50 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           >
             <View style={tw`flex-row items-center gap-2 flex-1 pr-4`}>
               <View style={tw`bg-emerald-500/10 p-1.5 rounded-lg`}>
-                <Activity size={14} color="#10B981" />
+                <Layers size={14} color="#10B981" />
               </View>
-              <Text style={tw`text-xs font-black text-white uppercase tracking-wide`}>2. Dental Torque & Arch Allocation</Text>
+              <Text style={tw`text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono`}>Dental Compensations</Text>
             </View>
-            <View style={tw`flex-row items-center gap-2`}>
-              <Text style={tw`text-xs font-mono font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg`}>{ociDen}%</Text>
+            <View style={tw`flex-row items-center gap-1.5`}>
+              <Text style={tw`text-[9px] font-bold text-slate-400 font-mono`}>
+                {expandedSections.dental ? 'COLLAPSE' : 'EXPAND'}
+              </Text>
               <View style={tw`w-5 h-5 rounded-full bg-white/5 items-center justify-center`}>
                 {expandedSections.dental ? (
-                  <ChevronUp size={12} color="#14B8A6" />
+                  <ChevronUp size={12} color="#10B981" />
                 ) : (
-                  <ChevronDown size={12} color="#14B8A6" />
+                  <ChevronDown size={12} color="#10B981" />
                 )}
               </View>
             </View>
           </Pressable>
 
           {expandedSections.dental && (
-            <View style={tw`p-6 space-y-4`}>
-              <View style={tw`flex-col lg:flex-row gap-5 items-center`}>
-                <View style={tw`items-center`}>
-                  <ReactDonutChart segments={dentalSegments} size={110} strokeWidth={10} />
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-2`}>Dental Sub-load</Text>
-                </View>
-
-                <View style={tw`flex-1 space-y-3 w-full`}>
-                  <Text style={tw`text-xs text-slate-300 leading-relaxed font-medium`}>{dentalSummary}</Text>
-                  
-                  {/* Visual Bar Legends */}
-                  <View style={tw`flex-row flex-wrap gap-2 pt-1`}>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-pink-400 font-black uppercase`}>U. Incisor</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{upperIncisorPct}%</Text>
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`space-y-3`}>
+                {[
+                  { name: 'Upper Incisor', val: upperIncisorPct, color: '#EC4899' },
+                  { name: 'Lower Incisor', val: lowerIncisorPct, color: '#8B5CF6' },
+                  { name: 'Upper Molar', val: upperMolarPct, color: '#10B981' },
+                  { name: 'Lower Molar', val: lowerMolarPct, color: '#3B82F6' },
+                  { name: 'Occlusal Plane', val: occlusalPct, color: '#F59E0B' }
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <Text style={tw`text-xs font-semibold text-slate-300`}>{item.name}</Text>
+                      <Text style={tw`text-xs font-black text-white font-mono`}>{item.val}%</Text>
                     </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-purple-400 font-black uppercase`}>L. Incisor</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{lowerIncisorPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-emerald-400 font-black uppercase`}>U. Molar</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{upperMolarPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-blue-400 font-black uppercase`}>L. Molar</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{lowerMolarPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-amber-400 font-black uppercase`}>Occlusal</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{occlusalPct}%</Text>
+                    <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.color }]} />
                     </View>
                   </View>
-                </View>
+                ))}
               </View>
             </View>
           )}
         </View>
 
-        {/* CARD 3: SOFT TISSUE DECOMPOSITION */}
+        {/* CARD 3: SOFT TISSUE ADAPTATION */}
         <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
           <Pressable 
             onPress={() => setExpandedSections(prev => ({ ...prev, softTissue: !prev.softTissue }))}
@@ -572,250 +581,79 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           >
             <View style={tw`flex-row items-center gap-2 flex-1 pr-4`}>
               <View style={tw`bg-blue-500/10 p-1.5 rounded-lg`}>
-                <Compass size={14} color="#3B82F6" />
+                <Layers size={14} color="#3B82F6" />
               </View>
-              <Text style={tw`text-xs font-black text-white uppercase tracking-wide`}>3. Soft Tissue & Lip Tension Allocation</Text>
+              <Text style={tw`text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono`}>Soft Tissue Adaptations</Text>
             </View>
-            <View style={tw`flex-row items-center gap-2`}>
-              <Text style={tw`text-xs font-mono font-black text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-lg`}>{ociSof}%</Text>
+            <View style={tw`flex-row items-center gap-1.5`}>
+              <Text style={tw`text-[9px] font-bold text-slate-400 font-mono`}>
+                {expandedSections.softTissue ? 'COLLAPSE' : 'EXPAND'}
+              </Text>
               <View style={tw`w-5 h-5 rounded-full bg-white/5 items-center justify-center`}>
                 {expandedSections.softTissue ? (
-                  <ChevronUp size={12} color="#14B8A6" />
+                  <ChevronUp size={12} color="#3B82F6" />
                 ) : (
-                  <ChevronDown size={12} color="#14B8A6" />
+                  <ChevronDown size={12} color="#3B82F6" />
                 )}
               </View>
             </View>
           </Pressable>
 
           {expandedSections.softTissue && (
-            <View style={tw`p-6 space-y-4`}>
-              <View style={tw`flex-col lg:flex-row gap-5 items-center`}>
-                <View style={tw`items-center`}>
-                  <ReactDonutChart segments={softTissueSegments} size={110} strokeWidth={10} />
-                  <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-2`}>Soft Tissue Sub-load</Text>
-                </View>
-
-                <View style={tw`flex-1 space-y-3 w-full`}>
-                  <Text style={tw`text-xs text-slate-300 leading-relaxed font-medium`}>{softTissueSummary}</Text>
-                  
-                  {/* Visual Bar Legends */}
-                  <View style={tw`flex-row flex-wrap gap-2 pt-1`}>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-red-400 font-black uppercase`}>U. Lip</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{upperLipPct}%</Text>
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`space-y-3`}>
+                {[
+                  { name: 'Upper Lip', val: upperLipPct, color: '#EF4444' },
+                  { name: 'Lower Lip', val: lowerLipPct, color: '#3B82F6' },
+                  { name: 'Chin Projection', val: chinPct, color: '#10B981' },
+                  { name: 'Nasolabial Angle', val: nasoPct, color: '#F59E0B' },
+                  { name: 'Facial Convexity', val: convexityPct, color: '#8B5CF6' }
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <Text style={tw`text-xs font-semibold text-slate-300`}>{item.name}</Text>
+                      <Text style={tw`text-xs font-black text-white font-mono`}>{item.val}%</Text>
                     </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-blue-400 font-black uppercase`}>L. Lip</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{lowerLipPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-emerald-400 font-black uppercase`}>Chin</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{chinPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-amber-400 font-black uppercase`}>Nasolabial</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{nasoPct}%</Text>
-                    </View>
-                    <View style={tw`bg-white/5 p-2 rounded-xl border border-white/5 flex-grow min-w-[55px] items-center justify-center`}>
-                      <Text style={tw`text-[7px] text-purple-400 font-black uppercase`}>Convexity</Text>
-                      <Text style={tw`text-xs font-mono font-black text-white mt-0.5`}>{convexityPct}%</Text>
+                    <View style={tw`w-full h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.color }]} />
                     </View>
                   </View>
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* AI Clinical Summary Synthesis Section */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <Pressable 
-            onPress={() => setExpandedSections(prev => ({ ...prev, synthesis: !prev.synthesis }))}
-            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
-          >
-            <View style={tw`flex-row items-center gap-2`}>
-              <Sparkles size={14} color="#22D3EE" />
-              <Text style={tw`text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono`}>AI Clinical Summary Synthesis</Text>
-            </View>
-            <View style={tw`flex-row items-center gap-1.5`}>
-              <Text style={tw`text-[9px] font-bold text-slate-400 font-mono`}>
-                {expandedSections.synthesis ? 'COLLAPSE' : 'EXPAND'}
-              </Text>
-              <View style={tw`w-5 h-5 rounded-full bg-white/5 items-center justify-center`}>
-                {expandedSections.synthesis ? (
-                  <ChevronUp size={12} color="#14B8A6" />
-                ) : (
-                  <ChevronDown size={12} color="#14B8A6" />
-                )}
-              </View>
-            </View>
-          </Pressable>
-
-          {expandedSections.synthesis && (
-            <View style={tw`p-6 space-y-4`}>
-              <View style={tw`flex-row flex-wrap gap-3`}>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>1. Overall Compensation Pattern</Text>
-                  <Text style={tw`text-xs font-extrabold text-white mt-1`}>Skeletal Class {anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} Bases with Dentoalveolar Camouflage</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>2. Dominant Compensation Type</Text>
-                  <Text style={tw`text-xs font-extrabold text-white mt-1`}>{dominantCompType} ({dominantCompVal}%)</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={[tw`text-[8px] text-teal-400 font-black uppercase font-mono`]}>3. Compensation Severity</Text>
-                  <Text style={[tw`text-xs font-extrabold text-white mt-1`, { color: severityColor }]}>{severityLabel} Compensation (OCI score: {total})</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>4. Facial Esthetic Impact</Text>
-                  <Text style={tw`text-xs font-bold text-slate-300 mt-1`}>{profileVal} Profile, compromised chin-lip projection, active labial mental tension</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>5. Occlusal Impact</Text>
-                  <Text style={tw`text-xs font-bold text-slate-300 mt-1`}>Distorted dental overjet, sagittal intercuspation limitations, reciprocal torque loss</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>6. Anchorage Requirement</Text>
-                  <Text style={tw`text-xs font-extrabold text-white mt-1`}>{report.anchorageRequirement} Anchorage Level</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>7. Decompensation Requirement</Text>
-                  <Text style={tw`text-xs font-bold text-slate-300 mt-1`}>Active orthodontic incisor uprighting/leveling before surgery or definitive correction</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>8. Treatment Difficulty</Text>
-                  <Text style={tw`text-xs font-extrabold text-white mt-1`}>{report.complexity}</Text>
-                </View>
-                <View style={tw`bg-white/3 p-3.5 rounded-2xl border border-white/5 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>9. Treatment Prognosis</Text>
-                  <Text style={tw`text-xs font-extrabold text-white mt-1`}>{report.overallPrognosis}</Text>
-                </View>
-                <View style={tw`bg-[#115E59]/10 p-3.5 rounded-2xl border border-[#14B8A6]/20 w-full sm:w-[48%] flex-grow`}>
-                  <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase font-mono`}>10. AI Treatment Action</Text>
-                  <Text style={tw`text-xs font-black text-white mt-1`}>
-                    {report.extractionRecommendation === 'Yes' ? 'Premolar Extraction Sequence' : 'Camouflage Non-extraction approach'}
-                  </Text>
-                </View>
+                ))}
               </View>
             </View>
           )}
         </View>
 
         {/* ====================================
-            OCI INDEX ANALYSIS
-           ==================================== */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <View style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row items-center gap-2 border-b border-white/5`}>
-            <Activity size={14} color="#14B8A6" />
-            <Text style={tw`text-[10px] font-black text-slate-200 uppercase tracking-widest font-mono`}>OCI INDEX ANALYSIS</Text>
-          </View>
-          <View style={tw`p-6 space-y-4`}>
-            <View style={tw`flex-row flex-wrap gap-4`}>
-              <View style={tw`flex-1 min-w-[200px] bg-white/3 p-4 rounded-2xl border border-white/5 items-center justify-center`}>
-                <Text style={tw`text-[8px] text-slate-500 font-black uppercase tracking-widest font-mono`}>OCI Clinical Score</Text>
-                <Text style={tw`text-3xl font-black text-white font-mono mt-1`}>{total}%</Text>
-                <Text style={tw`text-[9px] text-slate-400 font-semibold mt-1`}>Dentoalveolar Compensatory Load</Text>
-              </View>
-
-              <View style={tw`flex-1 min-w-[200px] bg-white/3 p-4 rounded-2xl border border-white/5 justify-center space-y-2`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[8px] text-slate-500 font-black uppercase tracking-widest font-mono`}>Severity Range</Text>
-                  <Text style={[tw`text-xs font-black uppercase`, { color: severityColor }]}>{severityLabel}</Text>
-                </View>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[8px] text-slate-500 font-black uppercase tracking-widest font-mono`}>Confidence Index</Text>
-                  <Text style={tw`text-xs font-black text-emerald-400 font-mono`}>95%</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={tw`space-y-3 pt-2`}>
-              <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Domain-wise OCI Breakdown</Text>
-              
-              {/* Skeletal Base */}
-              <View style={tw`space-y-1.5`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-xs font-bold text-slate-300`}>Skeletal Base Relationship</Text>
-                  <Text style={tw`text-xs font-extrabold text-amber-400 font-mono`}>{ociSke}%</Text>
-                </View>
-                <View style={tw`w-full h-1.5 bg-white/5 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-amber-500`, { width: `${ociSke}%` }]} />
-                </View>
-              </View>
-
-              {/* Dental Torque */}
-              <View style={tw`space-y-1.5`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-xs font-bold text-slate-300`}>Dental Torque Adaptation</Text>
-                  <Text style={tw`text-xs font-extrabold text-emerald-400 font-mono`}>{ociDen}%</Text>
-                </View>
-                <View style={tw`w-full h-1.5 bg-white/5 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-emerald-500`, { width: `${ociDen}%` }]} />
-                </View>
-              </View>
-
-              {/* Soft Tissue */}
-              <View style={tw`space-y-1.5`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-xs font-bold text-slate-300`}>Soft Tissue Tension Envelope</Text>
-                  <Text style={tw`text-xs font-extrabold text-blue-400 font-mono`}>{ociSof}%</Text>
-                </View>
-                <View style={tw`w-full h-1.5 bg-white/5 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-blue-500`, { width: `${ociSof}%` }]} />
-                </View>
-              </View>
-            </View>
-
-            <View style={tw`bg-black/30 p-3.5 rounded-2xl border border-white/5 mt-2`}>
-              <Text style={tw`text-[8px] text-slate-500 font-black uppercase tracking-widest font-mono`}>Diagnostic Interpretation</Text>
-              <Text style={tw`text-xs font-semibold text-slate-300 mt-1 leading-normal`}>
-                {selectedAssessment.ociResult.interpretation}. Lower incisor compensation ({impaVal}°) combined with upper incisor projection ({u1SnVal}°) produces a reciprocal mask protecting normal masticatory functions but straining sagittal bony support.
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ====================================
-            OCI-BASED TREATMENT RANKING
+            OCI-BASED TREATMENT PATHWAYS (NO BRANDING / NO TEXT LOGS)
            ==================================== */}
         <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
           <View style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row items-center gap-2 border-b border-white/5`}>
             <Award size={14} color="#14B8A6" />
-            <Text style={tw`text-[10px] font-black text-slate-200 uppercase tracking-widest font-mono`}>OCI-BASED TREATMENT RANKING</Text>
+            <Text style={tw`text-[10px] font-black text-slate-200 uppercase tracking-widest font-mono`}>AI RECOMMENDED TREATMENT PATHWAYS</Text>
           </View>
           <View style={tw`p-6 space-y-4`}>
             
             {/* 1st option: Recommended by OCI */}
-            <View style={tw`bg-[#14B8A6]/5 border-2 border-[#14B8A6] p-5 rounded-2xl space-y-3`}>
+            <View style={tw`bg-[#14B8A6]/5 border border-[#14B8A6]/40 p-5 rounded-2xl space-y-3`}>
               <View style={tw`flex-row justify-between items-center`}>
-                <Text style={tw`text-[10px] font-black text-[#14B8A6] uppercase tracking-widest font-mono`}>🥇 Recommended by OCI</Text>
+                <Text style={tw`text-[10px] font-black text-[#14B8A6] uppercase tracking-widest font-mono`}>🥇 Recommended Plan Option</Text>
                 <View style={tw`bg-[#14B8A6]/10 px-2 py-0.5 rounded border border-[#14B8A6]/25`}>
                   <Text style={tw`text-[8px] text-teal-400 font-mono font-bold uppercase`}>Primary Path</Text>
                 </View>
               </View>
               <View style={tw`space-y-1`}>
                 <Text style={tw`text-sm font-black text-white`}>
-                  {selectedAssessment.advanced?.primaryPlanOption || report.primaryPlanOption || 'Orthodontic Camouflage (Non-extraction approach)'}
-                </Text>
-                <Text style={tw`text-xs text-slate-300 leading-relaxed`}>
-                  <Text style={tw`font-bold text-teal-400`}>Why Recommended: </Text>
-                  {selectedAssessment.advanced?.explanationWhy || 'Selected by the OCI Analyzer™ because patient parameters lie within predictable non-extraction sagittal compensation margins.'}
+                  {selectedAssessment.advanced?.primaryPlanOption || report.primaryPlanOption || 'Orthodontic Camouflage'}
                 </Text>
               </View>
-              <View style={tw`flex-row space-x-4 pt-1 border-t border-[#14B8A6]/10`}>
+              <View style={tw`flex-row space-x-4 pt-2 border-t border-[#14B8A6]/10`}>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
                   <Text style={tw`text-xs font-black text-teal-400 font-mono`}>92%</Text>
                 </View>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
                   <Text style={tw`text-xs font-black text-[#22D3EE] font-mono`}>90%</Text>
                 </View>
               </View>
@@ -831,17 +669,11 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               </Text>
               <View style={tw`flex-row space-x-4 pt-1`}>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
                   <Text style={tw`text-xs font-extrabold text-slate-300 font-mono`}>75%</Text>
                 </View>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
                   <Text style={tw`text-xs font-extrabold text-slate-400 font-mono`}>80%</Text>
                 </View>
               </View>
@@ -857,107 +689,16 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               </Text>
               <View style={tw`flex-row space-x-4 pt-1`}>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
                   <Text style={tw`text-xs font-extrabold text-slate-300 font-mono`}>60%</Text>
                 </View>
                 <View>
-                  <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Info size={10} color="#64748B" style={tw`ml-1`} />
-                  </View>
+                  <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
                   <Text style={tw`text-xs font-extrabold text-slate-400 font-mono`}>75%</Text>
                 </View>
               </View>
             </View>
 
-          </View>
-        </View>
-
-        {/* ====================================
-            WHY OCI SELECTED THIS TREATMENT
-           ==================================== */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <View style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row items-center gap-2 border-b border-white/5`}>
-            <Compass size={14} color="#14B8A6" />
-            <Text style={tw`text-[10px] font-black text-slate-200 uppercase tracking-widest font-mono`}>WHY OCI SELECTED THIS TREATMENT</Text>
-          </View>
-          <View style={tw`p-6 space-y-3.5`}>
-            <Text style={tw`text-xs text-slate-400 leading-normal`}>
-              The OCI Analyzer™ evaluated the primary active orthodontic parameters to finalize the CAMouflage/Surgical suitability score:
-            </Text>
-
-            <View style={tw`space-y-2`}>
-              
-              {/* Factor 1: Skeletal discrepancy */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Skeletal Discrepancy</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    Skeletal Class {anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} (ANB = {anbVal}°)
-                  </Text>
-                </View>
-              </View>
-
-              {/* Factor 2: Dental compensation */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Dental Compensation Load</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    Lower incisor IMPA: {impaVal}° | Upper incisor U1-SN: {u1SnVal}°
-                  </Text>
-                </View>
-              </View>
-
-              {/* Factor 3: Growth status */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Physiological Growth Status</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    {selectedAssessment.advanced?.growthStatus || 'Growth Completed / CVM Stage 5-6'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Factor 4: Soft tissue */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Soft Tissue Tension Envelope</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    Nasolabial angle: {nasolabialAngleVal}° | Upper Lip to E-Line: {upperLipELineVal}mm
-                  </Text>
-                </View>
-              </View>
-
-              {/* Factor 5: Facial profile */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Facial Profile Coordinates</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    {profileVal} Facial Profile | Lip/Chin coordinates stable
-                  </Text>
-                </View>
-              </View>
-
-              {/* Factor 6: Existing OCI parameters */}
-              <View style={tw`flex-row items-start space-x-2.5 bg-black/25 p-3 rounded-xl border border-white/5`}>
-                <Text style={tw`text-[#14B8A6] font-bold text-xs`}>✓</Text>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono`}>Integrated OCI Parameters</Text>
-                  <Text style={tw`text-xs font-bold text-white`}>
-                    {selectedAssessment.ociResult.interpretation} (OCI Score: {total})
-                  </Text>
-                </View>
-              </View>
-
-            </View>
           </View>
         </View>
 
@@ -968,31 +709,22 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
             <View style={tw`flex-row justify-between items-center`}>
               <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Biomechanical Extraction Matrix</Text>
-              <Text style={tw`px-2.5 py-0.5 bg-rose-500/10 text-rose-400 rounded-lg text-[9px] font-black border border-rose-500/20`}>{report.extractionRecommendation}</Text>
+              <Text style={tw`px-2.5 py-0.5 bg-[#1E88FF]/10 text-[#1E88FF] rounded-lg text-[9px] font-black border border-[#1E88FF]/20`}>{report.extractionRecommendation}</Text>
             </View>
             <Text style={tw`text-sm font-black text-white`}>Extraction Probability: {cleanPercent(report.extractionProbability)}</Text>
-            <Text style={tw`text-[10px] text-slate-400 leading-normal mt-1.5`}>{report.extractionReason}</Text>
           </View>
 
           {/* Surgical Decision Card */}
           <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
             <View style={tw`flex-row justify-between items-center`}>
               <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Surgical Correction Matrix</Text>
-              <Text style={tw`px-2.5 py-0.5 bg-sky-500/10 text-sky-400 rounded-lg text-[9px] font-black border border-sky-500/20`}>{report.surgeryRecommendation}</Text>
+              <Text style={tw`px-2.5 py-0.5 bg-purple-500/10 text-purple-400 rounded-lg text-[9px] font-black border border-purple-500/20`}>{report.surgeryRecommendation}</Text>
             </View>
             <Text style={tw`text-sm font-black text-white`}>Surgical Probability: {cleanPercent(report.surgeryProbability)}</Text>
-            <Text style={tw`text-[10px] text-slate-400 leading-normal mt-1.5`}>{report.surgeryReason}</Text>
           </View>
         </View>
 
-        {/* Primary Sequence Path Option */}
-        <View style={tw`bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
-          <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Primary Treatment Sequence Pathway</Text>
-          <Text style={tw`text-sm font-extrabold text-[#14B8A6]`}>{report.primaryPlanOption}</Text>
-          <Text style={tw`text-xs text-slate-300 leading-relaxed font-medium`}>{report.finalClinicalSummary}</Text>
-        </View>
-
-        {/* Export PDF Button and Core Specialist Credentials Signature */}
+        {/* Export PDF Button and Core Specialist Credentials Signature (NO LOGOS / NO OCI HEADER TEXT) */}
         <View style={tw`bg-[#0B1226] p-6 rounded-3xl border border-white/5 space-y-6`}>
           <Pressable
             onPress={handleExportPDF}
@@ -1004,7 +736,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
             <Text style={tw`text-xs font-black text-white uppercase tracking-widest`}>Export & View PDF Report</Text>
           </Pressable>
 
-          {/* Specialist Sign-off Seal (interactive, centered, responsive) */}
+          {/* Specialist Sign-off Seal */}
           <View style={tw`border-t border-white/10 pt-5 w-full flex-col items-center justify-center`}>
             <TextInput
               value={sigText}
@@ -1014,19 +746,12 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
             <Text style={tw`text-[8px] text-slate-500 mt-1.5 uppercase tracking-wider font-bold text-center`}>Specialist Sign-off Seal</Text>
           </View>
 
-          {/* OCI Clinical Decision Support System Footer */}
-          <View style={tw`border-t border-white/10 pt-6 px-4 pb-2 w-full max-w-[600px] mx-auto min-h-[100px] flex-col items-center justify-center`}>
-            <Text style={tw`text-xs font-black text-white text-center uppercase tracking-wider leading-snug`}>
-              OCI Analyzer™
+          {/* Clean Specialist developer signature footer - NO LOGOS */}
+          <View style={tw`border-t border-white/10 pt-6 px-4 pb-2 w-full max-w-[600px] mx-auto flex-col items-center justify-center`}>
+            <Text style={tw`text-[11px] font-medium text-slate-400 text-center leading-normal`}>
+              Clinician Director & Specialist Lead
             </Text>
-            <Text style={tw`text-[10px] text-slate-400 font-mono text-center uppercase mt-1 mb-4 leading-normal`}>
-              AI-Powered Orthodontic Clinical Decision Support System
-            </Text>
-            
-            <Text style={tw`text-[12px] font-medium text-slate-400 text-center leading-normal`}>
-              Developed & Innovated by
-            </Text>
-            <Text style={tw`text-[14px] font-semibold text-teal-400 text-center mt-1 leading-normal`}>
+            <Text style={tw`text-sm font-semibold text-teal-400 text-center mt-1 leading-normal`}>
               Dr. Salman, MDS (Orthodontist)
             </Text>
           </View>
