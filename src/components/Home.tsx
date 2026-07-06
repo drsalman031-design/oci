@@ -155,8 +155,8 @@ export default function Home({
           {/* Square official OCI logo_icon image, resized to be larger as requested */}
           <Image
             source={require('../../assets/logo_icon.jpg')}
-            style={tw`w-32 h-32 rounded-[24px] border border-white/5`}
-            resizeMode="cover"
+            style={tw`w-32 h-32 rounded-[24px] border border-white/5 bg-[#0B1020]`}
+            resizeMode="contain"
           />
         </View>
 
