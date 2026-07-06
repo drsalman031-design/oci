@@ -472,14 +472,9 @@ export default function App() {
         {screen !== 'splash' && userEmail && (
           <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3.5 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
-              <Image 
-                source={require('./assets/logo_icon.jpg')} 
-                style={tw`w-9 h-9 rounded-xl border border-white/10 mr-2.5`}
-                resizeMode="cover"
-              />
               <View>
                 <Text style={tw`font-extrabold text-sm text-white tracking-wide`}>
-                  OCI
+                  OCI ANALYZER
                 </Text>
                 <Text style={tw`text-[8px] font-bold uppercase text-[#22D3EE] tracking-wider`}>AI DECISION SYSTEM</Text>
               </View>

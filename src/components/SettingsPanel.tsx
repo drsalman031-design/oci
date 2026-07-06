@@ -461,7 +461,7 @@ export default function SettingsPanel({
             </Text>
           </View>
           <Text style={tw`text-xs text-slate-400 leading-normal`}>
-            Manage practitioner credentials, clinic profiles, evidence guideline models, Google Drive synchronization, and secure clinical diagnostic records.
+            Manage practitioner credentials, evidence guideline models, Google Drive synchronization, and secure clinical diagnostic records.
           </Text>
         </View>
 
@@ -636,78 +636,7 @@ export default function SettingsPanel({
           )}
         </View>
 
-        {/* 2. Clinic Information */}
-        <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
-          <Pressable 
-            onPress={() => toggleSection('clinic')}
-            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
-          >
-            <View style={tw`flex-row items-center space-x-3`}>
-              <Building size={16} color="#14B8A6" />
-              <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>Clinic Information</Text>
-            </View>
-            <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
-              {activeSection === 'clinic' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
-            </View>
-          </Pressable>
 
-          {activeSection === 'clinic' && (
-            <View style={tw`p-5 space-y-4`}>
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinic Name</Text>
-                <TextInput 
-                  value={clinicName}
-                  onChangeText={setClinicName}
-                  style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-white text-xs font-bold`}
-                  placeholder="OCI Orthodontics Center"
-                  placeholderTextColor="#475569"
-                />
-              </View>
-
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinic Address</Text>
-                <TextInput 
-                  value={clinicAddress}
-                  onChangeText={setClinicAddress}
-                  style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-white text-xs font-bold`}
-                  placeholder="Clinical St, USA"
-                  placeholderTextColor="#475569"
-                />
-              </View>
-
-              <View style={tw`flex-row space-x-3`}>
-                <View style={tw`flex-1 space-y-1`}>
-                  <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinic Mobile</Text>
-                  <TextInput 
-                    value={clinicContact}
-                    onChangeText={setClinicContact}
-                    style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-white text-xs font-bold`}
-                    placeholder="+1 (555) 902-1846"
-                    placeholderTextColor="#475569"
-                  />
-                </View>
-                <View style={tw`flex-1 space-y-1`}>
-                  <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinic Email</Text>
-                  <TextInput 
-                    value={clinicEmail}
-                    onChangeText={setClinicEmail}
-                    style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-white text-xs font-bold`}
-                    placeholder="clinic@hospital.com"
-                    placeholderTextColor="#475569"
-                  />
-                </View>
-              </View>
-
-              <Pressable 
-                onPress={saveClinicInfo}
-                style={tw`flex-row items-center justify-center bg-teal-500/10 border border-teal-500/30 py-3 rounded-xl`}
-              >
-                <Save size={13} color="#14B8A6" style={tw`mr-2`} />
-                <Text style={tw`text-xs font-black text-teal-400 uppercase`}>Save Clinic Information</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
 
         {/* 3. AI Copilot Preferences */}
         <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
@@ -772,68 +701,70 @@ export default function SettingsPanel({
         </View>
 
         {/* 4. OCI Diagnostic Weights */}
-        <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
-          <Pressable 
-            onPress={() => toggleSection('weights')}
-            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
-          >
-            <View style={tw`flex-row items-center space-x-3`}>
-              <Cpu size={16} color="#14B8A6" />
-              <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>OCI Evaluation Weights</Text>
-            </View>
-            <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
-              {activeSection === 'weights' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
-            </View>
-          </Pressable>
+        {role === 'Developer' && (
+          <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
+            <Pressable 
+              onPress={() => toggleSection('weights')}
+              style={tw`flex-row justify-between items-center p-5 bg-black/20`}
+            >
+              <View style={tw`flex-row items-center space-x-3`}>
+                <Cpu size={16} color="#14B8A6" />
+                <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>OCI Evaluation Weights</Text>
+              </View>
+              <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
+                {activeSection === 'weights' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
+              </View>
+            </Pressable>
 
-          {activeSection === 'weights' && (
-            <View style={tw`p-5 space-y-4`}>
-              <Text style={tw`text-xs text-slate-400 leading-normal`}>
-                Customize the clinical weights assigned to each assessment category within the OCI scoring engine.
-              </Text>
+            {activeSection === 'weights' && (
+              <View style={tw`p-5 space-y-4`}>
+                <Text style={tw`text-xs text-slate-400 leading-normal`}>
+                  Customize the clinical weights assigned to each assessment category within the OCI scoring engine.
+                </Text>
 
-              {/* Render dynamic slider adjustments */}
-              {Object.entries(weights).map(([category, val]) => (
-                <View key={category} style={tw`space-y-1 bg-black/30 p-3 rounded-xl border border-white/3`}>
-                  <View style={tw`flex-row justify-between items-center`}>
-                    <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-wide`}>
-                      {category === 'maxillaryDental' ? 'Upper Dental Incisors' :
-                       category === 'mandibularDental' ? 'Lower Dental Incisors' :
-                       category === 'overjetOverbite' ? 'Vertical/Overjet Occlusion' :
-                       category === 'overallHarmony' ? 'Transverse Harmony' :
-                       category.replace(/([A-Z])/g, ' $1')}
-                    </Text>
-                    <Text style={tw`text-[10px] font-mono font-bold text-teal-400`}>{val} pts</Text>
-                  </View>
-                  <View style={tw`flex-row items-center space-x-2`}>
-                    <Pressable
-                      onPress={() => {
-                        const next = Math.max(0, val - 1);
-                        onUpdateWeights({ ...weights, [category]: next });
-                      }}
-                      style={tw`w-7 h-7 bg-white/5 rounded-lg items-center justify-center`}
-                    >
-                      <Text style={tw`text-white font-extrabold text-sm`}>-</Text>
-                    </Pressable>
-                    <View style={tw`flex-1 h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
-                      <View style={[tw`h-full bg-teal-500`, { width: `${(val / 20) * 100}%` }]} />
+                {/* Render dynamic slider adjustments */}
+                {Object.entries(weights).map(([category, val]) => (
+                  <View key={category} style={tw`space-y-1 bg-black/30 p-3 rounded-xl border border-white/3`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-wide`}>
+                        {category === 'maxillaryDental' ? 'Upper Dental Incisors' :
+                         category === 'mandibularDental' ? 'Lower Dental Incisors' :
+                         category === 'overjetOverbite' ? 'Vertical/Overjet Occlusion' :
+                         category === 'overallHarmony' ? 'Transverse Harmony' :
+                         category.replace(/([A-Z])/g, ' $1')}
+                      </Text>
+                      <Text style={tw`text-[10px] font-mono font-bold text-teal-400`}>{val} pts</Text>
                     </View>
-                    <Pressable
-                      onPress={() => {
-                        const maxVal = category === 'skeletal' ? 20 : category === 'maxillaryDental' ? 15 : 20;
-                        const next = Math.min(maxVal, val + 1);
-                        onUpdateWeights({ ...weights, [category]: next });
-                      }}
-                      style={tw`w-7 h-7 bg-white/5 rounded-lg items-center justify-center`}
-                    >
-                      <Text style={tw`text-white font-extrabold text-sm`}>+</Text>
-                    </Pressable>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <Pressable
+                        onPress={() => {
+                          const next = Math.max(0, val - 1);
+                          onUpdateWeights({ ...weights, [category]: next });
+                        }}
+                        style={tw`w-7 h-7 bg-white/5 rounded-lg items-center justify-center`}
+                      >
+                        <Text style={tw`text-white font-extrabold text-sm`}>-</Text>
+                      </Pressable>
+                      <View style={tw`flex-1 h-1.5 bg-slate-950 rounded-full overflow-hidden`}>
+                        <View style={[tw`h-full bg-teal-500`, { width: `${(val / 20) * 100}%` }]} />
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          const maxVal = category === 'skeletal' ? 20 : category === 'maxillaryDental' ? 15 : 20;
+                          const next = Math.min(maxVal, val + 1);
+                          onUpdateWeights({ ...weights, [category]: next });
+                        }}
+                        style={tw`w-7 h-7 bg-white/5 rounded-lg items-center justify-center`}
+                      >
+                        <Text style={tw`text-white font-extrabold text-sm`}>+</Text>
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 5. Google Drive Cloud Backup & Sync */}
         <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
@@ -956,48 +887,50 @@ export default function SettingsPanel({
         </View>
 
         {/* 6. Database Import/Export */}
-        <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
-          <Pressable 
-            onPress={() => toggleSection('database')}
-            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
-          >
-            <View style={tw`flex-row items-center space-x-3`}>
-              <Database size={16} color="#14B8A6" />
-              <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>Database Management</Text>
-            </View>
-            <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
-              {activeSection === 'database' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
-            </View>
-          </Pressable>
-
-          {activeSection === 'database' && (
-            <View style={tw`p-5 space-y-4`}>
-              <Text style={tw`text-xs text-slate-400 leading-normal`}>
-                Export your offline clinical diagnostics as JSON archive or restore them manually by uploading/pasting.
-              </Text>
-
-              <View style={tw`flex-row space-x-3`}>
-                <Pressable
-                  onPress={triggerExport}
-                  style={tw`flex-1 flex-row items-center justify-center p-4 bg-black/45 rounded-xl border border-white/10`}
-                >
-                  <Download size={13} color="#14B8A6" style={tw`mr-2`} />
-                  <Text style={tw`text-xs font-bold text-slate-200`}>Export JSON</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => {
-                    Alert.alert("Restore Sandbox", "Upload or paste backup string into database context.");
-                  }}
-                  style={tw`flex-1 flex-row items-center justify-center p-4 bg-black/45 rounded-xl border border-white/10`}
-                >
-                  <Upload size={13} color="#22D3EE" style={tw`mr-2`} />
-                  <Text style={tw`text-xs font-bold text-slate-200`}>Import / Upload</Text>
-                </Pressable>
+        {role === 'Developer' && (
+          <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
+            <Pressable 
+              onPress={() => toggleSection('database')}
+              style={tw`flex-row justify-between items-center p-5 bg-black/20`}
+            >
+              <View style={tw`flex-row items-center space-x-3`}>
+                <Database size={16} color="#14B8A6" />
+                <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>Database Management</Text>
               </View>
-            </View>
-          )}
-        </View>
+              <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
+                {activeSection === 'database' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
+              </View>
+            </Pressable>
+
+            {activeSection === 'database' && (
+              <View style={tw`p-5 space-y-4`}>
+                <Text style={tw`text-xs text-slate-400 leading-normal`}>
+                  Export your offline clinical diagnostics as JSON archive or restore them manually by uploading/pasting.
+                </Text>
+
+                <View style={tw`flex-row space-x-3`}>
+                  <Pressable
+                    onPress={triggerExport}
+                    style={tw`flex-1 flex-row items-center justify-center p-4 bg-black/45 rounded-xl border border-white/10`}
+                  >
+                    <Download size={13} color="#14B8A6" style={tw`mr-2`} />
+                    <Text style={tw`text-xs font-bold text-slate-200`}>Export JSON</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert("Restore Sandbox", "Upload or paste backup string into database context.");
+                    }}
+                    style={tw`flex-1 flex-row items-center justify-center p-4 bg-black/45 rounded-xl border border-white/10`}
+                  >
+                    <Upload size={13} color="#22D3EE" style={tw`mr-2`} />
+                    <Text style={tw`text-xs font-bold text-slate-200`}>Import / Upload</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 7. Export Reports */}
         <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
@@ -1218,13 +1151,7 @@ export default function SettingsPanel({
         <View style={tw`bg-[#11050F]/70 p-5 rounded-[24px] border border-rose-950/20 shadow-xl space-y-3`}>
           <Text style={tw`text-[9px] font-bold text-rose-400 uppercase tracking-widest font-mono`}>System Control Console</Text>
           <View style={tw`flex-col space-y-2`}>
-            <Pressable
-              onPress={triggerReset}
-              style={tw`flex-row justify-between items-center p-3.5 bg-rose-500/10 rounded-xl border border-rose-500/25`}
-            >
-              <Text style={tw`text-xs font-black text-rose-400 uppercase`}>Wipe Database Archive</Text>
-              <Trash2 size={13} color="#EF4444" />
-            </Pressable>
+
 
             {onLogout && (
               <Pressable

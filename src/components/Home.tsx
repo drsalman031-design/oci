@@ -126,16 +126,9 @@ export default function Home({
             APP HEADER (Premium Medical branding)
            ==================================================== */}
         <View style={tw`flex-row justify-between items-center pt-2 pb-3 border-b border-white/5`}>
-          <View style={tw`flex-row items-center space-x-3.5`}>
-            {/* OCI rounded square logo image */}
-            <Image
-              source={require('../../assets/logo_icon.jpg')}
-              style={tw`w-14 h-14 rounded-2xl border border-white/10`}
-              resizeMode="cover"
-            />
-
+          <View style={tw`flex-row items-center`}>
             <View style={tw`space-y-0.5`}>
-              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI</Text>
+              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI ANALYZER</Text>
               <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase tracking-wider font-mono`}>
                 AI DECISION SYSTEM
               </Text>
