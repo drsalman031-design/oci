@@ -470,7 +470,7 @@ export default function App() {
 
         {/* 2. Top Navigation Bar (Hidden during Splash or if Not Authenticated) */}
         {screen !== 'splash' && userEmail && (
-          <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-2.5 flex-row items-center justify-between`}>
+          <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3.5 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
               <View>
                 <Text style={tw`font-extrabold text-sm text-white tracking-wide`}>
@@ -479,15 +479,6 @@ export default function App() {
                 <Text style={tw`text-[8px] font-bold uppercase text-[#22D3EE] tracking-wider`}>AI DECISION SYSTEM</Text>
               </View>
             </Pressable>
-
-            {/* Top Right Circle Logo Container */}
-            <View style={tw`w-11 h-11 rounded-full border-2 border-[#22D3EE] bg-[#0B1020] overflow-hidden items-center justify-center`}>
-              <Image 
-                source={require('./assets/logo_icon.jpg')} 
-                style={tw`w-10 h-10`}
-                resizeMode="contain"
-              />
-            </View>
           </View>
         )}
 

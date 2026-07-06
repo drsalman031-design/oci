@@ -154,6 +154,15 @@ export default function Home({
               </Pressable>
             </View>
           </View>
+
+          {/* Rounded circle logo container on the right side of the hero card */}
+          <View style={tw`w-28 h-28 rounded-full border-2 border-[#22D3EE]/35 bg-[#0B1020] overflow-hidden items-center justify-center relative shadow-lg shadow-cyan-500/10`}>
+            <Image
+              source={require('../../assets/logo_icon.jpg')}
+              style={tw`w-22 h-22`}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* ====================================================
