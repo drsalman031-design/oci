@@ -123,16 +123,15 @@ export default function Home({
       <View style={tw`space-y-6 mt-5 max-w-4xl mx-auto w-full`}>
         
         {/* ====================================================
-            APP HEADER (Premium Medical branding)
+            APP HEADER (Official OCI Analyzer rectangular branding)
            ==================================================== */}
         <View style={tw`flex-row justify-between items-center pt-2 pb-3 border-b border-white/5`}>
           <View style={tw`flex-row items-center`}>
-            <View style={tw`space-y-0.5`}>
-              <Text style={tw`text-xl font-black text-white tracking-tight`}>OCI ANALYZER</Text>
-              <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase tracking-wider font-mono`}>
-                AI DECISION SYSTEM
-              </Text>
-            </View>
+            <Image
+              source={require('../../assets/logo.jpg')}
+              style={tw`w-36 h-10`}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
@@ -167,14 +166,12 @@ export default function Home({
             </View>
           </View>
 
-          {/* Rounded official OCI logo image */}
-          <View style={tw`w-28 h-28 rounded-full border border-teal-500/20 bg-white overflow-hidden items-center justify-center relative shadow-lg shadow-teal-500/10`}>
-            <Image
-              source={require('../../assets/logo.jpg')}
-              style={tw`w-28 h-28 rounded-full`}
-              resizeMode="contain"
-            />
-          </View>
+          {/* Square official OCI logo_icon image matching the user screenshot */}
+          <Image
+            source={require('../../assets/logo_icon.jpg')}
+            style={tw`w-28 h-28 rounded-2xl border border-white/5`}
+            resizeMode="cover"
+          />
         </View>
 
         {/* ====================================================
