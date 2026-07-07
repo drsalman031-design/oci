@@ -27,7 +27,7 @@ import Svg, { Line as SvgLine, Circle as SvgCircle, Path as SvgPath, G, Defs, Li
 import { Assessment } from '../types';
 
 interface HomeProps {
-  onNewAssessment: () => void;
+  onNewAssessment: (mode: 'clinic' | 'ceph' | 'turbo') => void;
   onViewHistory: () => void;
   onViewSettings: () => void;
   onViewAbout: () => void;
@@ -122,42 +122,110 @@ export default function Home({
     >
       <View style={tw`space-y-6 mt-5 max-w-4xl mx-auto w-full`}>
         {/* ====================================================
-            HERO SECTION: START NEW OCI ANALYSIS
+            BRANDING CARD
            ==================================================== */}
-        <View style={tw`bg-gradient-to-br from-[#0D152B]/90 to-[#080D1A]/95 border border-white/5 rounded-[32px] p-6 shadow-2xl relative overflow-hidden flex-row justify-between items-center`}>
-          {/* Radial glow spots */}
-          <View style={tw`absolute top-0 right-0 w-44 h-44 bg-teal-500/10 rounded-full blur-3xl`} />
-          <View style={tw`absolute -bottom-10 -left-10 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl`} />
-
-          <View style={tw`z-10 flex-1 pr-4`}>
-            <Text style={tw`text-xl font-black text-white tracking-tight`}>
-              Start New OCI Analysis
-            </Text>
-            <Text style={tw`text-xs text-slate-400 mt-2 leading-relaxed max-w-xs font-sans`}>
-              AI-powered orthodontic compensation assessment
-            </Text>
-
-            <View style={tw`mt-5`}>
-              <Pressable
-                onPress={onNewAssessment}
-                style={({ pressed }) => [
-                  tw`bg-[#14B8A6] rounded-2xl py-3 px-5 flex-row items-center justify-center self-start shadow-lg shadow-teal-500/25 border border-teal-400/30`,
-                  pressed ? tw`opacity-90 scale-98` : null
-                ]}
-              >
-                <Text style={tw`text-white font-black text-xs uppercase tracking-widest`}>
-                  Analyze Now →
-                </Text>
-              </Pressable>
+        <View style={tw`bg-[#0D152B]/40 border border-white/5 rounded-[32px] p-5 flex-row justify-between items-center shadow-lg`}>
+          <View style={tw`flex-1 pr-3`}>
+            <View style={tw`flex-row items-center space-x-2`}>
+              <View style={tw`w-2.5 h-2.5 rounded-full bg-teal-500`} />
+              <Text style={tw`text-[10px] font-black text-[#22D3EE] tracking-widest uppercase font-mono`}>OCI Clinical Engine v3.0</Text>
             </View>
+            <Text style={tw`text-xl font-black text-white tracking-tight mt-1`}>OCI ANALYZER</Text>
+            <Text style={tw`text-[11px] text-slate-400 mt-1`}>Orthodontic Compensation Index | Artificial Intelligence Analysis Engine</Text>
           </View>
-
-          {/* Square official OCI logo_icon image, resized to be larger as requested */}
           <Image
             source={require('../../assets/logo_icon.jpg')}
-            style={tw`w-32 h-32 rounded-[24px] border border-white/5 bg-[#0B1020]`}
+            style={tw`w-20 h-20 rounded-[20px] border border-white/5 bg-[#0B1020]`}
             resizeMode="contain"
           />
+        </View>
+
+        {/* ====================================================
+            THREE INTELLIGENT ANALYSIS MODES
+           ==================================================== */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-extrabold text-teal-400 uppercase tracking-widest font-mono`}>Select Intelligent Analysis Mode</Text>
+          
+          {/* Card 1: Clinic Mode */}
+          <Pressable
+            onPress={() => onNewAssessment('clinic')}
+            style={({ pressed }) => [
+              tw`bg-gradient-to-br from-[#0A1A2E]/90 to-[#050B16]/95 border border-white/5 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
+              pressed ? tw`opacity-90 scale-[0.99]` : null
+            ]}
+          >
+            <View style={tw`absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl`} />
+            <View style={tw`flex-1 pr-4`}>
+              <View style={tw`flex-row items-center space-x-2`}>
+                <View style={tw`bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30`}>
+                  <Text style={tw`text-emerald-400 text-[8px] font-black uppercase tracking-wider`}>Clinic Mode</Text>
+                </View>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 85%</Text>
+              </View>
+              <Text style={tw`text-base font-black text-white mt-1.5`}>Rapid Chairside Clinical Intelligence</Text>
+              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
+                Generate a complete orthodontic diagnosis and treatment plan using structured clinical findings only.
+              </Text>
+            </View>
+            <View style={tw`w-12 h-12 bg-emerald-500/10 rounded-2xl items-center justify-center border border-emerald-500/20`}>
+              <Activity size={20} color="#10B981" />
+            </View>
+          </Pressable>
+
+          {/* Card 2: Ceph Mode */}
+          <Pressable
+            onPress={() => onNewAssessment('ceph')}
+            style={({ pressed }) => [
+              tw`bg-gradient-to-br from-[#120F2B]/90 to-[#060512]/95 border border-white/5 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
+              pressed ? tw`opacity-90 scale-[0.99]` : null
+            ]}
+          >
+            <View style={tw`absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-xl`} />
+            <View style={tw`flex-1 pr-4`}>
+              <View style={tw`flex-row items-center space-x-2`}>
+                <View style={tw`bg-violet-500/15 px-2 py-0.5 rounded border border-violet-500/30`}>
+                  <Text style={tw`text-violet-400 text-[8px] font-black uppercase tracking-wider`}>Ceph Mode</Text>
+                </View>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 90%</Text>
+              </View>
+              <Text style={tw`text-base font-black text-white mt-1.5`}>Comprehensive Cephalometric Intelligence</Text>
+              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
+                Generate a complete orthodontic diagnosis and treatment plan using cephalometric measurements.
+              </Text>
+            </View>
+            <View style={tw`w-12 h-12 bg-violet-500/10 rounded-2xl items-center justify-center border border-violet-500/20`}>
+              <Layers size={20} color="#8B5CF6" />
+            </View>
+          </Pressable>
+
+          {/* Card 3: OCI Turbo Mode */}
+          <Pressable
+            onPress={() => onNewAssessment('turbo')}
+            style={({ pressed }) => [
+              tw`bg-gradient-to-br from-[#1A122C]/90 to-[#07050E]/95 border border-cyan-500/20 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
+              pressed ? tw`opacity-90 scale-[0.99]` : null
+            ]}
+          >
+            <View style={tw`absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl`} />
+            <View style={tw`flex-1 pr-4`}>
+              <View style={tw`flex-row items-center space-x-2`}>
+                <View style={tw`bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/40`}>
+                  <Text style={tw`text-cyan-300 text-[8px] font-black uppercase tracking-wider`}>OCI Turbo Mode</Text>
+                </View>
+                <View style={tw`bg-amber-500/20 px-1.5 py-0.5 rounded`}>
+                  <Text style={tw`text-amber-400 text-[7px] font-black`}>RECOMMENDED</Text>
+                </View>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 98%</Text>
+              </View>
+              <Text style={tw`text-base font-black text-white mt-1.5`}>Integrated Clinical + Cephalometric Intelligence</Text>
+              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
+                Combine clinical findings and cephalometric analysis to produce the highest-confidence diagnosis, treatment plan, and comprehensive OCI report.
+              </Text>
+            </View>
+            <View style={tw`w-12 h-12 bg-cyan-500/10 rounded-2xl items-center justify-center border border-cyan-500/20`}>
+              <Brain size={20} color="#22D3EE" />
+            </View>
+          </Pressable>
         </View>
 
         {/* ====================================================

@@ -61,6 +61,55 @@ import {
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
+function constructEstimatedCeph(details: PatientDetails): CephalometricInput {
+  const isClass2 = details.diagnosis === 'Class II';
+  const isClass3 = details.diagnosis === 'Class III';
+  
+  const anbVal = isClass2 ? 6.0 : isClass3 ? -2.0 : 2.0;
+  const snaVal = isClass2 ? 84.0 : isClass3 ? 78.0 : 82.0;
+  const snbVal = isClass2 ? 78.0 : isClass3 ? 80.0 : 80.0;
+  const witsVal = isClass2 ? 5.0 : isClass3 ? -4.0 : 0.0;
+  const fmaVal = details.facialProfile === 'Convex' ? 28.0 : details.facialProfile === 'Concave' ? 20.0 : 25.0;
+  const snMpVal = details.facialProfile === 'Convex' ? 35.0 : details.facialProfile === 'Concave' ? 28.0 : 32.0;
+  const u1SnVal = isClass2 ? 98.0 : isClass3 ? 112.0 : 104.0;
+  const impaVal = isClass2 ? 98.0 : isClass3 ? 83.0 : 90.0;
+  
+  const ojVal = details.overjet !== undefined && details.overjet !== '' ? Number(details.overjet) : (isClass2 ? 5.5 : isClass3 ? -1.0 : 2.5);
+  const obVal = details.overbite !== undefined && details.overbite !== '' ? Number(details.overbite) : 2.5;
+
+  return {
+    anb: anbVal,
+    sna: snaVal,
+    snb: snbVal,
+    wits: witsVal,
+    snMp: snMpVal,
+    fma: fmaVal,
+    u1Sn: u1SnVal,
+    u1NaDeg: isClass2 ? 18 : isClass3 ? 28 : 22,
+    u1NaMm: isClass2 ? 2.5 : isClass3 ? 6.0 : 4.0,
+    impa: impaVal,
+    l1NbDeg: isClass2 ? 30 : isClass3 ? 18 : 25,
+    l1NbMm: isClass2 ? 5.5 : isClass3 ? 2.0 : 4.0,
+    interincisalAngle: isClass2 ? 140 : isClass3 ? 125 : 135,
+    overjet: ojVal,
+    overbite: obVal,
+    upperLipELine: isClass2 ? 1.0 : isClass3 ? -3.0 : -2.0,
+    lowerLipELine: isClass2 ? 2.0 : isClass3 ? -1.0 : 0.0,
+    nasolabialAngle: isClass2 ? 92 : isClass3 ? 108 : 102,
+    facialConvexity: isClass2 ? 18 : isClass3 ? 6 : 12,
+    molarRelation: details.molarRelationRight || 'Class I',
+    canineRelation: details.canineRelationRight || 'Class I',
+    crossbite: details.anteriorCrossbite === 'Single Tooth' || details.anteriorCrossbite === 'Multiple' ? 'Anterior' : 'None',
+    deepBite: obVal > 3.5 ? obVal - 2.5 : 0,
+    openBite: obVal < 0 ? Math.abs(obVal) : 0,
+    curveOfSpee: details.crowdingSpacing === 'Crowding' ? 2.0 : 1.0,
+    midlineDeviation: 0,
+    posteriorCrossbite: details.posteriorCrossbite || 'None',
+    archWidthDifference: details.posteriorCrossbite === 'Unilateral' ? -2.0 : details.posteriorCrossbite === 'Bilateral' ? -4.0 : 0,
+    dentalMidlineDev: 0
+  };
+}
+
 export default function App() {
   const safeAlert = (title: string, message: string) => {
     try {
@@ -102,6 +151,7 @@ export default function App() {
   const [activePatient, setActivePatient] = useState<PatientDetails | null>(null);
   const [activeCeph, setActiveCeph] = useState<CephalometricInput | null>(null);
   const [activeResult, setActiveResult] = useState<OciResult | null>(null);
+  const [activeMode, setActiveMode] = useState<'clinic' | 'ceph' | 'turbo'>('turbo');
 
   // PDF Overlay State
   const [pdfReportAssessment, setPdfReportAssessment] = useState<Assessment | null>(null);
@@ -231,17 +281,161 @@ export default function App() {
     await dbSaveSetting('oci_dark_mode', nextDark);
   };
 
-  const handleStartNewAssessment = () => {
-    setEditingAssessmentId(null);
-    setActivePatient(null);
-    setActiveCeph(null);
+  const handleStartNewAssessment = (mode: 'clinic' | 'ceph' | 'turbo' = 'turbo') => {
+    setActiveMode(mode);
+    const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    setEditingAssessmentId(uuid);
+
+    const defaultPatient: PatientDetails = {
+      name: '',
+      age: '',
+      gender: '',
+      caseNumber: `OCI-DRAFT-${Math.floor(1000 + Math.random() * 9000)}`,
+      diagnosis: 'Class I',
+      date: new Date().toISOString().split('T')[0],
+      clinicalNotes: '',
+      analysisMode: mode
+    };
+
+    const defaultCeph: CephalometricInput = {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '',
+      impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '',
+      upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+      molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    };
+
+    setActivePatient(defaultPatient);
+    setActiveCeph(defaultCeph);
     setActiveResult(null);
     setScreen('patient-form');
   };
 
-  const handlePatientSubmit = (details: PatientDetails) => {
+  const handleDraftUpdate = async (details: PatientDetails) => {
     setActivePatient(details);
-    setScreen('ceph-input');
+    const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    if (!editingAssessmentId) {
+      setEditingAssessmentId(uuid);
+    }
+
+    const currentCeph = activeCeph || {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '',
+      impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '',
+      upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+      molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    };
+
+    let currentResult = activeResult;
+    if (activeMode === 'clinic') {
+      const estimatedCeph = constructEstimatedCeph(details);
+      currentResult = calculateOCI(estimatedCeph, weights);
+    } else if (activeCeph) {
+      currentResult = calculateOCI(activeCeph, weights);
+    }
+
+    const draftAssessment: Assessment = {
+      id: uuid,
+      patientDetails: details,
+      cephalometricInput: activeMode === 'clinic' ? constructEstimatedCeph(details) : currentCeph,
+      ociResult: currentResult || {
+        totalScore: 0,
+        interpretation: 'Normal',
+        recommendation: '',
+        categoryScores: [],
+        severityMap: {
+          upperIncisors: 'green',
+          lowerIncisors: 'green',
+          softTissue: 'green',
+          occlusion: 'green',
+          transverse: 'green'
+        }
+      },
+      aiSummary: 'Draft in progress...',
+      createdAt: new Date().toISOString()
+    };
+
+    const exists = savedAssessments.some(a => a.id === uuid);
+    let nextAssessments: Assessment[];
+    if (exists) {
+      nextAssessments = savedAssessments.map(a => a.id === uuid ? draftAssessment : a);
+    } else {
+      nextAssessments = [draftAssessment, ...savedAssessments];
+    }
+    setSavedAssessments(nextAssessments);
+
+    try {
+      await dbSaveAssessment(draftAssessment);
+    } catch (err) {
+      console.log('Failed to background auto-save details draft:', err);
+    }
+  };
+
+  const handleCephUpdate = async (input: CephalometricInput) => {
+    setActiveCeph(input);
+    if (!activePatient) return;
+    const uuid = editingAssessmentId;
+    if (!uuid) return;
+
+    const result = calculateOCI(input, weights);
+    setActiveResult(result);
+
+    const draftAssessment: Assessment = {
+      id: uuid,
+      patientDetails: activePatient,
+      cephalometricInput: input,
+      ociResult: result,
+      aiSummary: 'Draft in progress...',
+      createdAt: new Date().toISOString()
+    };
+
+    const nextAssessments = savedAssessments.map(a => a.id === uuid ? draftAssessment : a);
+    setSavedAssessments(nextAssessments);
+
+    try {
+      await dbSaveAssessment(draftAssessment);
+    } catch (err) {
+      console.log('Failed to background auto-save ceph draft:', err);
+    }
+  };
+
+  const handlePatientSubmit = async (details: PatientDetails) => {
+    setActivePatient(details);
+    
+    if (activeMode === 'clinic') {
+      const estimatedCeph = constructEstimatedCeph(details);
+      setActiveCeph(estimatedCeph);
+      
+      const result = calculateOCI(estimatedCeph, weights);
+      setActiveResult(result);
+      
+      const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      const finalAssessment: Assessment = {
+        id: uuid,
+        patientDetails: details,
+        cephalometricInput: estimatedCeph,
+        ociResult: result,
+        aiSummary: "Synthesizing orthodontic report...",
+        createdAt: new Date().toISOString()
+      };
+      
+      const nextAssessments = savedAssessments.map(a => a.id === uuid ? finalAssessment : a);
+      setSavedAssessments(nextAssessments);
+      
+      try {
+        await dbSaveAssessment(finalAssessment);
+      } catch (err) {
+        console.error("Failed to auto-save clinical assessment:", err);
+      }
+      setEditingAssessmentId(uuid);
+      setScreen('results');
+    } else {
+      setScreen('ceph-input');
+    }
   };
 
   const handleCephSubmit = async (input: CephalometricInput) => {
@@ -267,7 +461,6 @@ export default function App() {
 
     setActiveResult(result);
 
-    // Auto-Save Assessment directly upon calculation completion!
     if (updatedPatient) {
       const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       
@@ -280,23 +473,20 @@ export default function App() {
         createdAt: new Date().toISOString()
       };
 
-      // Save to state and database
-      if (editingAssessmentId) {
-        const nextAssessments = savedAssessments.map(a => a.id === editingAssessmentId ? newAssessment : a);
-        setSavedAssessments(nextAssessments);
-        setEditingAssessmentId(null);
+      const exists = savedAssessments.some(a => a.id === uuid);
+      let nextAssessments: Assessment[];
+      if (exists) {
+        nextAssessments = savedAssessments.map(a => a.id === uuid ? newAssessment : a);
       } else {
-        const nextAssessments = [newAssessment, ...savedAssessments];
-        setSavedAssessments(nextAssessments);
+        nextAssessments = [newAssessment, ...savedAssessments];
       }
+      setSavedAssessments(nextAssessments);
       
       try {
         await dbSaveAssessment(newAssessment);
       } catch (err) {
         console.error("Failed to auto-save assessment:", err);
       }
-      
-      // Store the active editing ID so subsequent screens or edits target this same record!
       setEditingAssessmentId(uuid);
     }
 
@@ -504,8 +694,10 @@ export default function App() {
               {screen === 'patient-form' && (
                 <PatientForm
                   initialDetails={activePatient || undefined}
+                  mode={activeMode}
                   onNext={handlePatientSubmit}
                   onCancel={() => setScreen('home')}
+                  onUpdate={handleDraftUpdate}
                 />
               )}
 
@@ -516,6 +708,7 @@ export default function App() {
                   diagnosis={activePatient.diagnosis}
                   onCalculate={handleCephSubmit}
                   onBack={() => setScreen('patient-form')}
+                  onUpdate={handleCephUpdate}
                 />
               )}
 
@@ -712,7 +905,7 @@ export default function App() {
               return (
                 <Pressable
                   key={item.id}
-                  onPress={item.action ? item.action : () => setScreen(item.id as any)}
+                  onPress={item.action ? () => item.action() : () => setScreen(item.id as any)}
                   style={[
                     isActive 
                       ? tw`bg-teal-500/10 border border-teal-500/20 px-3.5 py-2 rounded-2xl flex-row items-center justify-center space-x-1.5 shadow-lg shadow-teal-500/5` 

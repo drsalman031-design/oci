@@ -23,6 +23,7 @@ interface CephInputProps {
   diagnosis: 'Class I' | 'Class II' | 'Class III' | '';
   onCalculate: (input: CephalometricInput) => void;
   onBack: () => void;
+  onUpdate?: (input: CephalometricInput) => void;
 }
 
 const PRESETS = {
@@ -61,7 +62,7 @@ const PRESETS = {
   }
 };
 
-export default function CephInput({ initialInput, patientDetails, diagnosis, onCalculate, onBack }: CephInputProps) {
+export default function CephInput({ initialInput, patientDetails, diagnosis, onCalculate, onBack, onUpdate }: CephInputProps) {
   const [showAiAnalyzer, setShowAiAnalyzer] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'skeletal' | 'dental' | 'soft' | 'clinical'>('skeletal');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -79,32 +80,49 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
   const handleApplyAiAnalysis = (computedMeasurements: CephalometricInput) => {
     setForm(computedMeasurements);
     setShowAiAnalyzer(false);
+    if (onUpdate) {
+      onUpdate(computedMeasurements);
+    }
   };
 
   const handleFieldChange = (key: keyof CephalometricInput, val: any) => {
     setValidationError(null);
-    setForm(prev => ({
-      ...prev,
-      [key]: val === '' ? '' : Number(val)
-    }));
+    const parsedVal = val === '' ? '' : (typeof val === 'number' || key === 'molarRelation' || key === 'canineRelation' || key === 'crossbite' || key === 'posteriorCrossbite') ? val : Number(val);
+    const nextForm = {
+      ...form,
+      [key]: parsedVal
+    };
+    setForm(nextForm);
+    if (onUpdate) {
+      onUpdate(nextForm);
+    }
   };
 
   const applyPreset = (presetType: keyof typeof PRESETS) => {
     setValidationError(null);
-    setForm(PRESETS[presetType]);
+    const nextForm = PRESETS[presetType];
+    setForm(nextForm);
+    if (onUpdate) {
+      onUpdate(nextForm);
+    }
   };
 
   const clearForm = () => {
     setValidationError(null);
-    setForm({
+    const nextForm: CephalometricInput = {
       anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
       u1Sn: '', u1NaDeg: '', u1NaMm: '',
       impa: '', l1NbDeg: '', l1NbMm: '',
       interincisalAngle: '', overjet: '', overbite: '',
       upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
-      molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
-      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
-    });
+      yAxis: '', coA: '', coGn: '',
+      molarRelation: '' as any, canineRelation: '' as any, crossbite: '' as any, deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '' as any, archWidthDifference: '', dentalMidlineDev: ''
+    };
+    setForm(nextForm);
+    if (onUpdate) {
+      onUpdate(nextForm);
+    }
   };
 
   const handleCalculate = () => {

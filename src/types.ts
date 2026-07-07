@@ -10,6 +10,23 @@ export interface PatientDetails {
   smileAnalysis?: 'Consonant' | 'Non-Consonant' | 'Gummy' | 'Flat' | '';
   crowdingSpacing?: 'None' | 'Crowding' | 'Spacing' | '';
   dentitionPhase?: 'Primary Dentition' | 'Mixed Dentition' | 'Permanent Dentition' | '';
+  chiefComplaint?: string;
+  facialAsymmetry?: 'None' | 'Mild' | 'Moderate' | 'Severe' | '';
+  lips?: 'Competent' | 'Incompetent' | 'Potentially Competent' | '';
+  molarRelationRight?: 'Class I' | 'Class II' | 'Class III' | '';
+  molarRelationLeft?: 'Class I' | 'Class II' | 'Class III' | '';
+  canineRelationRight?: 'Class I' | 'Class II' | 'Class III' | '';
+  canineRelationLeft?: 'Class I' | 'Class II' | 'Class III' | '';
+  overjet?: number | '';
+  overbite?: number | '';
+  anteriorCrossbite?: 'None' | 'Single Tooth' | 'Multiple' | '';
+  posteriorCrossbite?: 'None' | 'Unilateral' | 'Bilateral' | '';
+  functionalAirway?: 'Normal' | 'Mouth Breeder' | 'Nasal Obstruction' | '';
+  tmjStatus?: 'Normal' | 'Clicking' | 'Painful' | 'Limited Opening' | '';
+  habits?: string[];
+  cvmStage?: 'CS1' | 'CS2' | 'CS3' | 'CS4' | 'CS5' | 'CS6' | '';
+  growthStatus?: 'Growing' | 'Peak Growth' | 'Decelerating Growth' | 'Growth Complete' | '';
+  analysisMode?: 'clinic' | 'ceph' | 'turbo';
 }
 
 export interface CephalometricInput {

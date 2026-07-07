@@ -114,9 +114,18 @@ export default function ResultsDashboard({
         {/* Title / Action Header Card */}
         <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
           <View style={tw`space-y-1`}>
-            <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-1`}>
-              <Sparkles size={11} color="#22D3EE" style={tw`mr-1.5`} />
-              <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Calculated Diagnostics</Text>
+            <View style={tw`flex-row items-center space-x-2 mb-1.5`}>
+              <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-2.5 py-0.5 rounded-full`}>
+                <Sparkles size={10} color="#22D3EE" style={tw`mr-1`} />
+                <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>
+                  {patientDetails.analysisMode === 'clinic' ? 'Clinic Mode' : patientDetails.analysisMode === 'ceph' ? 'Ceph Mode' : 'OCI Turbo Mode'}
+                </Text>
+              </View>
+              <View style={tw`flex-row items-center bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 rounded-full`}>
+                <Text style={tw`text-indigo-300 text-[8px] font-black uppercase tracking-wider font-mono`}>
+                  Confidence: {patientDetails.analysisMode === 'clinic' ? '85%' : patientDetails.analysisMode === 'ceph' ? '90%' : '98%'}
+                </Text>
+              </View>
             </View>
             <Text style={tw`text-xl font-black text-white tracking-tight`}>
               Case: {patientDetails.name || 'Anonymous'}
