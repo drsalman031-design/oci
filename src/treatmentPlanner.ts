@@ -1,4 +1,5 @@
 import { PatientDetails, CephalometricInput, OciResult } from './types';
+import { ClinicalNarrativeQA } from './lib/narrativeQA';
 
 export interface TreatmentPlanningOptions {
   ageGroup: 'growing' | 'adult';
@@ -360,17 +361,18 @@ export function generateTreatmentPlan(
     severityAssessment = 'The patient presents with severe to extreme dentoalveolar compensation, representing critical clinical limits. Camouflage mechanics are highly compromised, pointing heavily toward surgical corrective treatment.';
   }
 
-  return {
+  const context = { patient, ceph, oci };
+  const rawPlan = {
     severityAssessment,
     skeletalPattern: skeletalPatternDesc,
     dentalCompensation: dentalCompensationDesc,
-    occlusalSummary: `Molar relation: ${ceph.molarRelation || 'Unrecorded'}. Canine relation: ${ceph.canineRelation || 'Unrecorded'}. Overjet is ${overjet}mm, Overbite is ${overbite}mm.`,
+    occlusalSummary: `Molar relation: ${ceph.molarRelation || 'Unrecorded'}. Canine relation: ${ceph.canineRelation || 'Unrecorded'}. Overjet: ${overjet} mm. Overbite: ${overbite} mm.`,
     treatmentComplexity: complexity,
     
     growthModification: {
       applicable: isGrowing,
       timingConsideration: growthModificationTiming,
-      growthGuidanceOptions
+      growthGuidanceOptions: growthGuidanceOptions.map(s => ClinicalNarrativeQA.validateAndClean(s, context))
     },
     
     orthodonticCamouflage: {
@@ -387,10 +389,33 @@ export function generateTreatmentPlan(
       orthognathicReferralConsideration: surgicalConsideration
     },
     
-    applianceSuggestions,
-    problemList,
-    treatmentObjectives,
-    retentionConsiderations,
-    possibleApproaches
+    applianceSuggestions: applianceSuggestions.map(app => ({
+      category: app.category,
+      justification: ClinicalNarrativeQA.validateAndClean(app.justification, context),
+      items: app.items
+    })),
+    problemList: problemList.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
+    treatmentObjectives: treatmentObjectives.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
+    retentionConsiderations: retentionConsiderations.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
+    possibleApproaches: possibleApproaches.map(app => ({
+      ...app,
+      description: ClinicalNarrativeQA.validateAndClean(app.description, context),
+      advantages: app.advantages.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
+      disadvantages: app.disadvantages.map(s => ClinicalNarrativeQA.validateAndClean(s, context))
+    }))
   };
+
+  // Run deep QA validation on top-level strings
+  rawPlan.severityAssessment = ClinicalNarrativeQA.validateAndClean(rawPlan.severityAssessment, context);
+  rawPlan.skeletalPattern = ClinicalNarrativeQA.validateAndClean(rawPlan.skeletalPattern, context);
+  rawPlan.dentalCompensation = ClinicalNarrativeQA.validateAndClean(rawPlan.dentalCompensation, context);
+  rawPlan.occlusalSummary = ClinicalNarrativeQA.validateAndClean(rawPlan.occlusalSummary, context);
+  rawPlan.orthodonticCamouflage.extractionConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.extractionConsideration, context);
+  rawPlan.orthodonticCamouflage.spaceManagement = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.spaceManagement, context);
+  rawPlan.orthodonticCamouflage.incisorCompensationStrategies = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.incisorCompensationStrategies, context);
+  rawPlan.orthodonticCamouflage.anchorageConsiderations = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.anchorageConsiderations, context);
+  rawPlan.surgicalOrthodontics.orthognathicReferralConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.surgicalOrthodontics.orthognathicReferralConsideration, context);
+  rawPlan.growthModification.timingConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.growthModification.timingConsideration, context);
+
+  return rawPlan;
 }

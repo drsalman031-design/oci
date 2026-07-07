@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import { generateTreatmentPlan } from '../treatmentPlanner';
+import { ClinicalNarrativeQA } from '../lib/narrativeQA';
 
 const cleanPercent = (val: string | number | undefined) => {
   if (val === undefined || val === '') return '0%';
@@ -44,10 +45,11 @@ interface PdfReportProps {
  */
 export function getReportData(assessment: Assessment) {
   const adv = assessment.advanced || {};
+  let rawData: any;
   
   // If the advanced fields are already populated (seeded case), use them directly!
   if (adv.cvmStage) {
-    return {
+    rawData = {
       cvmStage: adv.cvmStage,
       growthStatus: adv.growthStatus || 'Growth Complete',
       skeletalMaturity: adv.skeletalMaturity || 'Mature',
@@ -99,111 +101,122 @@ export function getReportData(assessment: Assessment) {
       riskAlerts: adv.riskAlerts || 'None',
       finalClinicalSummary: adv.finalClinicalSummary || 'Healthy functional occlusion indicated.'
     };
+  } else {
+    // Otherwise, calculate them dynamically on-the-fly for manually-created cases!
+    const anb = typeof assessment.cephalometricInput.anb === 'number' ? assessment.cephalometricInput.anb : 2;
+    const impa = typeof assessment.cephalometricInput.impa === 'number' ? assessment.cephalometricInput.impa : 90;
+    
+    const isClass1 = assessment.patientDetails.diagnosis === 'Class I';
+    const isClass2 = assessment.patientDetails.diagnosis === 'Class II' || anb > 4.5;
+    const isClass3 = assessment.patientDetails.diagnosis === 'Class III' || anb < 0;
+    
+    const age = Number(assessment.patientDetails.age) || 20;
+    const isGrowing = age < 14;
+    
+    // Dynamic growth indicators
+    let cvmStage = 'CS6';
+    let growthStatus = 'Growth Complete';
+    let skeletalMaturity = 'Mature';
+    if (isGrowing) {
+      if (age <= 9) {
+        cvmStage = 'CS1';
+        growthStatus = 'Growing';
+        skeletalMaturity = 'Immature';
+      } else if (age <= 11) {
+        cvmStage = 'CS3';
+        growthStatus = 'Peak Growth';
+        skeletalMaturity = 'Transitional';
+      } else {
+        cvmStage = 'CS4';
+        growthStatus = 'Decelerating Growth';
+        skeletalMaturity = 'Transitional';
+      }
+    }
+
+    // Use treatment planning rules engine to build dynamic options
+    const plan = generateTreatmentPlan(
+      assessment.patientDetails,
+      assessment.cephalometricInput,
+      assessment.ociResult,
+      {
+        ageGroup: isGrowing ? 'growing' : 'adult',
+        crowdingSeverity: assessment.patientDetails.crowdingSpacing === 'Crowding' ? 'moderate' : 'none',
+        spacingSeverity: assessment.patientDetails.crowdingSpacing === 'Spacing' ? 'moderate' : 'none',
+        archDiscrepancy: 0
+      }
+    );
+
+    const total = assessment.ociResult.totalScore;
+    const isSurgical = total > 60 || plan.treatmentComplexity === 'Severe / Surgical';
+    const isExtraction = total > 45 || assessment.patientDetails.crowdingSpacing === 'Crowding';
+
+    const skeletonDiag = isClass2 ? 'Skeletal Class II' : isClass3 ? 'Skeletal Class III' : 'Skeletal Class I';
+    const dentalDiag = isClass2 ? 'Class II Division 1' : isClass3 ? 'Class III' : 'Class I';
+
+    rawData = {
+      cvmStage,
+      growthStatus,
+      skeletalMaturity,
+      extractionRecommendation: isExtraction ? 'Yes' : 'No',
+      extractionProbability: isExtraction ? '85' : '10',
+      extractionReason: isExtraction ? 'Required to relieve dental crowding and upright lower incisors.' : 'Non-extraction approach is fully indicated; dental arches possess sufficient volume.',
+      surgeryRecommendation: isSurgical ? 'Yes' : 'No',
+      surgeryProbability: isSurgical ? '90' : '5',
+      surgeryReason: isSurgical ? 'Severe jaw mismatch exceeds standard orthodontic alveolar bone plate limits.' : 'Orthognathic corrective surgery is not indicated; skeletal discrepancy is manageable via standard dental movement.',
+      anchorageRequirement: isSurgical ? 'Maximum' : isExtraction ? 'Moderate' : 'Minimum',
+      suggestedAnchorage: isSurgical ? 'Temporary Anchorage Devices (TADs) / Palatal Miniscrews' : isExtraction ? 'Transpalatal Arch (TPA) / Lingual Holding Arch' : 'Conventional reciprocal alignment',
+      difficultyScore: total > 60 ? '90' : total > 40 ? '65' : '30',
+      complexity: plan.treatmentComplexity,
+      estimatedDuration: total > 60 ? '24' : total > 40 ? '20' : '14',
+      estimatedAppointments: total > 60 ? '22' : total > 40 ? '16' : '12',
+      estimatedRetention: 'Standard fixed bonded wire coupled with nocturnal vacuum-formed retainers.',
+      relapseRisk: total > 60 ? 'High' : total > 40 ? 'Moderate' : 'Low',
+      relapseProbability: total > 60 ? '75' : total > 40 ? '45' : '15',
+      relapseReason: total > 60 ? 'Inherent mechanical bounce and neuromuscular adaptation limits.' : 'Favorable vertical pattern and skeletal stability support low rebound risk.',
+      ociSkeletalContribution: isClass1 ? '25' : isClass2 ? '45' : '50',
+      ociDentalContribution: isClass1 ? '55' : isClass2 ? '35' : '35',
+      ociSoftTissueContribution: isClass1 ? '20' : isClass2 ? '20' : '15',
+      ociScoreExplanation: `OCI reflects the level of compensatory dentoalveolar masking of the underlying ${assessment.patientDetails.diagnosis} skeletal discrepancy.`,
+      diagnosticConfidence: '95',
+      treatmentConfidence: '90',
+      borderlineCategory: total >= 55 && total <= 65 ? 'Surgical Camouflage Borderline' : 'None',
+      borderlineReason: total >= 55 && total <= 65 ? 'Score falls close to the surgical transition threshold (60%).' : 'Clear-cut diagnosis.',
+      skeletalProblems: plan.problemList.filter(p => p.toLowerCase().includes('skeletal') || p.toLowerCase().includes('mandibular') || p.toLowerCase().includes('maxillary')).join(', ') || 'Normal skeletal bases.',
+      dentalProblems: plan.problemList.filter(p => !p.toLowerCase().includes('skeletal') && !p.toLowerCase().includes('profile')).join(', ') || 'Class I dental relationship.',
+      softTissueProblems: plan.problemList.filter(p => p.toLowerCase().includes('profile')).join(', ') || 'Balanced straight facial profile.',
+      functionalProblems: isClass2 ? 'Airway obstruction risk / lip incompetence' : isClass3 ? 'Mouth breathing risk / speech discrepancy' : 'None',
+      primaryObjectives: plan.treatmentObjectives[0] || 'Align arches.',
+      secondaryObjectives: plan.treatmentObjectives[1] || 'Refine occlusion.',
+      longTermObjectives: 'Establish optimal structural periodontal support, stable joint relations, and facial aesthetics.',
+      treatmentSequence: 'Phase 1: Records -> Phase 2: Alignment -> Phase 3: Leveling -> Phase 4: Space Closure -> Phase 5: Finishing -> Phase 6: Active Retention',
+      contraindications: isGrowing ? 'Avoid premature orthodontic force prior to root formation.' : 'Avoid high cervical headgear vectors.',
+      contraindicationReason: isGrowing ? 'Risk of root resorption.' : 'Cervical vectors can extrude molars and worsen hyperdivergent pattern.',
+      primaryPlanOption: plan.possibleApproaches[0]?.name || 'Dentoalveolar Camouflage via Fixed Appliances',
+      alternativePlan1: plan.possibleApproaches[1]?.name || 'Sequential Clear Aligners',
+      alternativePlan2: 'Fixed brackets combined with intermaxillary elastics',
+      overallPrognosis: total > 60 ? 'Fair' : total > 40 ? 'Good' : 'Excellent',
+      skeletalCorrectionPotential: isClass1 ? 'Excellent' : isGrowing ? 'Good (via Orthopedics)' : 'Poor (Adult camouflage limits)',
+      dentalCorrectionPotential: 'Excellent',
+      softTissueImprovement: total > 40 ? 'Moderate' : 'Excellent',
+      longTermStability: total > 60 ? 'Unstable without surgery' : 'Highly Stable',
+      successProbability: total > 60 ? '60' : total > 40 ? '80' : '95',
+      explanationWhy: `The dental correction is highly predictable, but stable skeletal corrections depend on growth status or surgical cooperation.`,
+      decisionTrace: `Cephalometrics Analyzed -> OCI Score Calculated -> Treatment Options Drafted.`,
+      riskAlerts: total > 60 ? 'High periodontal bone loss risk if camouflage is forced.' : 'Minimal treatment risk.',
+      finalClinicalSummary: `Chief Diagnosis: ${skeletonDiag}, ${dentalDiag}, ${growthStatus} growth status, overall OCI score of ${total}%. Recommended Treatment: ${plan.possibleApproaches[0]?.name || 'Alignment'}.`
+    };
   }
 
-  // Otherwise, calculate them dynamically on-the-fly for manually-created cases!
-  const anb = typeof assessment.cephalometricInput.anb === 'number' ? assessment.cephalometricInput.anb : 2;
-  const impa = typeof assessment.cephalometricInput.impa === 'number' ? assessment.cephalometricInput.impa : 90;
-  
-  const isClass1 = assessment.patientDetails.diagnosis === 'Class I';
-  const isClass2 = assessment.patientDetails.diagnosis === 'Class II' || anb > 4.5;
-  const isClass3 = assessment.patientDetails.diagnosis === 'Class III' || anb < 0;
-  
-  const age = Number(assessment.patientDetails.age) || 20;
-  const isGrowing = age < 14;
-  
-  // Dynamic growth indicators
-  let cvmStage = 'CS6';
-  let growthStatus = 'Growth Complete';
-  let skeletalMaturity = 'Mature';
-  if (isGrowing) {
-    if (age <= 9) {
-      cvmStage = 'CS1';
-      growthStatus = 'Growing';
-      skeletalMaturity = 'Immature';
-    } else if (age <= 11) {
-      cvmStage = 'CS3';
-      growthStatus = 'Peak Growth';
-      skeletalMaturity = 'Transitional';
+  const context = { patient: assessment.patientDetails, ceph: assessment.cephalometricInput, oci: assessment.ociResult };
+  const cleanedData = {} as any;
+  for (const [key, val] of Object.entries(rawData)) {
+    if (typeof val === 'string') {
+      cleanedData[key] = ClinicalNarrativeQA.validateAndClean(val, context);
     } else {
-      cvmStage = 'CS4';
-      growthStatus = 'Decelerating Growth';
-      skeletalMaturity = 'Transitional';
+      cleanedData[key] = val;
     }
   }
-
-  // Use treatment planning rules engine to build dynamic options
-  const plan = generateTreatmentPlan(
-    assessment.patientDetails,
-    assessment.cephalometricInput,
-    assessment.ociResult,
-    {
-      ageGroup: isGrowing ? 'growing' : 'adult',
-      crowdingSeverity: assessment.patientDetails.crowdingSpacing === 'Crowding' ? 'moderate' : 'none',
-      spacingSeverity: assessment.patientDetails.crowdingSpacing === 'Spacing' ? 'moderate' : 'none',
-      archDiscrepancy: 0
-    }
-  );
-
-  const total = assessment.ociResult.totalScore;
-  const isSurgical = total > 60 || plan.treatmentComplexity === 'Severe / Surgical';
-  const isExtraction = total > 45 || assessment.patientDetails.crowdingSpacing === 'Crowding';
-
-  const skeletonDiag = isClass2 ? 'Skeletal Class II' : isClass3 ? 'Skeletal Class III' : 'Skeletal Class I';
-  const dentalDiag = isClass2 ? 'Class II Division 1' : isClass3 ? 'Class III' : 'Class I';
-
-  return {
-    cvmStage,
-    growthStatus,
-    skeletalMaturity,
-    extractionRecommendation: isExtraction ? 'Yes' : 'No',
-    extractionProbability: isExtraction ? '85' : '10',
-    extractionReason: isExtraction ? 'Required to relieve dental crowding and upright lower incisors.' : 'Non-extraction approach is fully indicated; dental arches possess sufficient volume.',
-    surgeryRecommendation: isSurgical ? 'Yes' : 'No',
-    surgeryProbability: isSurgical ? '90' : '5',
-    surgeryReason: isSurgical ? 'Severe jaw mismatch exceeds standard orthodontic alveolar bone plate limits.' : 'Orthognathic corrective surgery is not indicated; skeletal discrepancy is manageable via standard dental movement.',
-    anchorageRequirement: isSurgical ? 'Maximum' : isExtraction ? 'Moderate' : 'Minimum',
-    suggestedAnchorage: isSurgical ? 'Temporary Anchorage Devices (TADs) / Palatal Miniscrews' : isExtraction ? 'Transpalatal Arch (TPA) / Lingual Holding Arch' : 'Conventional reciprocal alignment',
-    difficultyScore: total > 60 ? '90' : total > 40 ? '65' : '30',
-    complexity: plan.treatmentComplexity,
-    estimatedDuration: total > 60 ? '24' : total > 40 ? '20' : '14',
-    estimatedAppointments: total > 60 ? '22' : total > 40 ? '16' : '12',
-    estimatedRetention: 'Standard fixed bonded wire coupled with nocturnal vacuum-formed retainers.',
-    relapseRisk: total > 60 ? 'High' : total > 40 ? 'Moderate' : 'Low',
-    relapseProbability: total > 60 ? '75' : total > 40 ? '45' : '15',
-    relapseReason: total > 60 ? 'Inherent mechanical bounce and neuromuscular adaptation limits.' : 'Favorable vertical pattern and skeletal stability support low rebound risk.',
-    ociSkeletalContribution: isClass1 ? '25' : isClass2 ? '45' : '50',
-    ociDentalContribution: isClass1 ? '55' : isClass2 ? '35' : '35',
-    ociSoftTissueContribution: isClass1 ? '20' : isClass2 ? '20' : '15',
-    ociScoreExplanation: `OCI reflects the level of compensatory dentoalveolar masking of the underlying ${assessment.patientDetails.diagnosis} skeletal discrepancy.`,
-    diagnosticConfidence: '95',
-    treatmentConfidence: '90',
-    borderlineCategory: total >= 55 && total <= 65 ? 'Surgical Camouflage Borderline' : 'None',
-    borderlineReason: total >= 55 && total <= 65 ? 'Score falls close to the surgical transition threshold (60%).' : 'Clear-cut diagnosis.',
-    skeletalProblems: plan.problemList.filter(p => p.toLowerCase().includes('skeletal') || p.toLowerCase().includes('mandibular') || p.toLowerCase().includes('maxillary')).join(', ') || 'Normal skeletal bases.',
-    dentalProblems: plan.problemList.filter(p => !p.toLowerCase().includes('skeletal') && !p.toLowerCase().includes('profile')).join(', ') || 'Class I dental relationship.',
-    softTissueProblems: plan.problemList.filter(p => p.toLowerCase().includes('profile')).join(', ') || 'Balanced straight facial profile.',
-    functionalProblems: isClass2 ? 'Airway obstruction risk / lip incompetence' : isClass3 ? 'Mouth breathing risk / speech discrepancy' : 'None',
-    primaryObjectives: plan.treatmentObjectives[0] || 'Align arches.',
-    secondaryObjectives: plan.treatmentObjectives[1] || 'Refine occlusion.',
-    longTermObjectives: 'Establish optimal structural periodontal support, stable joint relations, and facial aesthetics.',
-    treatmentSequence: 'Phase 1: Records -> Phase 2: Alignment -> Phase 3: Leveling -> Phase 4: Space Closure -> Phase 5: Finishing -> Phase 6: Active Retention',
-    contraindications: isGrowing ? 'Avoid premature orthodontic force prior to root formation.' : 'Avoid high cervical headgear vectors.',
-    contraindicationReason: isGrowing ? 'Risk of root resorption.' : 'Cervical vectors can extrude molars and worsen hyperdivergent pattern.',
-    primaryPlanOption: plan.possibleApproaches[0]?.name || 'Dentoalveolar Camouflage via Fixed Appliances',
-    alternativePlan1: plan.possibleApproaches[1]?.name || 'Sequential Clear Aligners',
-    alternativePlan2: 'Fixed brackets combined with intermaxillary elastics',
-    overallPrognosis: total > 60 ? 'Fair' : total > 40 ? 'Good' : 'Excellent',
-    skeletalCorrectionPotential: isClass1 ? 'Excellent' : isGrowing ? 'Good (via Orthopedics)' : 'Poor (Adult camouflage limits)',
-    dentalCorrectionPotential: 'Excellent',
-    softTissueImprovement: total > 40 ? 'Moderate' : 'Excellent',
-    longTermStability: total > 60 ? 'Unstable without surgery' : 'Highly Stable',
-    successProbability: total > 60 ? '60' : total > 40 ? '80' : '95',
-    explanationWhy: `The dental correction is highly predictable, but stable skeletal corrections depend on growth status or surgical cooperation.`,
-    decisionTrace: `Cephalometrics Analyzed -> OCI Score Calculated -> Treatment Options Drafted.`,
-    riskAlerts: total > 60 ? 'High periodontal bone loss risk if camouflage is forced.' : 'Minimal treatment risk.',
-    finalClinicalSummary: `Chief Diagnosis: ${skeletonDiag}, ${dentalDiag}, ${growthStatus} growth status, overall OCI score of ${total}%. Recommended Treatment: ${plan.possibleApproaches[0]?.name || 'Alignment'}.`
-  };
+  return cleanedData;
 }
 
 // Custom responsive React Native SVG Donut Chart for interactive dashboard

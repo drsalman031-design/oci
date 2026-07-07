@@ -1,3 +1,5 @@
+import { ClinicalNarrativeQA } from './narrativeQA';
+
 // Helper to get Gemini API Key safely
 function getGeminiApiKey(): string {
   try {
@@ -212,7 +214,9 @@ Do not write any intro or outro; start directly with '# Comprehensive Orthodonti
     const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return text || 'Unable to generate clinical report via Gemini.';
+    return text 
+      ? ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: cephalometricInput, oci: ociResult }) 
+      : 'Unable to generate clinical report via Gemini.';
   } catch (error: any) {
     console.error('Error generating AI clinical summary, falling back to local synthesis:', error);
     return generateLocalClinicalSynthesis(patientDetails, cephalometricInput, ociResult);
@@ -377,7 +381,7 @@ export function generateLocalClinicalSynthesis(
 - **Alternative Pathway Comparison**: This alternative is ranked lower because non-extraction arch management can achieve full alignment with lower biological cost.`;
   }
 
-  return `# Comprehensive Orthodontic Analysis & Report
+  const synthesis = `# Comprehensive Orthodontic Analysis & Report
 
 ## 1. Automatic Diagnosis
 
@@ -473,6 +477,8 @@ This patient presents with a Skeletal Class ${skeletalClass === 'Class III' ? 'I
 
 ## 5. Professional Disclaimer
 *This report is an AI-assisted clinical decision-support tool. Final diagnosis and treatment decisions remain the responsibility of the treating orthodontist.*`;
+
+  return ClinicalNarrativeQA.validateAndClean(synthesis, { patient, ceph, oci });
 }
 
 export async function generateChatResponse(message: string, history: any[]): Promise<string> {
