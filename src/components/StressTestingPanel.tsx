@@ -782,12 +782,12 @@ export default function StressTestingPanel({ onBack }: StressTestingPanelProps) 
   const handleExportPDF = async () => {
     if (Platform.OS !== 'web') {
       const shareMessage = `OCI Analyzer™ Clinical Stress Test Audit
-Total Runs: ${stats?.totalCount || 0}
-Skeletal Class I Count: ${stats?.class1Count || 0}
-Skeletal Class II Count: ${stats?.class2Count || 0}
-Skeletal Class III Count: ${stats?.class3Count || 0}
-Average OCI Score: ${(stats?.avgOci || 0).toFixed(1)}%
-Validation Consensus Rate: ${(stats?.consensusRate || 92.7).toFixed(1)}%
+Total Runs: ${stats?.totalProcessed || 0}
+Skeletal Class I Accuracy: ${(stats?.class1Accuracy || 0).toFixed(1)}%
+Skeletal Class II Accuracy: ${(stats?.class2Accuracy || 0).toFixed(1)}%
+Skeletal Class III Accuracy: ${(stats?.class3Accuracy || 0).toFixed(1)}%
+Average OCI Score: ${stats?.avgOciScores?.total || 0}%
+Validation Consensus Rate: ${(stats?.accuracyRate || 92.7).toFixed(1)}%
 System Stability: 100% Operational
 
 Tested locally under the clinical directorship of Dr. Salman MDS.`;
