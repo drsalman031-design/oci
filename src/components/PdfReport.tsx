@@ -424,7 +424,8 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
     { name: 'Chin', value: chinPct, color: '#10B981' },
     { name: 'Nasolabial Angle', value: nasoPct, color: '#F59E0B' },
     { name: 'Facial Convexity', value: convexityPct, color: '#8B5CF6' }
-  ];  // HTML template generator for both PDF compilation and System printing
+  ];
+
   const getHtmlTemplate = (scoreColor: string, bgLight: string) => {
     // Helper function to generate high-fidelity HTML SVG Donut Charts
     const getHtmlDonutChart = (segments: { name: string; value: number; color: string }[], size = 150, thickness = 14) => {
@@ -497,11 +498,9 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
       { name: 'Facial Convexity', value: convexityPct, color: '#8B5CF6' }
     ];
 
-    // Recommendations derived dynamically
-    const recommendationTxt = report.finalClinicalSummary || '';
-    const suggestedExtractions = report.extractionRecommendation === 'Yes' ? 'Premolar Extractions Recommended' : 'Non-extraction Camouflage Therapy';
+    const overbiteVal = assessment.cephalometricInput.overbite || 2.0;
 
-    // Cephalometric values list for diagnostic page 2
+    // Cephalometric values list for diagnostic page 3
     const measurementsList = [
       { name: 'SNA (°)', val: snaVal, mean: 82, min: 80, max: 84, unit: '°' },
       { name: 'SNB (°)', val: snbVal, mean: 80, min: 78, max: 82, unit: '°' },
@@ -525,15 +524,15 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
     };
 
     const getDeviationBadgeClass = (val: number, min: number, max: number) => {
-      if (val >= min && val <= max) return 'text-emerald-700 bg-emerald-50/80 border-emerald-200';
-      return 'text-amber-700 bg-amber-50/80 border-amber-200';
+      if (val >= min && val <= max) return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      return 'text-amber-700 bg-amber-50 border-amber-200';
     };
 
     const tableRowsHtml = measurementsList.map((item) => {
       const devText = getDeviationText(item.val, item.min, item.max, item.mean);
       const badgeClass = getDeviationBadgeClass(item.val, item.min, item.max);
       return `
-        <tr class="hover:bg-slate-50/60 transition-colors duration-150">
+        <tr class="hover:bg-slate-50 transition-colors duration-150">
           <td class="p-3 pl-4 font-semibold text-slate-800 border-b border-slate-100">${item.name}</td>
           <td class="p-3 text-center text-slate-500 font-mono border-b border-slate-100">${item.min} to ${item.max}${item.unit}</td>
           <td class="p-3 text-right font-black text-slate-900 font-mono border-b border-slate-100">${item.val.toFixed(1)}${item.unit}</td>
@@ -546,476 +545,517 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
       `;
     }).join('');
 
+    const suggestedExtractions = report.extractionRecommendation === 'Extraction' ? 'Premolar Extractions Recommended' : 'Non-extraction Camouflage Therapy';
+
     return `
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-        .pdf-page {
-          font-family: 'Inter', sans-serif;
-          color: #0F172A;
-          background: #FFFFFF;
-        }
-        .heading-font {
-          font-family: 'Space Grotesk', sans-serif;
-        }
-        .mono-font {
-          font-family: 'JetBrains Mono', monospace;
-        }
-      </style>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+          .pdf-page {
+            width: 794px;
+            height: 1123px;
+            background-color: white;
+            padding: 45px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            page-break-after: always;
+            break-after: page;
+            font-family: 'Inter', sans-serif;
+            color: #0F172A;
+          }
+          .heading-font {
+            font-family: 'Space Grotesk', sans-serif;
+          }
+          .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+          }
+        </style>
+      </head>
+      <body class="bg-slate-100">
 
-      <!-- PAGE 1: COVER & EXECUTIVE PORTFOLIO SUMMARY -->
-      <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
-        <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
-        
-        <!-- Header -->
-        <div class="flex justify-between items-start mt-4">
-          <div class="space-y-2">
-            <div class="inline-flex items-center space-x-2 bg-teal-500/10 border border-teal-500/20 px-3.5 py-1.5 rounded-full">
-              <span class="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
-              <span class="text-teal-600 text-[9px] font-black tracking-widest uppercase mono-font">OCI Portfolio Suite</span>
-            </div>
-            <h1 class="text-4xl font-black tracking-tight text-slate-900 heading-font uppercase">
-              OCI ANALYZER REPORT
-            </h1>
-            <p class="text-slate-500 text-xs font-medium">
-              AI-Powered Orthodontic Compensation Index & Clinical Dossier
-            </p>
-          </div>
-          <div class="text-right space-y-1">
-            <p class="text-[9px] text-slate-400 font-mono">Case ID: ${patientID}</p>
-            <p class="text-[9px] text-slate-400 font-mono">Date: ${assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
-            <p class="text-[9px] text-slate-400 font-mono">Clinic: ${clinicName}</p>
-          </div>
-        </div>
-
-        <!-- Demographics Quick Info -->
-        <div class="grid grid-cols-5 gap-3 p-5 bg-slate-50 rounded-2xl border border-slate-100 my-4 text-xs">
-          <div class="border-r border-slate-200/60 pr-2">
-            <p class="text-[8px] text-slate-400 font-black uppercase tracking-wider">Patient Name</p>
-            <p class="font-extrabold text-slate-800 mt-0.5 text-sm">${assessment.patientDetails.name}</p>
-          </div>
-          <div class="border-r border-slate-200/60 pr-2">
-            <p class="text-[8px] text-slate-400 font-black uppercase tracking-wider">Age / Gender</p>
-            <p class="font-extrabold text-slate-800 mt-0.5 text-sm">${assessment.patientDetails.age} Y / ${assessment.patientDetails.gender || 'N/A'}</p>
-          </div>
-          <div class="border-r border-slate-200/60 pr-2">
-            <p class="text-[8px] text-slate-400 font-black uppercase tracking-wider">Dentition Phase</p>
-            <p class="font-extrabold text-slate-800 mt-0.5 text-sm">${assessment.patientDetails.dentitionPhase || 'Permanent'}</p>
-          </div>
-          <div class="border-r border-slate-200/60 pr-2">
-            <p class="text-[8px] text-slate-400 font-black uppercase tracking-wider">CVM Stage / Growth Status</p>
-            <p class="font-extrabold text-teal-600 mt-0.5 text-sm">${report.cvmStage} (${report.growthStatus})</p>
-          </div>
-          <div>
-            <p class="text-[8px] text-slate-400 font-black uppercase tracking-wider">Skeletal Pattern</p>
-            <p class="font-extrabold text-slate-800 mt-0.5 text-sm">${assessment.patientDetails.diagnosis}</p>
-          </div>
-        </div>
-
-        <!-- Top Section: Large Score & Distribution -->
-        <div class="grid grid-cols-2 gap-6 items-center my-4 py-6 border-y border-slate-150">
+        <!-- PAGE 1: COVER PAGE -->
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
           
-          <!-- Left side: Large Circular Score -->
-          <div class="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl border border-slate-100/80">
-            <div class="relative w-44 h-44 flex items-center justify-center">
-              <svg width="176" height="176" viewBox="0 0 176 176" class="w-full h-full transform -rotate-90">
-                <circle cx="88" cy="88" r="76" stroke="#E2E8F0" stroke-width="12" fill="transparent" />
-                <circle cx="88" cy="88" r="76" stroke="${scoreColor}" stroke-width="12" fill="transparent" 
-                  stroke-dasharray="477" stroke-dashoffset="${477 - (477 * total) / 100}" stroke-linecap="round" />
+          <div class="flex-1 flex flex-col justify-center items-center space-y-8 my-auto">
+            <div class="w-24 h-24 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20 mb-2">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
               </svg>
-              <div class="absolute flex flex-col items-center justify-center">
-                <span class="text-4xl font-black text-slate-950 heading-font">${total}%</span>
-                <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">OCI Index</span>
+            </div>
+            
+            <div class="text-center space-y-3">
+              <h1 class="text-5xl font-black tracking-tight text-slate-900 heading-font uppercase">
+                OCI ANALYZER v2.0
+              </h1>
+              <p class="text-teal-600 text-sm font-black tracking-widest uppercase mono-font">
+                Orthodontic Compensation Index
+              </p>
+              <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                Artificial Intelligence Clinical Analysis Engine
+              </p>
+            </div>
+
+            <!-- Patient Summary Card -->
+            <div class="w-full max-w-lg p-6 bg-slate-50 rounded-3xl border border-slate-150 shadow-sm space-y-4">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-200 pb-2">
+                Patient Dossier Overview
+              </h3>
+              <div class="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Patient Name</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5">${assessment.patientDetails.name}</p>
+                </div>
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Case Reference ID</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5 font-mono">${patientID}</p>
+                </div>
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Age & Gender</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5">${assessment.patientDetails.age} Y / ${assessment.patientDetails.gender || 'N/A'}</p>
+                </div>
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Dentition Phase</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5">${assessment.patientDetails.dentitionPhase || 'Permanent'}</p>
+                </div>
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Record Date</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5 font-mono">${assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
+                </div>
+                <div>
+                  <p class="text-[8.5px] text-slate-400 font-black uppercase tracking-wider">Referring Clinic</p>
+                  <p class="font-extrabold text-slate-800 mt-0.5">${clinicName}</p>
+                </div>
               </div>
             </div>
-            <div class="mt-4 text-center">
-              <span class="text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider border" style="color: ${scoreColor}; background-color: ${bgLight}; border-color: ${scoreColor}25">
-                ${severityLabel} Compensation Pattern
-              </span>
-              <p class="text-[10px] text-slate-500 mt-2.5 font-semibold max-w-xs leading-relaxed">
-                Quantified physiological masking of Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} skeletal discrepancy.
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 1 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+          </div>
+        </div>
+
+        <!-- PAGE 2: EXECUTIVE SUMMARY & OCI SCORE -->
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
+          
+          <div class="space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">OCI Executive Assessment Summary</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 2 of 6</span>
+            </div>
+
+            <!-- Demographics Header Bar -->
+            <div class="grid grid-cols-4 gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
+              <div>
+                <p class="text-[8px] text-slate-400 font-black uppercase">Patient Name</p>
+                <p class="font-extrabold text-slate-800 mt-0.5">${assessment.patientDetails.name}</p>
+              </div>
+              <div>
+                <p class="text-[8px] text-slate-400 font-black uppercase">Skeletal Pattern</p>
+                <p class="font-extrabold text-slate-800 mt-0.5">${assessment.patientDetails.diagnosis}</p>
+              </div>
+              <div>
+                <p class="text-[8px] text-slate-400 font-black uppercase">CVM Stage</p>
+                <p class="font-extrabold text-teal-600 mt-0.5">${report.cvmStage} (${report.growthStatus})</p>
+              </div>
+              <div>
+                <p class="text-[8px] text-slate-400 font-black uppercase">Case ID</p>
+                <p class="font-extrabold text-slate-800 mt-0.5 font-mono">${patientID}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 items-center">
+              <!-- Circular OCI Score Display -->
+              <div class="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <div class="relative w-44 h-44 flex items-center justify-center">
+                  <svg width="176" height="176" viewBox="0 0 176 176" class="w-full h-full transform -rotate-90">
+                    <circle cx="88" cy="88" r="76" stroke="#E2E8F0" stroke-width="12" fill="transparent" />
+                    <circle cx="88" cy="88" r="76" stroke="${scoreColor}" stroke-width="12" fill="transparent" 
+                      stroke-dasharray="477" stroke-dashoffset="${477 - (477 * total) / 100}" stroke-linecap="round" />
+                  </svg>
+                  <div class="absolute flex flex-col items-center justify-center">
+                    <span class="text-3xl font-black text-slate-900 heading-font">${(total/10).toFixed(1)}/10</span>
+                    <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">OCI Score</span>
+                  </div>
+                </div>
+                <div class="mt-4 text-center space-y-2">
+                  <span class="inline-block text-[9px] font-black px-4 py-1 rounded-full uppercase tracking-wider border" style="color: ${scoreColor}; background-color: ${bgLight}; border-color: ${scoreColor}25">
+                    ${severityLabel} Severity Profile
+                  </span>
+                  <p class="text-[10px] text-slate-500 leading-relaxed max-w-xs">
+                    Quantified dentoalveolar and soft tissue masking index of Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} skeletal discrepancy.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Overall Compensation Distribution Donut -->
+              <div class="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-4">Compensation Distribution</h4>
+                <div class="flex items-center space-x-6">
+                  <div>
+                    ${getHtmlDonutChart(overallSegments, 120, 12)}
+                  </div>
+                  <div class="flex-1 space-y-2.5">
+                    <div class="space-y-0.5">
+                      <div class="flex items-center space-x-1.5">
+                        <span class="w-2.5 h-2.5 rounded bg-amber-500 inline-block"></span>
+                        <span class="text-[10px] font-bold text-slate-700">Skeletal</span>
+                      </div>
+                      <span class="text-xs font-black text-slate-900 font-mono">${ociSke}%</span>
+                    </div>
+                    <div class="space-y-0.5">
+                      <div class="flex items-center space-x-1.5">
+                        <span class="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span>
+                        <span class="text-[10px] font-bold text-slate-700">Dental</span>
+                      </div>
+                      <span class="text-xs font-black text-slate-900 font-mono">${ociDen}%</span>
+                    </div>
+                    <div class="space-y-0.5">
+                      <div class="flex items-center space-x-1.5">
+                        <span class="w-2.5 h-2.5 rounded bg-blue-500 inline-block"></span>
+                        <span class="text-[10px] font-bold text-slate-700">Soft Tissue</span>
+                      </div>
+                      <span class="text-xs font-black text-slate-900 font-mono">${ociSof}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Clinical Findings Summary -->
+            <div class="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
+              <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Dynamic Clinical Findings</h4>
+              <p class="text-xs text-slate-700 leading-relaxed">
+                The diagnostic engine has processed lateral cephalometrics for <strong>${assessment.patientDetails.name}</strong>. 
+                Skeletal measurements confirm a <strong>Skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'}</strong> discrepancy 
+                with a <strong>${assessment.ociResult.verticalPattern || 'Normodivergent'}</strong> growth pattern. 
+                Dentoalveolar compensation level is determined as <strong>${assessment.ociResult.compensationLevel || 'Moderate'}</strong>. 
+                Camouflage potential is evaluated as <strong>${report.complexity === 'Severe / Surgical' ? 'Limited (Surgical intervention indicated)' : 'Feasible within camouflage boundaries'}</strong>.
               </p>
             </div>
           </div>
 
-          <!-- Right side: Overall Distribution Donut Chart -->
-          <div class="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl border border-slate-100/80">
-            <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-4">Overall Compensation Distribution</h4>
-            
-            <div class="flex items-center space-x-6">
-              <!-- SVG Donut Chart -->
-              <div>
-                ${getHtmlDonutChart(overallSegments, 120, 12)}
-              </div>
-              
-              <!-- Legend Grid -->
-              <div class="space-y-3">
-                <div class="flex items-center space-x-3">
-                  <span class="w-3 h-3 rounded bg-amber-500 inline-block shadow-sm"></span>
-                  <div>
-                    <p class="text-[10px] font-extrabold text-slate-800">Skeletal Base</p>
-                    <p class="text-[8px] text-slate-400 font-bold uppercase mt-0.5">Load: ${ociSke}% | Score: ${report.ociSkeletalContribution}</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <span class="w-3 h-3 rounded bg-emerald-500 inline-block shadow-sm"></span>
-                  <div>
-                    <p class="text-[10px] font-extrabold text-slate-800">Dental Torque</p>
-                    <p class="text-[8px] text-slate-400 font-bold uppercase mt-0.5">Load: ${ociDen}% | Score: ${report.ociDentalContribution}</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <span class="w-3 h-3 rounded bg-blue-500 inline-block shadow-sm"></span>
-                  <div>
-                    <p class="text-[10px] font-extrabold text-slate-800">Soft Tissue</p>
-                    <p class="text-[8px] text-slate-400 font-bold uppercase mt-0.5">Load: ${ociSof}% | Score: ${report.ociSoftTissueContribution}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 2 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
           </div>
         </div>
 
-        <!-- Clinical Branding & Supervisor Credentials -->
-        <div class="border-t border-slate-200 pt-6 flex justify-between items-end">
-          <div class="space-y-1">
-            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Supervisor & Specialty Clinic</p>
-            <p class="text-sm font-black text-slate-950 heading-font">${doctorName}</p>
-            <p class="text-[9px] text-slate-500 font-medium">MDS (Orthodontics) | Senior Board Consultant</p>
-          </div>
-          <div class="text-right space-y-1">
-            <p class="text-[9px] text-slate-400 font-mono">Software Audit Suite: OCI Analyzer v2.0</p>
-            <p class="text-[9px] text-slate-400 font-mono">System Developer: Dr. Salman</p>
-          </div>
-        </div>
-
-        <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono mt-2" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-          <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Date: ${assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
-          <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
-        </div>
-      </div>
-
-      <!-- PAGE 2: CEPHALOMETRIC METRIC PROFILE & DEVIATIONS -->
-      <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
-        <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
-        
-        <div class="space-y-5">
-          <!-- Page Header -->
-          <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
-            <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Cephalometric Metric Profile & Deviations</h3>
-            <span class="text-[9px] text-slate-400 font-mono">Page 2 of 4</span>
-          </div>
-
-          <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
-            Anatomical sagittal, vertical, and dentoalveolar parameters measured on lateral cephalograms. Calculated deviations highlight major structural discrepancies and compensatory base movements.
-          </p>
-
-          <!-- Table Container -->
-          <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr class="bg-slate-900 text-white font-black uppercase tracking-wider text-[8px]">
-                  <th class="p-3.5 pl-4">Measurement Parameter</th>
-                  <th class="p-3.5 text-center">Normative Range</th>
-                  <th class="p-3.5 text-right">Patient Value</th>
-                  <th class="p-3.5 text-right pr-4">Calculated Deviation</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 bg-white">
-                ${tableRowsHtml}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono mt-4" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-          <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Date: ${assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
-          <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
-        </div>
-      </div>
-
-      <!-- PAGE 3: MULTIDIMENSIONAL DECOMPOSITION CARDS -->
-      <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
-        <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
-        
-        <div class="space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
-            <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Multidimensional Decomposition Analytics</h3>
-            <span class="text-[9px] text-slate-400 font-mono">Page 3 of 4</span>
-          </div>
-
-          <!-- CARD 1: SKELETAL DECOMPOSITION -->
-          <div class="p-5 bg-gradient-to-r from-slate-50 to-white rounded-2xl border border-slate-200/60 flex items-start space-x-6">
-            <div class="flex flex-col items-center" style="min-width: 140px;">
-              ${getHtmlDonutChart(skeletalSegments, 110, 11)}
-              <span class="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-3 font-mono">Skeletal sub-load</span>
-            </div>
-            <div class="flex-1 space-y-3">
-              <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-1.5 flex justify-between">
-                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-amber-500 mr-2 inline-block"></span>1. Skeletal Base Allocation</span>
-                <span class="text-amber-600 font-mono bg-amber-50 px-2 rounded-md">${ociSke}% Contribution</span>
-              </h4>
-              <p class="text-[11px] text-slate-600 leading-relaxed font-medium">${skeletalSummary}</p>
-              
-              <!-- Segment Legend Row -->
-              <div class="grid grid-cols-4 gap-2 pt-1">
-                <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-                  <p class="text-[8px] text-slate-400 uppercase font-black tracking-wider mt-0.5">Maxilla</p>
-                  <p class="text-[10px] font-black text-slate-800 font-mono mt-0.5">${maxillaPct}%</p>
-                </div>
-                <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                  <p class="text-[8px] text-slate-400 uppercase font-black tracking-wider mt-0.5">Mandible</p>
-                  <p class="text-[10px] font-black text-slate-800 font-mono mt-0.5">${mandiblePct}%</p>
-                </div>
-                <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
-                  <p class="text-[8px] text-slate-400 uppercase font-black tracking-wider mt-0.5">Vertical</p>
-                  <p class="text-[10px] font-black text-slate-800 font-mono mt-0.5">${verticalPct}%</p>
-                </div>
-                <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                  <p class="text-[8px] text-slate-400 uppercase font-black tracking-wider mt-0.5">Balance</p>
-                  <p class="text-[10px] font-black text-slate-800 font-mono mt-0.5">${balancePct}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 2: DENTAL DECOMPOSITION -->
-          <div class="p-5 bg-gradient-to-r from-slate-50 to-white rounded-2xl border border-slate-200/60 flex items-start space-x-6">
-            <div class="flex flex-col items-center" style="min-width: 140px;">
-              ${getHtmlDonutChart(dentalSegments, 110, 11)}
-              <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-3 font-mono">Dental sub-load</span>
-            </div>
-            <div class="flex-1 space-y-3">
-              <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-1.5 flex justify-between">
-                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-emerald-500 mr-2 inline-block"></span>2. Dental Torque & Arch Allocation</span>
-                <span class="text-emerald-600 font-mono bg-emerald-50 px-2 rounded-md">${ociDen}% Contribution</span>
-              </h4>
-              <p class="text-[11px] text-slate-600 leading-relaxed font-medium">${dentalSummary}</p>
-              
-              <!-- Segment Legend Row -->
-              <div class="grid grid-cols-5 gap-1.5 pt-1">
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-pink-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">U. Incisor</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${upperIncisorPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">L. Incisor</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${lowerIncisorPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">U. Molar</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${upperMolarPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">L. Molar</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${lowerMolarPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">Occlusal</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${occlusalPct}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 3: SOFT TISSUE DECOMPOSITION -->
-          <div class="p-5 bg-gradient-to-r from-slate-50 to-white rounded-2xl border border-slate-200/60 flex items-start space-x-6">
-            <div class="flex flex-col items-center" style="min-width: 140px;">
-              ${getHtmlDonutChart(softTissueSegments, 110, 11)}
-              <span class="text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-3 font-mono">Soft tissue sub-load</span>
-            </div>
-            <div class="flex-1 space-y-3">
-              <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-1.5 flex justify-between">
-                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-blue-500 mr-2 inline-block"></span>3. Soft Tissue & Lip Tension Allocation</span>
-                <span class="text-blue-600 font-mono bg-blue-50 px-2 rounded-md">${ociSof}% Contribution</span>
-              </h4>
-              <p class="text-[11px] text-slate-600 leading-relaxed font-medium">${softTissueSummary}</p>
-              
-              <!-- Segment Legend Row -->
-              <div class="grid grid-cols-5 gap-1.5 pt-1">
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">U. Lip</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${upperLipPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">L. Lip</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${lowerLipPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">Chin</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${chinPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">Nasolabial</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${nasoPct}%</p>
-                </div>
-                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200/40 text-center">
-                  <span class="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
-                  <p class="text-[7px] text-slate-400 uppercase font-black tracking-wider">Convexity</p>
-                  <p class="text-[9px] font-black text-slate-800 font-mono mt-0.5">${convexityPct}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono mt-4" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-          <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Date: ${assessment.patientDetails.date || assessment.createdAt.split('T')[0]}</p>
-          <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
-        </div>
-      </div>
-
-      <!-- PAGE 4: AI CLINICAL SUMMARY & RECOMMENDATIONS -->
-      <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
-        <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
-        
-        <div class="space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
-            <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Clinical Treatment Decisions & AI Synthesis</h3>
-            <span class="text-[9px] text-slate-400 font-mono">Page 4 of 4</span>
-          </div>
-
-          <!-- Section 1: AI Clinical Summary Grid -->
-          <div class="space-y-2">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400">AI Clinical Summary & Diagnostic Breakdown</h4>
-            <div class="grid grid-cols-2 gap-3 text-[10px] leading-relaxed">
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-teal-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">1. Overall Compensation Pattern</p>
-                <p class="font-bold text-slate-800">Skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} with Dentoalveolar Camouflage</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-cyan-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">2. Dominant Compensation Type</p>
-                <p class="font-bold text-slate-800">${dominantCompType} (${dominantCompVal}%)</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-slate-100 space-y-1" style="border-left-color: ${scoreColor}">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">3. Compensation Severity</p>
-                <p class="font-bold text-teal-600" style="color: ${scoreColor}">${severityLabel} Compensation (Score: ${(total/10).toFixed(1)}/10 [${total}%])</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-cyan-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">4. Facial Esthetic Impact</p>
-                <p class="font-semibold text-slate-700">${profileVal} Profile, compromised chin-lip projection, muscular tension.</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">5. Occlusal Impact</p>
-                <p class="font-semibold text-slate-700">Restricted tooth positions, compromised dental bite, overjet/overbite distortion.</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">6. Anchorage Requirement</p>
-                <p class="font-bold text-slate-800">${report.anchorageRequirement} Anchorage Level</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">7. Decompensation Requirement</p>
-                <p class="font-semibold text-slate-700">Orthodontic torque/uprighting is required to coordinate incisors before surgery or final leveling.</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-slate-600 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">8. Treatment Difficulty</p>
-                <p class="font-bold text-slate-800">${report.complexity}</p>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-slate-600 border-slate-100 space-y-1">
-                <p class="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">9. Treatment Prognosis</p>
-                <p class="font-bold text-slate-800">${report.overallPrognosis}</p>
-              </div>
-              <div class="p-3 bg-teal-50 rounded-xl border-l-4 border-teal-500 border-teal-100 space-y-1">
-                <p class="text-[7.5px] text-teal-600 font-bold uppercase tracking-wider">10. AI-Based Recommendations</p>
-                <p class="font-bold text-teal-700">${suggestedExtractions}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 2: Biomechanical Decisional Matrices -->
-          <div class="space-y-2">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400">Treatment Pathway & Sequence</h4>
-            <div class="grid grid-cols-2 gap-4 text-xs">
-              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-[9px] font-black uppercase text-slate-400">Premolar Extractions</span>
-                  <span class="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-black">${report.extractionRecommendation}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <p class="font-extrabold text-slate-800">Probability: ${cleanPercent(report.extractionProbability)}</p>
-                </div>
-                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-rose-500 rounded-full" style="width: ${cleanPercent(report.extractionProbability)}"></div>
-                </div>
-                <p class="text-[10px] text-slate-500 leading-normal mt-1">${report.extractionReason}</p>
-              </div>
-              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-[9px] font-black uppercase text-slate-400">Orthognathic Surgery</span>
-                  <span class="px-2 py-0.5 bg-sky-100 text-sky-700 rounded text-[9px] font-black">${report.surgeryRecommendation}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <p class="font-extrabold text-slate-800">Probability: ${cleanPercent(report.surgeryProbability)}</p>
-                </div>
-                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-sky-500 rounded-full" style="width: ${cleanPercent(report.surgeryProbability)}"></div>
-                </div>
-                <p class="text-[10px] text-slate-500 leading-normal mt-1">${report.surgeryReason}</p>
-              </div>
-            </div>
-
-            <!-- Primary Recommended Plan Option -->
-            <div class="p-4 bg-teal-50 border border-teal-200/60 rounded-xl text-xs space-y-1.5">
-              <p class="text-[9px] font-mono uppercase text-teal-600 font-bold tracking-wider">Primary Treatment Recommendation & Final Clinical Summary</p>
-              <p class="font-black text-[#14B8A6] text-sm">${report.primaryPlanOption}</p>
-              <p class="text-[11px] text-slate-700 leading-relaxed font-semibold">${recommendationTxt}</p>
-            </div>
-          </div>
-
-          <!-- Specialist Audit Stamp & Signatures -->
-          <div class="flex justify-between items-end border-t border-slate-200 pt-6">
-            <div class="space-y-2">
-              <p class="text-[9px] text-slate-400 uppercase tracking-widest font-black">Clinical Integrity Seal</p>
-              <div class="flex items-center space-x-4 text-[8px] text-slate-500 font-mono mt-1">
-                <span class="bg-slate-100 px-2.5 py-1 rounded">Core: OCI-v2.0</span>
-                <span class="bg-teal-50 text-teal-700 px-2.5 py-1 rounded">System: AI-Surgical-Ready</span>
-                <span class="bg-slate-100 px-2.5 py-1 rounded">Audit Ref: d1d8d5b7</span>
-              </div>
-            </div>
-            <div class="text-right" style="min-width: 150px;">
-              <span class="text-base font-black italic text-teal-600 block border-b border-slate-200 pb-1 font-serif tracking-wide" style="font-family: 'Georgia', serif;">${sigText}</span>
-              <span class="text-[8px] text-slate-400 uppercase font-black mt-1 block tracking-wider">Specialist Sign-off Seal</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- OCI Clinical Decision Support System Printed Footer -->
-        <div class="border-t border-slate-200 pt-6 px-4 pb-2 w-full max-w-[600px] mx-auto min-h-[100px] flex flex-col items-center justify-center text-center mt-4">
-          <p class="text-xs font-black text-slate-900 uppercase tracking-wider leading-snug m-0">
-            OCI Analyzer™
-          </p>
-          <p class="text-[10px] text-slate-500 font-mono uppercase mt-1 mb-4 leading-normal m-0">
-            AI-Powered Orthodontic Clinical Decision Support System
-          </p>
+        <!-- PAGE 3: CEPHALOMETRIC ANALYSIS TABLE -->
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
           
-          <p class="text-[12px] font-medium text-slate-500 leading-normal m-0">
-            Developed & Innovated by
-          </p>
-          <p class="text-[14px] font-semibold text-teal-600 mt-1 leading-normal m-0">
-            Dr. Salman, MDS (Orthodontist)
-          </p>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Cephalometric Metric Profile & Deviations</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 3 of 6</span>
+            </div>
+
+            <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
+              Anatomical sagittal, vertical, and dentoalveolar parameters measured on lateral cephalograms. Calculated deviations highlight major structural discrepancies and compensatory base movements.
+            </p>
+
+            <!-- Table Container -->
+            <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-900 text-white font-black uppercase tracking-wider text-[8px]">
+                    <th class="p-3.5 pl-4">Measurement Parameter</th>
+                    <th class="p-3.5 text-center">Normative Range</th>
+                    <th class="p-3.5 text-right">Patient Value</th>
+                    <th class="p-3.5 text-right pr-4">Calculated Deviation</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                  ${tableRowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 3 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+          </div>
         </div>
 
-        <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono mt-4" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-          <p style="font-style: italic; color: #64748B; margin: 0;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+        <!-- PAGE 4: MULTIDIMENSIONAL SUB-LOAD GRAPHICS -->
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Multidimensional Decomposition Analytics</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 4 of 6</span>
+            </div>
+
+            <!-- Grid containing sub-load graphs -->
+            <div class="space-y-4">
+              <!-- SKELETAL SUB-LOAD CARD -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex items-center space-x-6">
+                <div class="flex flex-col items-center justify-center" style="min-width: 130px;">
+                  ${getHtmlDonutChart(skeletalSegments, 90, 10)}
+                  <span class="text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-2 font-mono">Skeletal Allocation</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-200 pb-1 flex justify-between">
+                    <span>1. Skeletal Base Allocation</span>
+                    <span class="text-amber-600 font-mono">${ociSke}% Contribution</span>
+                  </h4>
+                  <p class="text-[10px] text-slate-600 leading-normal">${skeletalSummary}</p>
+                  <div class="grid grid-cols-4 gap-1.5 pt-1 text-[9px]">
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[7px] text-slate-400 uppercase font-black">Maxilla</p>
+                      <p class="font-bold text-slate-800">${maxillaPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[7px] text-slate-400 uppercase font-black">Mandible</p>
+                      <p class="font-bold text-slate-800">${mandiblePct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[7px] text-slate-400 uppercase font-black">Vertical</p>
+                      <p class="font-bold text-slate-800">${verticalPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[7px] text-slate-400 uppercase font-black">Balance</p>
+                      <p class="font-bold text-slate-800">${balancePct}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DENTAL SUB-LOAD CARD -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex items-center space-x-6">
+                <div class="flex flex-col items-center justify-center" style="min-width: 130px;">
+                  ${getHtmlDonutChart(dentalSegments, 90, 10)}
+                  <span class="text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-2 font-mono">Dental Allocation</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-200 pb-1 flex justify-between">
+                    <span>2. Dental Torque & Arch Allocation</span>
+                    <span class="text-emerald-600 font-mono">${ociDen}% Contribution</span>
+                  </h4>
+                  <p class="text-[10px] text-slate-600 leading-normal">${dentalSummary}</p>
+                  <div class="grid grid-cols-5 gap-1 pt-1 text-[8px]">
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">U.Inc</p>
+                      <p class="font-bold text-slate-800">${upperIncisorPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">L.Inc</p>
+                      <p class="font-bold text-slate-800">${lowerIncisorPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">U.Mol</p>
+                      <p class="font-bold text-slate-800">${upperMolarPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">L.Mol</p>
+                      <p class="font-bold text-slate-800">${lowerMolarPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">Occl</p>
+                      <p class="font-bold text-slate-800">${occlusalPct}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SOFT TISSUE SUB-LOAD CARD -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex items-center space-x-6">
+                <div class="flex flex-col items-center justify-center" style="min-width: 130px;">
+                  ${getHtmlDonutChart(softTissueSegments, 90, 10)}
+                  <span class="text-[8px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider mt-2 font-mono">Soft Tissue Allocation</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide border-b border-slate-200 pb-1 flex justify-between">
+                    <span>3. Soft Tissue & Lip Tension Allocation</span>
+                    <span class="text-blue-600 font-mono">${ociSof}% Contribution</span>
+                  </h4>
+                  <p class="text-[10px] text-slate-600 leading-normal">${softTissueSummary}</p>
+                  <div class="grid grid-cols-5 gap-1 pt-1 text-[8px]">
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">U.Lip</p>
+                      <p class="font-bold text-slate-800">${upperLipPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">L.Lip</p>
+                      <p class="font-bold text-slate-800">${lowerLipPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">Chin</p>
+                      <p class="font-bold text-slate-800">${chinPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">Naso</p>
+                      <p class="font-bold text-slate-800">${nasoPct}%</p>
+                    </div>
+                    <div class="p-1 bg-white rounded border border-slate-100 text-center">
+                      <p class="text-[6.5px] text-slate-400 uppercase font-black">Conv</p>
+                      <p class="font-bold text-slate-800">${convexityPct}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 4 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+          </div>
         </div>
-      </div>
+
+        <!-- PAGE 5: DYNAMIC TREATMENT PLANNING -->
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">OCI Intelligence Treatment Planning</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 5 of 6</span>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+              <!-- Treatment Objectives -->
+              <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1.5">
+                <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Treatment Objectives</h4>
+                <div class="space-y-1 pl-1 text-[10px] leading-relaxed text-slate-700">
+                  <p><strong>• Skeletal:</strong> ${anbVal > 4.5 ? `Promote orthopedic redirection of the maxilla and/or encourage mandibular growth advancement to resolve the Class II discrepancy (ANB: ${anbVal}°).` : anbVal < 0.5 ? `Decompensate the arch to prepare for orthognathic surgery or restrict mandibular projection (ANB: ${anbVal}°).` : `Maintain the existing skeletal sagittal relationship (ANB: ${anbVal}°).`}</p>
+                  <p><strong>• Dental:</strong> ${impaVal > 95 ? `Retract and upright the proclined mandibular incisors (IMPA: ${impaVal}°) to restore proper labiolingual inclination.` : impaVal < 85 ? `Procline and decompensate the retroclined mandibular incisors (IMPA: ${impaVal}°).` : `Maintain correct lower incisor sagittal inclination (IMPA: ${impaVal}°).`}</p>
+                  <p><strong>• Facial & Occlusal:</strong> Coordinate arches, lip profile support, and establish Class I molar/canine intercuspation (OJ: ${overjetVal}mm, OB: ${overbiteVal}mm).</p>
+                </div>
+              </div>
+
+              <!-- Sequence of treatment -->
+              <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1.5">
+                <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Treatment Sequence</h4>
+                <div class="space-y-1 pl-1 text-[10px] leading-relaxed text-slate-700">
+                  <p><strong>1. Leveling & Alignment:</strong> Resolve initial crowding and rotation utilizing light forces (.014 to .018 NiTi wires).</p>
+                  <p><strong>2. Sagittal & Torque Coordination:</strong> Establish buccal coordination using Class ${anbVal > 4.5 ? 'II' : 'I'} elastics and coordinate arch widths.</p>
+                  <p><strong>3. Finishing & Retention:</strong> artistic detailing bends, establish ideal overbite, and place fixed/removable retainers.</p>
+                </div>
+              </div>
+
+              <!-- Appliance & Extraction -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1">
+                  <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Appliance Selection</h4>
+                  <p class="text-[10px] text-slate-700 leading-normal">
+                    ${total > 80 ? 'Standard edgewise twin brackets (.022 slot) with high-torque prescriptions or custom orthognathic splints.' : total > 40 ? 'Pre-adjusted active self-ligation brackets (.022 slot) to optimize sliding mechanics.' : 'Clear aligners or standard twin bracket systems suitable for mild alignment.'}
+                  </p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1">
+                  <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Extraction & Anchorage</h4>
+                  <p class="text-[10px] text-slate-700 leading-normal">
+                    <strong>Plan:</strong> ${report.extractionRecommendation}. <br/><strong>Anchorage:</strong> ${report.anchorageRequirement} anchorage (${report.suggestedAnchorage}).
+                  </p>
+                </div>
+              </div>
+
+              <!-- Biomechanics -->
+              <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1.5">
+                <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Biomechanical Vectors</h4>
+                <div class="grid grid-cols-2 gap-3 text-[10px] pl-1 text-slate-700">
+                  <p><strong>• Torque control:</strong> Active utility arches or high-torque bracket values (current IMPA: ${impaVal}°).</p>
+                  <p><strong>• Vertical control:</strong> Intrusion arches to resolve deep bite of ${overbiteVal}mm.</p>
+                  <p><strong>• Expansion:</strong> Slowly expand arches to resolve crowding without buccal plate compromise.</p>
+                  <p><strong>• Sagittal elastics:</strong> Light intermaxillary elastics for active sagittal coordination.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono mt-4" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 5 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+          </div>
+        </div>
+
+        <!-- PAGE 6: OCI CLINICAL INTELLIGENCE -->
+        <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; break-after: page;">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">OCI Clinical Intelligence & Decisional Trace</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 6 of 6</span>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+              <!-- Diagnosis Reasoning -->
+              <div class="space-y-1">
+                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI selected this diagnosis</h4>
+                <p class="text-slate-700 leading-relaxed pl-1">
+                  Based on the patient's skeletal parameters (ANB: ${anbVal}°, Wits: ${witsVal}mm), the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                </p>
+              </div>
+
+              <!-- Compensation Reasoning -->
+              <div class="space-y-1">
+                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI detected these compensations</h4>
+                <p class="text-slate-700 leading-relaxed pl-1">
+                  The lower incisor sagittal inclination (IMPA: ${impaVal}°) and upper incisor inclination (U1-SN: ${u1SnVal}°) demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                </p>
+              </div>
+
+              <!-- Treatment Reasoning -->
+              <div class="space-y-1">
+                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI selected this treatment plan</h4>
+                <p class="text-slate-700 leading-relaxed pl-1">
+                  For OCI Score ${(total/10).toFixed(1)}/10, a ${report.surgeryRecommendation === 'Surgical Correction' ? 'presurgical decompensation and orthognathic surgery' : 'conventional orthodontic camouflage'} approach was selected. Extraction planning recommends a ${report.extractionRecommendation === 'Extraction' ? 'premolar extraction pattern' : 'non-extraction pattern'} to optimize dental and facial aesthetics.
+                </p>
+              </div>
+
+              <!-- Risks & Prognosis -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Clinical Risk Factors</h4>
+                  <p class="text-slate-700 leading-relaxed pl-1">
+                    ${total > 60 ? 'Root resorption (high risk due to extensive movement requirements), periodontal compromise (due to thin buccal cortical plate), and anchorage loss.' : 'Minimal risk profile; standard considerations include compliance with elastics and light transient root resorption.'}
+                  </p>
+                </div>
+
+                <div class="space-y-1">
+                  <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Prognosis & Relapse Risk</h4>
+                  <p class="text-slate-700 leading-relaxed pl-1">
+                    <strong>Prognosis:</strong> ${report.overallPrognosis} (${report.explanationWhy || 'Skeletal and dental parameters are stable.'}) <br/>
+                    <strong>Relapse Risk:</strong> ${report.relapseRisk} (${report.relapseReason})
+                  </p>
+                </div>
+              </div>
+
+              <!-- Specialist Sign-off Seal -->
+              <div class="pt-6 mt-6 border-t border-slate-150 flex flex-col items-center justify-center space-y-1">
+                <div class="w-full max-w-[240px] border-b border-slate-300 pb-1 text-center font-extrabold italic text-teal-600 text-sm">
+                  ${sigText}
+                </div>
+                <p class="text-[8px] text-slate-400 uppercase tracking-widest font-bold">Specialist Sign-off Seal</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
     `;
   };
 

@@ -639,66 +639,68 @@ export default function SettingsPanel({
 
 
         {/* 3. AI Copilot Preferences */}
-        <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
-          <Pressable 
-            onPress={() => toggleSection('aiprefs')}
-            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
-          >
-            <View style={tw`flex-row items-center space-x-3`}>
-              <BrainCircuit size={16} color="#14B8A6" />
-              <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>AI Copilot Preferences</Text>
-            </View>
-            <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
-              {activeSection === 'aiprefs' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
-            </View>
-          </Pressable>
+        {role === 'Developer' && (
+          <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
+            <Pressable 
+              onPress={() => toggleSection('aiprefs')}
+              style={tw`flex-row justify-between items-center p-5 bg-black/20`}
+            >
+              <View style={tw`flex-row items-center space-x-3`}>
+                <BrainCircuit size={16} color="#14B8A6" />
+                <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>AI Copilot Preferences</Text>
+              </View>
+              <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
+                {activeSection === 'aiprefs' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
+              </View>
+            </Pressable>
 
-          {activeSection === 'aiprefs' && (
-            <View style={tw`p-5 space-y-4`}>
-              <View style={tw`space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinical Assistance Level</Text>
-                <View style={tw`flex-row space-x-2`}>
-                  {(['high', 'med', 'low'] as const).map((level) => (
-                    <Pressable
-                      key={level}
-                      onPress={() => setAiAssistanceLevel(level)}
-                      style={[
-                        tw`flex-1 py-2.5 rounded-xl border items-center justify-center`,
-                        aiAssistanceLevel === level 
-                          ? tw`bg-teal-500/10 border-teal-500/40` 
-                          : tw`bg-black/30 border-white/5`
-                      ]}
-                    >
-                      <Text style={[
-                        tw`text-[10px] font-black uppercase font-mono`,
-                        aiAssistanceLevel === level ? tw`text-teal-400` : tw`text-slate-400`
-                      ]}>
-                        {level === 'high' ? 'Autonomous Copilot' : level === 'med' ? 'Collaborative' : 'Manual Trigger'}
-                      </Text>
-                    </Pressable>
-                  ))}
+            {activeSection === 'aiprefs' && (
+              <View style={tw`p-5 space-y-4`}>
+                <View style={tw`space-y-2`}>
+                  <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Clinical Assistance Level</Text>
+                  <View style={tw`flex-row space-x-2`}>
+                    {(['high', 'med', 'low'] as const).map((level) => (
+                      <Pressable
+                        key={level}
+                        onPress={() => setAiAssistanceLevel(level)}
+                        style={[
+                          tw`flex-1 py-2.5 rounded-xl border items-center justify-center`,
+                          aiAssistanceLevel === level 
+                            ? tw`bg-teal-500/10 border-teal-500/40` 
+                            : tw`bg-black/30 border-white/5`
+                        ]}
+                      >
+                        <Text style={[
+                          tw`text-[10px] font-black uppercase font-mono`,
+                          aiAssistanceLevel === level ? tw`text-teal-400` : tw`text-slate-400`
+                        ]}>
+                          {level === 'high' ? 'Autonomous Copilot' : level === 'med' ? 'Collaborative' : 'Manual Trigger'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
-              </View>
 
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Active LLM Core Engine</Text>
-                <TextInput 
-                  value={aiEngineMode}
-                  editable={false}
-                  style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-slate-400 text-xs font-mono font-bold`}
-                />
-              </View>
+                <View style={tw`space-y-1`}>
+                  <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Active LLM Core Engine</Text>
+                  <TextInput 
+                    value={aiEngineMode}
+                    editable={false}
+                    style={tw`w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4 text-slate-400 text-xs font-mono font-bold`}
+                  />
+                </View>
 
-              <Pressable 
-                onPress={saveAiPrefs}
-                style={tw`flex-row items-center justify-center bg-teal-500/10 border border-teal-500/30 py-3 rounded-xl`}
-              >
-                <Save size={13} color="#14B8A6" style={tw`mr-2`} />
-                <Text style={tw`text-xs font-black text-teal-400 uppercase`}>Apply AI Preferences</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
+                <Pressable 
+                  onPress={saveAiPrefs}
+                  style={tw`flex-row items-center justify-center bg-teal-500/10 border border-teal-500/30 py-3 rounded-xl`}
+                >
+                  <Save size={13} color="#14B8A6" style={tw`mr-2`} />
+                  <Text style={tw`text-xs font-black text-teal-400 uppercase`}>Apply AI Preferences</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 4. OCI Diagnostic Weights */}
         {role === 'Developer' && (

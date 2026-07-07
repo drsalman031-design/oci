@@ -11,7 +11,8 @@ import {
   User,
   Compass,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import { Norms } from '../scoringEngine';
@@ -34,6 +35,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   const [showActiveSelect, setShowActiveSelect] = useState<boolean>(false);
   const [sigText, setSigText] = useState('Dr. Salman');
   const [activeSection, setActiveSection] = useState<'severity' | 'parameters' | 'compensation' | 'pathways' | null>('severity');
+  const [clinicalExpanded, setClinicalExpanded] = useState<boolean>(false);
 
   const toggleSection = (section: 'severity' | 'parameters' | 'compensation' | 'pathways') => {
     if (Platform.OS === 'android') {
@@ -574,21 +576,99 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           
           {/* Extraction Decision Card */}
           <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
-            <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`flex-row flex-wrap justify-between items-center gap-2`}>
               <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Biomechanical Extraction Matrix</Text>
-              <Text style={tw`px-2.5 py-0.5 bg-[#1E88FF]/10 text-[#1E88FF] rounded-lg text-[9px] font-black border border-[#1E88FF]/20`}>{report.extractionRecommendation}</Text>
+              <Text style={tw`px-2.5 py-1 bg-[#1E88FF]/10 text-[#1E88FF] rounded-lg text-[9px] font-black border border-[#1E88FF]/20 text-center flex-wrap max-w-full`}>{report.extractionRecommendation}</Text>
             </View>
             <Text style={tw`text-sm font-black text-white`}>Extraction Probability: {cleanPercent(report.extractionProbability)}</Text>
           </View>
 
           {/* Surgical Decision Card */}
           <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
-            <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`flex-row flex-wrap justify-between items-center gap-2`}>
               <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Surgical Correction Matrix</Text>
-              <Text style={tw`px-2.5 py-0.5 bg-purple-500/10 text-purple-400 rounded-lg text-[9px] font-black border border-purple-500/20`}>{report.surgeryRecommendation}</Text>
+              <Text style={tw`px-2.5 py-1 bg-purple-500/10 text-purple-400 rounded-lg text-[9px] font-black border border-purple-500/20 text-center flex-wrap max-w-full`}>{report.surgeryRecommendation}</Text>
             </View>
             <Text style={tw`text-sm font-black text-white`}>Surgical Probability: {cleanPercent(report.surgeryProbability)}</Text>
           </View>
+        </View>
+
+        {/* ====================================================
+            🧠 OCI CLINICAL INTELLIGENCE ACCORDION CARD
+           ==================================================== */}
+        <View style={tw`bg-[#0B1226] rounded-[24px] border border-white/5 shadow-xl overflow-hidden`}>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS === 'android') {
+                UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
+              }
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setClinicalExpanded(!clinicalExpanded);
+            }}
+            style={tw`p-5 flex-row justify-between items-center bg-black/20`}
+          >
+            <View style={tw`flex-row items-center space-x-2.5`}>
+              <Sparkles size={14} color="#14B8A6" />
+              <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>OCI Clinical Intelligence</Text>
+            </View>
+            {clinicalExpanded ? (
+              <ChevronUp size={14} color="#14B8A6" />
+            ) : (
+              <ChevronDown size={14} color="#14B8A6" />
+            )}
+          </Pressable>
+
+          {clinicalExpanded && (
+            <View style={tw`p-5 space-y-4 border-t border-white/5`}>
+              {/* Diagnosis Reasoning */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI selected this diagnosis</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  Based on the patient's skeletal parameters (ANB: {typeof selectedAssessment.cephalometricInput.anb === 'number' ? selectedAssessment.cephalometricInput.anb : parseFloat(selectedAssessment.cephalometricInput.anb as any) || 2}°, Wits: {typeof selectedAssessment.cephalometricInput.wits === 'number' ? selectedAssessment.cephalometricInput.wits : parseFloat(selectedAssessment.cephalometricInput.wits as any) || 0}mm), the engine mapped a Skeletal {selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a {selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                </Text>
+              </View>
+
+              {/* Compensation Reasoning */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI detected these compensations</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  The lower incisor sagittal inclination (IMPA: {typeof selectedAssessment.cephalometricInput.impa === 'number' ? selectedAssessment.cephalometricInput.impa : parseFloat(selectedAssessment.cephalometricInput.impa as any) || 90}°) and upper incisor inclination (U1-SN: {typeof selectedAssessment.cephalometricInput.u1Sn === 'number' ? selectedAssessment.cephalometricInput.u1Sn : parseFloat(selectedAssessment.cephalometricInput.u1Sn as any) || 104}°) demonstrate a {selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                </Text>
+              </View>
+
+              {/* Treatment Reasoning */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI selected this treatment plan</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  For OCI Score {selectedAssessment.ociResult.totalScore}/10, a {report.surgeryRecommendation === 'Surgical Correction' ? 'presurgical decompensation and orthognathic surgery' : 'conventional orthodontic camouflage'} approach was selected. Extraction planning recommends a {report.extractionRecommendation === 'Extraction' ? 'premolar extraction pattern' : 'non-extraction pattern'} to optimize dental and facial aesthetics.
+                </Text>
+              </View>
+
+              {/* Risk Factors */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Risk Factors</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  {selectedAssessment.ociResult.totalScore > 6.0 ? 'Root resorption (high risk due to extensive movement requirements), periodontal compromise (due to thin buccal cortical plate), and anchorage loss.' : 'Minimal risk profile; standard considerations include compliance with elastics and light transient root resorption.'}
+                </Text>
+              </View>
+
+              {/* Prognosis */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Prognosis</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  {report.overallPrognosis} ({report.explanationWhy || 'Skeletal and dental parameters are within stable boundaries.'})
+                </Text>
+              </View>
+
+              {/* Relapse Risk */}
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Relapse Risk</Text>
+                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                  {report.relapseRisk} ({report.relapseReason || 'Stable post-treatment intercuspation.'})
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Export PDF Button and Core Specialist Credentials Signature (NO LOGOS / NO OCI HEADER TEXT) */}

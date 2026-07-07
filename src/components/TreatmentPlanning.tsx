@@ -35,6 +35,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPatientSelect, setShowPatientSelect] = useState(false);
   const [expandedSection, setExpandedSection] = useState<'cdss' | 'planner' | 'biomechanics' | null>('cdss');
+  const [intelligenceExpanded, setIntelligenceExpanded] = useState(false);
 
   const toggleSection = (section: 'cdss' | 'planner' | 'biomechanics') => {
     if (Platform.OS === 'android') {
@@ -234,6 +235,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   // Dynamic biomechanical calculations based on patient cephalometrics and options
   const anbVal = activeAssessment ? getNumVal(activeAssessment.cephalometricInput.anb) : 2;
   const fmaVal = activeAssessment ? getNumVal(activeAssessment.cephalometricInput.fma) : 25;
+  const impaVal = activeAssessment ? getNumVal(activeAssessment.cephalometricInput.impa) : 90;
+  const overjetVal = activeAssessment ? getNumVal(activeAssessment.cephalometricInput.overjet) : 2.5;
+  const overbiteVal = activeAssessment ? getNumVal(activeAssessment.cephalometricInput.overbite) : 2.5;
   
   // 1. Biomechanics Engine Metrics
   const retractionForce = anbVal > 4 ? 75 : anbVal < 0 ? 35 : 15;
@@ -380,6 +384,109 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
             </View>
 
             {/* ====================================================
+                🧠 OCI INTELLIGENCE TREATMENT PLANNING ACCORDION
+               ==================================================== */}
+            <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl overflow-hidden`}>
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS === 'android') {
+                    UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
+                  }
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setIntelligenceExpanded(!intelligenceExpanded);
+                }}
+                style={tw`p-5 flex-row justify-between items-center bg-black/25`}
+              >
+                <View style={tw`flex-row items-center space-x-2.5`}>
+                  <Sparkles size={14} color="#14B8A6" />
+                  <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>OCI Intelligence Treatment Planning</Text>
+                </View>
+                {intelligenceExpanded ? (
+                  <ChevronUp size={14} color="#14B8A6" />
+                ) : (
+                  <ChevronDown size={14} color="#14B8A6" />
+                )}
+              </Pressable>
+
+              {intelligenceExpanded && (
+                <View style={tw`p-5 space-y-4 border-t border-white/5`}>
+                  {/* Treatment Objectives */}
+                  <View style={tw`space-y-1.5`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Treatment Objectives</Text>
+                    <View style={tw`space-y-1 pl-1`}>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-teal-400`}>• Skeletal: </Text>{anbVal > 4.5 ? `Promote orthopedic redirection of the maxilla and/or encourage mandibular growth advancement to resolve the Class II sagittal discrepancy (ANB: ${anbVal}°).` : anbVal < 0.5 ? `Decompensate the arch to prepare for orthognathic surgery or restrict mandibular projection while encouraging maxillary advancement (ANB: ${anbVal}°).` : `Maintain the existing skeletal sagittal relationship (ANB: ${anbVal}°) within normal physiological limits.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-teal-400`}>• Dental: </Text>{impaVal > 95 ? `Retract and upright the proclined mandibular incisors (IMPA: ${impaVal}°) to restore proper labiolingual inclination.` : impaVal < 85 ? `Procline and decompensate the retroclined mandibular incisors (IMPA: ${impaVal}°) to create adequate dental arch perimeter.` : `Maintain correct lower incisor sagittal inclination (IMPA: ${impaVal}°) relative to the mandibular basal bone.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-teal-400`}>• Facial: </Text>{activeAssessment.ociResult.totalScore > 6.0 ? `Coordinate dentoalveolar dimensions to optimize soft-tissue support, improve nasolabial angle, and enhance chin projection.` : `Support lip posture and facial profile symmetry through conservative arch alignment.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-teal-400`}>• Occlusal: </Text>{`Establish Class I canine/molar relationship, resolve sagittal discrepancy (Overjet: ${overjetVal}mm, Overbite: ${overbiteVal}mm), and coordinate the arches.`}</Text>
+                    </View>
+                  </View>
+
+                  {/* Treatment Sequence */}
+                  <View style={tw`space-y-1.5`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Treatment Sequence</Text>
+                    <View style={tw`space-y-1 pl-1`}>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-cyan-400`}>1. Aligning & Leveling: </Text>{`Use light, continuous forces (.014 to .018 NiTi wires) to resolve rotation and level the arches, utilizing ${crowdingSeverity !== 'none' ? 'space gained from extraction/stripping' : 'available arch space'}. (4-6 months)`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-cyan-400`}>2. Sagittal Correction: </Text>{`Establish sagittal coordination. Apply ${anbVal > 4.5 ? 'Class II elastics and/or molar distalization' : anbVal < 0.5 ? 'Class III elastics and/or surgical decompensation' : 'light intermaxillary elastics'} for arch coordination. (8-12 months)`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-cyan-400`}>3. Finishing & Detailing: </Text>{`Introduce coordinate steel wires with artistic detailing bends. Achieve maximum intercuspation and seat canine relations. (3-5 months)`}</Text>
+                    </View>
+                  </View>
+
+                  {/* Appliance Selection */}
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Appliance Selection</Text>
+                    <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                      {activeAssessment.ociResult.totalScore > 8.0 ? `Pre-adjusted edgewise twin brackets (.022 slot) with high-torque prescriptions or custom surgical splints indicating orthognathic surgical support.` : activeAssessment.ociResult.totalScore > 4.0 ? `Pre-adjusted active self-ligation brackets (.022 slot) to optimize sliding mechanics during compensation.` : `Clear aligners or standard twin bracket systems suitable for mild space closure and alignment.`}
+                    </Text>
+                  </View>
+
+                  {/* Extraction Decision */}
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Extraction Decision</Text>
+                    <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                      {activeAssessment.ociResult.totalScore > 6.0 && crowdingSeverity === 'severe' ? `Extraction of first premolars is highly indicated to gain ${archDiscrepancy || 6}mm space and resolve severe crowding without pushing incisors out of labial alveolar bone.` : activeAssessment.ociResult.totalScore > 4.0 && anbVal > 4.5 ? `Extraction of upper first premolars and lower second premolars is recommended to coordinate arch alignment.` : `Non-extraction approach utilizing interproximal reduction (IPR) or arch expansion to gain required space safely.`}
+                    </Text>
+                  </View>
+
+                  {/* Anchorage Planning */}
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Anchorage Planning</Text>
+                    <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                      {activeAssessment.ociResult.totalScore > 6.0 ? `Maximum anchorage required. Recommend temporary anchorage devices (TADs) or transpalatal arch (TPA) to prevent mesial molar migration during anterior retraction.` : activeAssessment.ociResult.totalScore > 4.0 ? `Moderate anchorage required. Use second molar inclusion and light Class II/III elastics to manage space closure.` : `Minimum anchorage required. Standard sliding mechanics with minimal auxiliary support is sufficient.`}
+                    </Text>
+                  </View>
+
+                  {/* Biomechanics */}
+                  <View style={tw`space-y-1.5`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Biomechanics Considerations</Text>
+                    <View style={tw`space-y-1 pl-1`}>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-amber-500`}>• Torque: </Text>{`Apply active utility arches or high-torque bracket values to control lower incisor torque (current IMPA: ${impaVal}°).`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-amber-500`}>• Intrusion: </Text>{overbiteVal > 4 ? `Use anterior intrusion arches to resolve deep bite of ${overbiteVal}mm.` : `Standard intrusion control.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-amber-500`}>• Expansion: </Text>{crowdingSeverity === 'severe' ? `Perform slow maxillary expansion using NiTi archwires or quad-helix to gain 4-5mm transverse width.` : `Standard archwire expansion.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-amber-500`}>• Elastics: </Text>{anbVal > 4.5 ? `Class II elastics (3/16 inch, 4.5oz) for active sagittal coordination.` : anbVal < 0.5 ? `Class III elastics for active sagittal coordination.` : `Light vertical detailing elastics.`}</Text>
+                    </View>
+                  </View>
+
+                  {/* Patient timing Considerations */}
+                  <View style={tw`space-y-1.5`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Age & Surgical Considerations</Text>
+                    <View style={tw`space-y-1 pl-1`}>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-rose-400`}>• Growth & Age: </Text>{ageGroup === 'growing' ? `Patient has active growth potential. Consider orthopedic appliances (e.g., Twin Block or Herbst for Class II, Facemask for Class III) to guide mandibular/maxillary growth.` : `Adult patient. No growth potential remaining. Monitor periodontal attachment health; biomechanics must use light force values to prevent root resorption.`}</Text>
+                      <Text style={tw`text-xs text-slate-300 leading-normal`}><Text style={tw`font-extrabold text-rose-400`}>• Surgical: </Text>{activeAssessment.ociResult.totalScore > 8.0 ? `Severe skeletal discrepancy (ANB: ${anbVal}°). Orthognathic surgery (LeFort I and/or BSSO) is indicated to restore ideal facial profile and airway dimensions.` : `Skeletal discrepancy is within orthodontic camouflage limits. Surgical intervention is not primary.`}</Text>
+                    </View>
+                  </View>
+
+                  {/* Finishing Goals */}
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Finishing Goals</Text>
+                    <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
+                      Establish mutually protected occlusion, achieve ideal overjet/overbite, ensure parallel roots, align dental midlines, and place stable passive retainers.
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* ====================================================
                 📊 1. FORCE DISTRIBUTION DASHBOARD
                ==================================================== */}
             <View style={tw`bg-[#0B1020] rounded-[24px] border border-white/5 shadow-xl p-5 space-y-4`}>
@@ -467,9 +574,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
               </View>
 
-              <View style={tw`flex-row flex-wrap gap-3`}>
+              <View style={tw`flex-row flex-wrap justify-between gap-y-3`}>
                 {/* Vector 1 */}
-                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                <View style={tw`w-[48%] p-3.5 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
                   <View style={tw`flex-row justify-between items-center`}>
                     <Text style={tw`text-xs font-black text-white`}>Anterior Retraction</Text>
                     <Text style={tw`text-lg`}>⬅️</Text>
@@ -484,7 +591,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
 
                 {/* Vector 2 */}
-                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                <View style={tw`w-[48%] p-3.5 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
                   <View style={tw`flex-row justify-between items-center`}>
                     <Text style={tw`text-xs font-black text-white`}>Vertical Intrusion</Text>
                     <Text style={tw`text-lg`}>↗️</Text>
@@ -499,7 +606,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
 
                 {/* Vector 3 */}
-                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                <View style={tw`w-[48%] p-3.5 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
                   <View style={tw`flex-row justify-between items-center`}>
                     <Text style={tw`text-xs font-black text-white`}>Transverse Exp.</Text>
                     <Text style={tw`text-lg`}>➡️</Text>
@@ -514,7 +621,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </View>
 
                 {/* Vector 4 */}
-                <View style={tw`flex-1 min-w-[135px] p-4 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
+                <View style={tw`w-[48%] p-3.5 bg-black/35 border border-white/5 rounded-2xl space-y-2`}>
                   <View style={tw`flex-row justify-between items-center`}>
                     <Text style={tw`text-xs font-black text-white`}>Root Torque</Text>
                     <Text style={tw`text-lg`}>↘️</Text>
