@@ -13,11 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Clean Cache and Android directories
-        run: |
-          rm -rf .expo
-          rm -rf android
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -34,58 +29,6 @@ jobs:
         run: |
           npm install --legacy-peer-deps
 
-      - name: Regenerate Valid Asset Images (Fix Jimp MIME error)
-        run: |
-          node -e "
-          const Jimp = require('jimp-compact');
-          const fs = require('fs');
-          async function main() {
-            if (!fs.existsSync('assets')) {
-              fs.mkdirSync('assets');
-            }
-            const createImage = (w, h, color) => new Promise((resolve, reject) => {
-              new Jimp(w, h, color, (err, img) => {
-                if (err) reject(err);
-                else resolve(img);
-              });
-            });
-            const splashImg = await createImage(1284, 2778, 0x0B1020FF);
-            await splashImg.writeAsync('assets/splash.png');
-            const faviconImg = await createImage(48, 48, 0x14B8A6FF);
-            await faviconImg.writeAsync('assets/favicon.png');
-            const loaderImg = await createImage(512, 512, 0x14B8A6FF);
-            await loaderImg.writeAsync('assets/loader.png');
-            console.log('Successfully regenerated placeholder splash/favicon assets dynamically!');
-          }
-          main().catch(err => {
-            console.error('Failed to regenerate assets:', err);
-            process.exit(1);
-          });
-          "
-
-      - name: Generate Native Android Code (Expo Prebuild)
-        run: |
-          npx expo prebuild --platform android --no-install
-
-      - name: Patch android/gradle.properties to enable legacy packaging (fix startup crash)
-        run: |
-          sed -i 's/expo.useLegacyPackaging=false/expo.useLegacyPackaging=true/g' android/gradle.properties
-          echo "Successfully patched android/gradle.properties to use legacy packaging!"
-
-      - name: Patch android/build.gradle to suppress Kotlin compatibility checks
-        run: |
-          cat << 'EOF' >> android/build.gradle
-
-          subprojects {
-              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                  kotlinOptions {
-                      freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"]
-                  }
-              }
-          }
-          EOF
-          echo "Successfully patched android/build.gradle with Kotlin compatibility suppression!"
-
       - name: Set executable permission for Gradlew
         run: chmod +x android/gradlew
 
@@ -101,4 +44,3 @@ jobs:
         with:
           name: oci-analyzer-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
-
