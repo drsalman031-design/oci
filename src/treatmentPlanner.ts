@@ -1,5 +1,6 @@
 import { PatientDetails, CephalometricInput, OciResult } from './types';
 import { ClinicalNarrativeQA } from './lib/narrativeQA';
+import { OrthoKnowledgeBase } from './lib/knowledgeEngine';
 
 export interface TreatmentPlanningOptions {
   ageGroup: 'growing' | 'adult';
@@ -79,13 +80,13 @@ export function generateTreatmentPlan(
   const treatmentObjectives: string[] = [];
   const applianceSuggestions: { category: string; justification: string; items: string[] }[] = [];
   const retentionConsiderations: string[] = [
-    'Dual-retention strategy highly recommended (fixed bonded lingual wire 3-3 coupled with removable vacuum-formed Essix retainer).',
-    'Class II/III dental camouflage requires active retention focusing on maintaining corrected incisor torque and dental arch width.'
+    OrthoKnowledgeBase.RetentionRules.DualRetention,
+    OrthoKnowledgeBase.RetentionRules.ActiveRetention
   ];
 
   // 1. Diagnose skeletal pattern
   let skeletalPatternDesc = '';
-  if (isClass2 || anb > 4.5) {
+  if (isClass2 || anb >= OrthoKnowledgeBase.SkeletalSagittal.ClassII.anbRange.min) {
     skeletalPatternDesc = `Skeletal Class II relationship characterized by a positive sagittal discrepancy (ANB: ${anb}°). `;
     if (ceph.sna !== '' && (ceph.sna as number) > 84) {
       skeletalPatternDesc += 'Primary etiology is maxillary protrusion/prognathism. ';
@@ -96,7 +97,7 @@ export function generateTreatmentPlan(
     } else {
       skeletalPatternDesc += 'Etiology is a combination of maxillary and mandibular skeletal elements. ';
     }
-  } else if (isClass3 || anb < 0.5) {
+  } else if (isClass3 || anb <= OrthoKnowledgeBase.SkeletalSagittal.ClassIII.anbRange.max) {
     skeletalPatternDesc = `Skeletal Class III relationship characterized by a negative sagittal discrepancy (ANB: ${anb}°). `;
     if (ceph.sna !== '' && (ceph.sna as number) < 79) {
       skeletalPatternDesc += 'Primary factor is maxillary hypoplasia / retrusion. ';
