@@ -1,5 +1,12 @@
+import { 
+  VisionEngine, 
+  ClinicalEngine, 
+  CephalometricEngine, 
+  DecisionEngine, 
+  ReportEngine, 
+  AISelfValidator 
+} from './aiCore';
 import { ClinicalNarrativeQA } from './narrativeQA';
-import { ReportGenerator } from './knowledgeEngine';
 
 // Helper to get Gemini API Key safely
 function getGeminiApiKey(): string {
@@ -219,9 +226,13 @@ Do not write any intro or outro; start directly with '# Comprehensive Orthodonti
     const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return text 
-      ? ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: cephalometricInput, oci: ociResult }) 
-      : 'Unable to generate clinical report via Gemini.';
+    if (text) {
+      const mode = patientDetails.analysisMode || 'turbo';
+      const cleanedQA = ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: cephalometricInput, oci: ociResult });
+      const validation = AISelfValidator.validate(cleanedQA, mode, patientDetails, cephalometricInput, ociResult);
+      return validation.cleanedText;
+    }
+    return 'Unable to generate clinical report via Gemini.';
   } catch (error: any) {
     console.error('Error generating AI clinical summary, falling back to local synthesis:', error);
     return generateLocalClinicalSynthesis(patientDetails, cephalometricInput, ociResult);
@@ -233,7 +244,15 @@ export function generateLocalClinicalSynthesis(
   ceph: any,
   oci: any
 ): string {
-  return ReportGenerator.generateReport(patient, ceph, oci);
+  const mode = patient.analysisMode || 'turbo';
+  const visionObs = VisionEngine.getObservations(patient);
+  const clinicalOutput = ClinicalEngine.analyze(patient, visionObs);
+  const cephOutput = CephalometricEngine.analyze(ceph);
+  const decisionOutput = DecisionEngine.formulate(mode, clinicalOutput, cephOutput, oci);
+  const reportMarkdown = ReportEngine.compile(mode, clinicalOutput, cephOutput, decisionOutput, oci);
+  
+  const validation = AISelfValidator.validate(reportMarkdown, mode, patient, ceph, oci);
+  return validation.cleanedText;
 }
 
 export async function generateChatResponse(message: string, history: any[]): Promise<string> {
@@ -437,9 +456,12 @@ Please structure the report exactly as follows with no introduction or outro:
     const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return text 
-      ? ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: null as any, oci: ociResult }) 
-      : 'Unable to generate clinical report via Gemini.';
+    if (text) {
+      const cleanedQA = ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: null as any, oci: ociResult });
+      const validation = AISelfValidator.validate(cleanedQA, 'clinic', patientDetails, null as any, ociResult);
+      return validation.cleanedText;
+    }
+    return 'Unable to generate clinical report via Gemini.';
   } catch (error: any) {
     console.error('Error generating AI clinical summary, falling back to local clinical synthesis:', error);
     return generateLocalClinicOnlySynthesis(patientDetails, ociResult);
@@ -456,5 +478,12 @@ export function generateLocalClinicOnlySynthesis(
     interincisalAngle: '', overjet: '', overbite: '', curveOfSpee: '', midlineDeviation: '',
     upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '', molarRelation: 'Class I'
   };
-  return ReportGenerator.generateReport(patient, emptyCeph, oci);
+  const visionObs = VisionEngine.getObservations(patient);
+  const clinicalOutput = ClinicalEngine.analyze(patient, visionObs);
+  const cephOutput = CephalometricEngine.analyze(emptyCeph);
+  const decisionOutput = DecisionEngine.formulate('clinic', clinicalOutput, cephOutput, oci);
+  const reportMarkdown = ReportEngine.compile('clinic', clinicalOutput, cephOutput, decisionOutput, oci);
+  
+  const validation = AISelfValidator.validate(reportMarkdown, 'clinic', patient, emptyCeph, oci);
+  return validation.cleanedText;
 }
