@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Alert, Linking } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { 
   Camera, 
   Image as ImageIcon, 
@@ -70,10 +71,9 @@ export default function ClinicPhotoWorkstation({
 
   // Seed default placeholders for mock experience or allow custom files
   useEffect(() => {
-    // Generate simulated clinical photos for high fidelity orthodontic workstation feel
     const defaultData: Record<string, string> = {};
     slots.forEach(slot => {
-      defaultData[slot.key] = 'MOCK_IMAGE';
+      defaultData[slot.key] = patientDetails.clinicalPhotos?.[slot.key] || 'MOCK_IMAGE';
     });
     setPhotos(defaultData);
   }, []);
@@ -83,16 +83,95 @@ export default function ClinicPhotoWorkstation({
     onComplete(photos, generateClinicalFindings().map(f => f.text));
   }, [photos, patientDetails]);
 
-  const handleFileUpload = (slotKey: string, fileType: 'camera' | 'gallery') => {
-    // Simulate real analysis & file binding
-    setAnalyzingSlot(slotKey);
-    setTimeout(() => {
-      setPhotos(prev => ({
-        ...prev,
-        [slotKey]: `CUSTOM_UPLOAD_${Date.now()}`
-      }));
+  const handleFileUpload = async (slotKey: string, fileType: 'camera' | 'gallery') => {
+    try {
+      if (fileType === 'camera') {
+        // Request camera permission
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permissionResult.granted) {
+          Alert.alert(
+            "Camera Access Required",
+            "OCI Analyzer needs access to your camera to take clinical photographs. Please enable it in app settings.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() }
+            ]
+          );
+          return;
+        }
+
+        // Open device camera
+        setAnalyzingSlot(slotKey);
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
+            Alert.alert("Image Too Large", "The captured photograph exceeds the 15MB size limit.");
+            return;
+          }
+          const uri = asset.uri;
+          if (!uri) {
+            throw new Error("Invalid image URI returned by camera.");
+          }
+          setPhotos(prev => ({
+            ...prev,
+            [slotKey]: uri
+          }));
+          Alert.alert("Success", `${slots.find(s => s.key === slotKey)?.label || 'Photo'} successfully captured!`);
+        }
+      } else {
+        // Request media library permission
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+          Alert.alert(
+            "Gallery Access Required",
+            "OCI Analyzer needs access to your photo library to select clinical photographs. Please enable it in app settings.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() }
+            ]
+          );
+          return;
+        }
+
+        // Open device gallery
+        setAnalyzingSlot(slotKey);
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
+            Alert.alert("Image Too Large", "The selected photograph exceeds the 15MB size limit.");
+            return;
+          }
+          const uri = asset.uri;
+          if (!uri) {
+            throw new Error("Invalid image URI returned by gallery.");
+          }
+          setPhotos(prev => ({
+            ...prev,
+            [slotKey]: uri
+          }));
+          Alert.alert("Success", `${slots.find(s => s.key === slotKey)?.label || 'Photo'} successfully uploaded!`);
+        }
+      }
+    } catch (err: any) {
+      console.error("Image capture error:", err);
+      Alert.alert("Upload Failed", err.message || "Failed to process selected photograph.");
+    } finally {
       setAnalyzingSlot(null);
-    }, 1200);
+    }
   };
 
   const handleDeletePhoto = (slotKey: string) => {
@@ -333,9 +412,12 @@ export default function ClinicPhotoWorkstation({
                 ]}>
                   <View style={tw`w-full h-full relative`}>
                     <Image 
-                      source={{ uri: 'https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=300&auto=format&fit=crop' }} 
-                      style={tw`w-full h-full opacity-35`}
-                      resizeMode="cover"
+                      source={{ uri: photos[activeSlot] === 'MOCK_IMAGE' ? 'https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=300&auto=format&fit=crop' : photos[activeSlot] }} 
+                      style={[
+                        tw`w-full h-full`,
+                        photos[activeSlot] === 'MOCK_IMAGE' ? tw`opacity-35` : tw`opacity-100`
+                      ]}
+                      resizeMode="contain"
                     />
                     {showOverlay && renderActiveOverlay()}
                   </View>

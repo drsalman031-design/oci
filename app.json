@@ -32,6 +32,13 @@
             "kotlinVersion": "1.9.25"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to upload orthodontic diagnostic clinical photographs.",
+          "cameraPermission": "The app accesses your camera to capture orthodontic diagnostic clinical photographs."
+        }
       ]
     ],
     "sdkVersion": "52.0.0",
