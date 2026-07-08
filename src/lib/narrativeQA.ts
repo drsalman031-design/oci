@@ -117,6 +117,47 @@ export class ClinicalNarrativeQA {
     cleaned = cleaned.replace(/\s+([.,;:?°])/g, '$1');
     cleaned = cleaned.trim();
 
+    if (context?.patient?.analysisMode === 'clinic') {
+      const forbiddenKeywords = [
+        'ANB', 'SNA', 'SNB', 'Wits', 'IMPA', 'FMA', 'U1-SN', 'SN-MP',
+        'Cephalogram', 'Cephalometric', 'Radiograph', 'Radiographic',
+        'CBCT', 'OPG', 'Measurement', 'Angular Measurement', 'Linear Measurement'
+      ];
+      
+      const lines = cleaned.split('\n');
+      const cleanLines = lines.map(line => {
+        let cleanLine = line;
+        
+        cleanLine = cleanLine.replace(/\bANB\b/gi, 'clinical skeletal relation');
+        cleanLine = cleanLine.replace(/\bSNA\b/gi, 'maxillary position');
+        cleanLine = cleanLine.replace(/\bSNB\b/gi, 'mandibular position');
+        cleanLine = cleanLine.replace(/\bWits\b/gi, 'clinical sagittal discrepancy');
+        cleanLine = cleanLine.replace(/\bIMPA\b/gi, 'lower incisor position');
+        cleanLine = cleanLine.replace(/\bU1-SN\b/gi, 'upper incisor position');
+        cleanLine = cleanLine.replace(/\bFMA\b/gi, 'mandibular plane angle');
+        cleanLine = cleanLine.replace(/\bSN-MP\b/gi, 'mandibular plane angle');
+        cleanLine = cleanLine.replace(/\b(lateral\s+)?cephalogram\b/gi, 'clinical examination');
+        cleanLine = cleanLine.replace(/\bcephalometric\b/gi, 'clinical examination');
+        cleanLine = cleanLine.replace(/\bradiograph(ic)?\b/gi, 'clinical');
+        cleanLine = cleanLine.replace(/\bCBCT\b/gi, 'clinical assessment');
+        cleanLine = cleanLine.replace(/\bOPG\b/gi, 'clinical assessment');
+        cleanLine = cleanLine.replace(/\b(angular\s+)?measurement(s)?\b/gi, 'clinical assessment');
+        cleanLine = cleanLine.replace(/\blinear\s+measurement(s)?\b/gi, 'clinical assessment');
+        
+        const containsForbidden = forbiddenKeywords.some(keyword => {
+          const regex = new RegExp('\\b' + keyword + '\\b', 'i');
+          return regex.test(cleanLine);
+        });
+        
+        if (containsForbidden) {
+          return '';
+        }
+        return cleanLine;
+      }).filter(line => line.trim() !== '');
+      
+      cleaned = cleanLines.join('\n');
+    }
+
     return cleaned;
   }
 }

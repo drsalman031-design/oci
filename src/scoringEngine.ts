@@ -1,4 +1,4 @@
-import { CephalometricInput, OciResult, CategoryScore, OciWeights, NormativeRange } from './types';
+import { CephalometricInput, OciResult, CategoryScore, OciWeights, NormativeRange, PatientDetails } from './types';
 
 // Default normative ranges for clinical cephalometrics
 export const Norms: Record<string, NormativeRange> = {
@@ -212,4 +212,152 @@ function getSeverityColor(score: number, max: number): OciResult['severityMap'][
   if (pct <= 0.5) return 'yellow';
   if (pct <= 0.8) return 'orange';
   return 'red';
+}
+
+export function calculateClinicalOCI(patient: PatientDetails, weights: OciWeights = DEFAULT_WEIGHTS): OciResult {
+  // 1. Skeletal Pattern Severity (max 50)
+  let skeletalScore = 0;
+  let skeletalClassification = 'Class I';
+
+  if (patient.diagnosis === 'Class II') {
+    skeletalScore += 25;
+    skeletalClassification = 'Class II';
+  } else if (patient.diagnosis === 'Class III') {
+    skeletalScore += 30;
+    skeletalClassification = 'Class III';
+  }
+
+  if (patient.facialProfile === 'Convex') {
+    skeletalScore += 10;
+  } else if (patient.facialProfile === 'Concave') {
+    skeletalScore += 15;
+  }
+
+  if (patient.facialAsymmetry === 'Mild') {
+    skeletalScore += 5;
+  } else if (patient.facialAsymmetry === 'Moderate') {
+    skeletalScore += 15;
+  } else if (patient.facialAsymmetry === 'Severe') {
+    skeletalScore += 25;
+  }
+
+  skeletalScore = Math.min(50, skeletalScore);
+
+  // 2. Dental Occlusion Severity (max 40)
+  let dentalScore = 0;
+  
+  const hasClassII = patient.molarRelationRight === 'Class II' || patient.molarRelationLeft === 'Class II' || patient.canineRelationRight === 'Class II' || patient.canineRelationLeft === 'Class II';
+  const hasClassIII = patient.molarRelationRight === 'Class III' || patient.molarRelationLeft === 'Class III' || patient.canineRelationRight === 'Class III' || patient.canineRelationLeft === 'Class III';
+
+  if (hasClassII) dentalScore += 10;
+  else if (hasClassIII) dentalScore += 12;
+
+  const ojVal = patient.overjet !== undefined && patient.overjet !== '' ? Number(patient.overjet) : 2.5;
+  const obVal = patient.overbite !== undefined && patient.overbite !== '' ? Number(patient.overbite) : 2.5;
+
+  if (ojVal > 4) dentalScore += 8;
+  else if (ojVal < 0) dentalScore += 10;
+
+  if (obVal > 4) dentalScore += 6;
+  else if (obVal < 0) dentalScore += 8;
+
+  if (patient.anteriorCrossbite === 'Single Tooth') dentalScore += 6;
+  else if (patient.anteriorCrossbite === 'Multiple') dentalScore += 12;
+
+  if (patient.posteriorCrossbite === 'Unilateral') dentalScore += 8;
+  else if (patient.posteriorCrossbite === 'Bilateral') dentalScore += 12;
+
+  if (patient.crowdingSpacing === 'Crowding') dentalScore += 6;
+  else if (patient.crowdingSpacing === 'Spacing') dentalScore += 4;
+
+  dentalScore = Math.min(40, dentalScore);
+
+  // 3. Soft-Tissue / Functional Severity (max 30)
+  let functionalScore = 0;
+
+  if (patient.lips === 'Incompetent') functionalScore += 10;
+  else if (patient.lips === 'Potentially Competent') functionalScore += 5;
+
+  if (patient.functionalAirway === 'Mouth Breeder') functionalScore += 10;
+  
+  if (patient.habits && patient.habits.length > 0) {
+    functionalScore += 10;
+  }
+
+  functionalScore = Math.min(30, functionalScore);
+
+  // Raw and Normalized scores
+  const rawScore = (skeletalScore + dentalScore + functionalScore) / 10.0; // max ~ 12.0
+  const totalScore = Math.min(100, Math.round(((skeletalScore + dentalScore + functionalScore) / 120.0) * 100));
+
+  let interpretation = 'Optimal Compensation';
+  let recommendation = 'Camouflage treatment via dental alignment and cosmetic detailing is highly feasible.';
+  let treatmentSuggestion = 'Camouflage Therapy';
+
+  if (totalScore <= 20) {
+    interpretation = 'Optimal Compensation';
+    recommendation = 'Non-extraction alignment with interproximal reduction (IPR) if required.';
+  } else if (totalScore <= 45) {
+    interpretation = 'Mild Compensation Limits';
+    recommendation = 'Minor dental camouflage. Interarch expansion or selective IPR to resolve crowding and detail occlusion.';
+  } else if (totalScore <= 70) {
+    interpretation = 'Moderate Compensation Limits';
+    recommendation = 'Borderline extraction case. Selective tooth extraction or skeletal anchorage (TADs) to retract segments and restore dental balance.';
+    treatmentSuggestion = 'Extraction or TAD-supported Retraction';
+  } else if (totalScore <= 85) {
+    interpretation = 'Severe Structural Compensation Limits';
+    recommendation = 'Extreme dental camouflage required. Careful biomechanical planning is necessary; risk of incisor fenestration or poor profile outcome.';
+    treatmentSuggestion = 'Skeletal Anchorage / Segmental Retraction';
+  } else {
+    interpretation = 'Extreme Structural Limit / Surgical Threshold';
+    recommendation = 'Decompensation followed by Orthognathic Surgery is recommended. Dental compensation is contraindicated due to periodontal boundaries.';
+    treatmentSuggestion = 'Orthognathic Surgical Consultation';
+  }
+
+  const categoryScores: CategoryScore[] = [
+    {
+      name: 'Clinical Skeletal Pattern',
+      score: Math.round(skeletalScore),
+      maxScore: 50,
+      severity: getSeverity(skeletalScore, 50),
+      details: `Profile: ${patient.facialProfile || 'Normal'}, Asymmetry: ${patient.facialAsymmetry || 'None'}.`
+    },
+    {
+      name: 'Clinical Dental Occlusion',
+      score: Math.round(dentalScore),
+      maxScore: 40,
+      severity: getSeverity(dentalScore, 40),
+      details: `Molar Relation: ${patient.molarRelationRight || 'Class I'}. Overjet: ${ojVal} mm, Overbite: ${obVal} mm.`
+    },
+    {
+      name: 'Clinical Soft-Tissue / Functional',
+      score: Math.round(functionalScore),
+      maxScore: 30,
+      severity: getSeverity(functionalScore, 30),
+      details: `Lips: ${patient.lips || 'Competent'}, Airway: ${patient.functionalAirway || 'Normal'}.`
+    }
+  ];
+
+  const severityMap: OciResult['severityMap'] = {
+    upperIncisors: ojVal > 4 ? 'yellow' : 'green',
+    lowerIncisors: ojVal < 0 ? 'orange' : 'green',
+    softTissue: patient.lips === 'Incompetent' ? 'orange' : 'green',
+    occlusion: hasClassII || hasClassIII ? 'yellow' : 'green',
+    transverse: patient.posteriorCrossbite && patient.posteriorCrossbite !== 'None' ? 'orange' : 'green'
+  };
+
+  return {
+    totalScore,
+    rawScore,
+    interpretation,
+    recommendation,
+    categoryScores,
+    severityMap,
+    skeletalClassification,
+    maxillaMandibleStatus: patient.facialProfile === 'Convex' ? 'Maxillary Protrusion / Mandibular Retrusion' : patient.facialProfile === 'Concave' ? 'Mandibular Protrusion / Maxillary Deficiency' : 'Normal Mandibular/Maxillary Balance',
+    sizeBalance: patient.facialAsymmetry !== 'None' ? 'Asymmetric Balance' : 'Symmetric Balance',
+    verticalPattern: patient.facialProfile === 'Convex' ? 'Hyperdivergent Growth Pattern' : patient.facialProfile === 'Concave' ? 'Hypodivergent Growth Pattern' : 'Normodivergent Growth Pattern',
+    compensationLevel: totalScore > 70 ? 'Extreme Dental Camouflage Required' : totalScore > 40 ? 'Moderate Camouflage Feasible' : 'Minimal Camouflage Required',
+    treatmentSuggestion,
+  };
 }

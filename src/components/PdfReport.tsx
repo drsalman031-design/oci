@@ -103,8 +103,9 @@ export function getReportData(assessment: Assessment) {
     };
   } else {
     // Otherwise, calculate them dynamically on-the-fly for manually-created cases!
-    const anb = typeof assessment.cephalometricInput.anb === 'number' ? assessment.cephalometricInput.anb : 2;
-    const impa = typeof assessment.cephalometricInput.impa === 'number' ? assessment.cephalometricInput.impa : 90;
+    const isClinicMode = assessment.patientDetails.analysisMode === 'clinic';
+    const anb = isClinicMode ? (assessment.patientDetails.diagnosis === 'Class II' ? 6.0 : assessment.patientDetails.diagnosis === 'Class III' ? -2.0 : 2.0) : (typeof assessment.cephalometricInput.anb === 'number' ? assessment.cephalometricInput.anb : 2);
+    const imp = isClinicMode ? (assessment.patientDetails.diagnosis === 'Class II' ? 98.0 : assessment.patientDetails.diagnosis === 'Class III' ? 83.0 : 90.0) : (typeof assessment.cephalometricInput.impa === 'number' ? assessment.cephalometricInput.impa : 90);
     
     const isClass1 = assessment.patientDetails.diagnosis === 'Class I';
     const isClass2 = assessment.patientDetails.diagnosis === 'Class II' || anb > 4.5;
@@ -298,25 +299,26 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
   const pdfFilename = `OCI_Report_${patientID}_${fileDateStr}`;
 
   // Dynamic calculations based on patient cephalometrics
-  const snaVal = Number(assessment.cephalometricInput.sna) || 82;
-  const snbVal = Number(assessment.cephalometricInput.snb) || 80;
-  const anbVal = Number(assessment.cephalometricInput.anb) || 2;
-  const fmaVal = Number(assessment.cephalometricInput.fma) || 25;
-  const witsVal = Number(assessment.cephalometricInput.wits) || 0;
-
-  const u1SnVal = Number(assessment.cephalometricInput.u1Sn) || 104;
-  const impaVal = Number(assessment.cephalometricInput.impa) || 90;
-  const overjetVal = Number(assessment.cephalometricInput.overjet) || 2.5;
-  const curveOfSpeeVal = Number(assessment.cephalometricInput.curveOfSpee) || 1;
-
-  const upperLipELineVal = Number(assessment.cephalometricInput.upperLipELine) || -2;
-  const lowerLipELineVal = Number(assessment.cephalometricInput.lowerLipELine) || 0;
-  const nasolabialAngleVal = Number(assessment.cephalometricInput.nasolabialAngle) || 102;
-  const facialConvexityVal = Number(assessment.cephalometricInput.facialConvexity) || 8;
-
+  const isClinicMode = assessment.patientDetails.analysisMode === 'clinic';
   const isClass1 = assessment.patientDetails.diagnosis === 'Class I';
-  const isClass2 = assessment.patientDetails.diagnosis === 'Class II' || anbVal > 4.5;
-  const isClass3 = assessment.patientDetails.diagnosis === 'Class III' || anbVal < 0;
+  const isClass2 = assessment.patientDetails.diagnosis === 'Class II';
+  const isClass3 = assessment.patientDetails.diagnosis === 'Class III';
+
+  const snaVal = isClinicMode ? (isClass2 ? 84 : isClass3 ? 78 : 82) : (Number(assessment.cephalometricInput.sna) || 82);
+  const snbVal = isClinicMode ? (isClass2 ? 78 : isClass3 ? 80 : 80) : (Number(assessment.cephalometricInput.snb) || 80);
+  const anbVal = isClinicMode ? (isClass2 ? 6.0 : isClass3 ? -2.0 : 2.0) : (Number(assessment.cephalometricInput.anb) || 2);
+  const fmaVal = isClinicMode ? (assessment.patientDetails.facialProfile === 'Convex' ? 29 : assessment.patientDetails.facialProfile === 'Concave' ? 20 : 25) : (Number(assessment.cephalometricInput.fma) || 25);
+  const witsVal = isClinicMode ? (isClass2 ? 5 : isClass3 ? -4 : 0) : (Number(assessment.cephalometricInput.wits) || 0);
+
+  const u1SnVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 112 : 104) : (Number(assessment.cephalometricInput.u1Sn) || 104);
+  const impaVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 83 : 90) : (Number(assessment.cephalometricInput.impa) || 90);
+  const overjetVal = isClinicMode ? (assessment.patientDetails.overjet !== undefined && assessment.patientDetails.overjet !== '' ? Number(assessment.patientDetails.overjet) : 2.5) : (Number(assessment.cephalometricInput.overjet) || 2.5);
+  const curveOfSpeeVal = isClinicMode ? (assessment.patientDetails.crowdingSpacing === 'Crowding' ? 2.0 : 1.0) : (Number(assessment.cephalometricInput.curveOfSpee) || 1);
+
+  const upperLipELineVal = isClinicMode ? (isClass2 ? 1 : isClass3 ? -3 : -2) : (Number(assessment.cephalometricInput.upperLipELine) || -2);
+  const lowerLipELineVal = isClinicMode ? (isClass2 ? 2 : isClass3 ? -1 : 0) : (Number(assessment.cephalometricInput.lowerLipELine) || 0);
+  const nasolabialAngleVal = isClinicMode ? (isClass2 ? 92 : isClass3 ? 108 : 102) : (Number(assessment.cephalometricInput.nasolabialAngle) || 102);
+  const facialConvexityVal = isClinicMode ? (isClass2 ? 18 : isClass3 ? 6 : 12) : (Number(assessment.cephalometricInput.facialConvexity) || 8);
 
   // 1. Skeletal Deviations
   const snaDev = Math.max(0.5, Math.abs(snaVal - 82));
@@ -776,7 +778,94 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           </div>
         </div>
 
-        <!-- PAGE 3: CEPHALOMETRIC ANALYSIS TABLE -->
+        <!-- PAGE 3: CEPHALOMETRIC OR CLINICAL ANALYSIS TABLE -->
+        ${assessment.patientDetails.analysisMode === 'clinic' ? `
+        <div class="pdf-page">
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Clinical Examination Matrix & Findings</h3>
+              <span class="text-[9px] text-slate-400 font-mono">Page 3 of 6</span>
+            </div>
+
+            <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
+              Comprehensive chairside clinical examination matrix. Evaluates sagittal dentoalveolar features, vertical occlusal features, transverse crossbites, facial muscle balance, and active functional atypical habits.
+            </p>
+
+            <!-- Table Container -->
+            <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-900 text-white font-black uppercase tracking-wider text-[8px]">
+                    <th class="p-3.5 pl-4">Examination Parameter</th>
+                    <th class="p-3.5 text-center">Assessed Status</th>
+                    <th class="p-3.5 text-right pr-4">Clinical Indication / Classification</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Molar Relationship (Right / Left)</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.molarRelationRight || 'Class I'} / ${assessment.patientDetails.molarRelationLeft || 'Class I'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.molarRelationRight || 'Class I'} Malocclusion</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Canine Relationship (Right / Left)</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.canineRelationRight || 'Class I'} / ${assessment.patientDetails.canineRelationLeft || 'Class I'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">Sagittal coordination target</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Overjet (mm)</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.overjet || '2.5'} mm</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${Number(assessment.patientDetails.overjet) > 4.0 ? 'Proclined / Class II OJ' : Number(assessment.patientDetails.overjet) < 0 ? 'Underjet / Class III' : 'Within physiological norms'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Overbite (mm)</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.overbite || '2.5'} mm</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${Number(assessment.patientDetails.overbite) > 3.5 ? 'Deep Bite Tendency' : Number(assessment.patientDetails.overbite) < 0 ? 'Anterior Open Bite' : 'Within physiological norms'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Dental Crowding / Spacing</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.crowdingSpacing || 'None'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.crowdingSpacing === 'Crowding' ? 'Arch length perimeter deficiency' : 'Arch spacing / Diastemas'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Anterior Crossbite</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.anteriorCrossbite || 'None'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.anteriorCrossbite !== 'None' ? 'Skeletal or dental intervention required' : 'No sagittal crossbite'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Posterior Crossbite</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.posteriorCrossbite || 'None'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.posteriorCrossbite !== 'None' ? 'Transverse expansion indicated' : 'Ideal transverse width'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Temporomandibular Joint (TMJ)</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.tmjStatus || 'Normal'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.tmjStatus === 'Normal' ? 'Healthy function' : 'Auxiliary splint therapy indicated'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Functional Airway Profile</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.functionalAirway || 'Normal'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">${assessment.patientDetails.functionalAirway === 'Mouth Breeder' ? 'Adenoid hypertrophy check recommended' : 'Nasal breathing verified'}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 pl-4 font-bold text-slate-700">Atypical Habits</td>
+                    <td class="p-3.5 text-center font-semibold text-slate-600">${assessment.patientDetails.habits && assessment.patientDetails.habits.length > 0 ? assessment.patientDetails.habits.join(', ') : 'None'}</td>
+                    <td class="p-3.5 text-right pr-4 font-mono text-slate-500">Muscle tone correction target</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
+          </div>
+        </div>
+        ` : `
         <div class="pdf-page">
           <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
           <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
@@ -803,17 +892,18 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
-                  ${tableRowsHtml}
+                  \${tableRowsHtml}
                 </tbody>
               </table>
             </div>
           </div>
 
           <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 3 of 6</p>
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3 of 6</p>
             <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
           </div>
         </div>
+        `}
 
         <!-- PAGE 4: MULTIDIMENSIONAL SUB-LOAD GRAPHICS -->
         <div class="pdf-page">
@@ -1027,7 +1117,11 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
               <div class="space-y-1">
                 <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI selected this diagnosis</h4>
                 <p class="text-slate-700 leading-relaxed pl-1">
-                  Based on the patient's skeletal parameters (ANB: ${anbVal}°, Wits: ${witsVal}mm), the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                  ${assessment.patientDetails.analysisMode === 'clinic' ? `
+                    Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                  ` : `
+                    Based on the patient's skeletal parameters (ANB: ${anbVal}°, Wits: ${witsVal}mm), the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                  `}
                 </p>
               </div>
 
@@ -1035,7 +1129,11 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
               <div class="space-y-1">
                 <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI detected these compensations</h4>
                 <p class="text-slate-700 leading-relaxed pl-1">
-                  The lower incisor sagittal inclination (IMPA: ${impaVal}°) and upper incisor inclination (U1-SN: ${u1SnVal}°) demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                  ${assessment.patientDetails.analysisMode === 'clinic' ? `
+                    The clinical lower incisor position and upper incisor position demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These features represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                  ` : `
+                    The lower incisor sagittal inclination (IMPA: ${impaVal}°) and upper incisor inclination (U1-SN: ${u1SnVal}°) demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                  `}
                 </p>
               </div>
 

@@ -40,6 +40,10 @@ export async function generateClinicalSummary(
   cephalometricInput: any,
   ociResult: any
 ): Promise<string> {
+  if (patientDetails.analysisMode === 'clinic') {
+    return generateClinicOnlySummary(patientDetails, ociResult);
+  }
+
   const apiKey = getGeminiApiKey();
 
   if (!apiKey) {
@@ -587,4 +591,194 @@ I encountered an error communicating with the live Gemini AI engine:
 
 Please verify your API key is correctly configured in your environment or continue in offline consulting mode.`;
   }
+}
+
+export async function generateClinicOnlySummary(
+  patientDetails: any,
+  ociResult: any
+): Promise<string> {
+  const apiKey = getGeminiApiKey();
+
+  if (!apiKey) {
+    return generateLocalClinicOnlySynthesis(patientDetails, ociResult);
+  }
+
+  try {
+    const prompt = `You are an expert, board-certified consulting orthodontist. Please generate a highly comprehensive, board-certified level Orthodontic Diagnosis & Treatment Planning Report based SOLELY on the patient's chairside clinical examination and the calculated OCI Clinical Score.
+    
+IMPORTANT: Do NOT refer to or request any lateral cephalograms, radiographs, cephalometric tracings, CBCT, OPG, patient photos, digital scans, or STL files. This is a rapid chairside consultation. Do NOT mention any cephalometric parameters such as ANB, SNA, SNB, Wits, IMPA, U1-SN, FMA, SN-MP, or any angular/linear measurements. Use wording like "Based on clinical examination...", "The facial profile suggests...", "The occlusal relationship indicates...", "The clinical findings support...", "The patient demonstrates...".
+
+Patient Metadata:
+- Name: ${patientDetails.name || 'Anonymous'}
+- Age: ${patientDetails.age} years old
+- Gender: ${patientDetails.gender}
+- Chief Complaint: ${patientDetails.chiefComplaint || 'N/A'}
+- Primary Clinical Skeletal Class: ${patientDetails.diagnosis}
+- Facial Profile: ${patientDetails.facialProfile || 'N/A'}
+- Facial Symmetry: ${patientDetails.facialAsymmetry || 'N/A'}
+- Lip Competence: ${patientDetails.lips || 'N/A'}
+- Smile Characteristics: ${patientDetails.smileAnalysis || 'N/A'}
+- Dentition Phase: ${patientDetails.dentitionPhase || 'N/A'}
+- Clinician's Observations: ${patientDetails.clinicalNotes || 'None'}
+
+Clinical Examination Findings:
+- Molar Relationship: Right: ${patientDetails.molarRelationRight || 'Class I'}, Left: ${patientDetails.molarRelationLeft || 'Class I'}
+- Canine Relationship: Right: ${patientDetails.canineRelationRight || 'Class I'}, Left: ${patientDetails.canineRelationLeft || 'Class I'}
+- Overjet: ${patientDetails.overjet !== undefined && patientDetails.overjet !== '' ? patientDetails.overjet + ' mm' : 'N/A'}
+- Overbite: ${patientDetails.overbite !== undefined && patientDetails.overbite !== '' ? patientDetails.overbite + ' mm' : 'N/A'}
+- Crowding/Spacing: ${patientDetails.crowdingSpacing || 'N/A'}
+- Anterior Crossbite: ${patientDetails.anteriorCrossbite || 'None'}
+- Posterior Crossbite: ${patientDetails.posteriorCrossbite || 'None'}
+- TMJ Status: ${patientDetails.tmjStatus || 'Normal'}
+- Functional Airway: ${patientDetails.functionalAirway || 'Normal'}
+- Atypical Habits: ${patientDetails.habits && patientDetails.habits.length > 0 ? patientDetails.habits.join(', ') : 'None'}
+- Growth Status: ${patientDetails.growthStatus || 'N/A'}
+
+OCI Clinical Difficulty Index:
+- Clinical Score: ${ociResult.totalScore}/100
+- Raw Difficulty Value: ${ociResult.rawScore.toFixed(2)}
+- Category Breakdown:
+${ociResult.categoryScores.map((c: any) => `  * ${c.name}: ${c.score}/${c.maxScore} (${c.severity}) - Details: ${c.details}`).join('\n')}
+
+Please structure the report exactly as follows with no introduction or outro:
+
+# Comprehensive Clinical Orthodontic Analysis & Report
+
+## 1. Clinical Case Analysis & Diagnosis
+- **Skeletal Pattern Prediction (Clinical)**: [Detailed clinical description based on profile and chin position]
+- **Dental Relationship & Malocclusion**: [Detailed description based on molar/canine relations, overjet, overbite, crossbites, and crowding]
+- **Soft Tissue & Facial Esthetics**: [Esthetic assessment based on facial profile, symmetry, lips, and smile]
+- **Functional Examination**: [Assessment of TMJ, airway, and oral habits]
+
+## 2. Problem List & Treatment Objectives
+- **Clinical Problem List**: [Prioritized list of patient problems]
+- **Treatment Objectives**: [Specific goals to resolve malocclusion and facial disharmony]
+
+## 3. Treatment Strategy & Recommendations
+- **Primary Recommendation**: [Title of recommended plan]
+- **Clinical Rationale**: [Justification based purely on clinical exam indicators]
+- **Extraction Recommendation**: [Whether extractions are indicated and why]
+- **Anchorage Requirement**: [Anchorage description based on retraction needs]
+- **Surgical Probability & Difficulty**: [Surgical probability and difficulty index description]
+
+## 4. Biomechanical & Growth Management
+- **Biomechanics Strategy**: [Detailed mechanics to achieve dental movements]
+- **Growth Modification Recommendation**: [Growth management if applicable]
+- **Estimated Treatment Duration**: [Duration estimate]
+
+## 5. Risk Assessment, Prognosis & Retention
+- **Risk Assessment**: [Periodontal, root resorption, compliance, or hygiene risks]
+- **Prognosis**: [Treatment success probability]
+- **Relapse Risk & Retention Protocol**: [Relapse factors and proposed retention protocol]
+
+## 6. Professional Disclaimer
+*This report is an AI-assisted clinical decision-support tool. Final diagnosis and treatment decisions remain the responsibility of the treating orthodontist.*
+`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [{ text: prompt }]
+        }
+      ]
+    };
+
+    const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    return text 
+      ? ClinicalNarrativeQA.validateAndClean(text, { patient: patientDetails, ceph: null as any, oci: ociResult }) 
+      : 'Unable to generate clinical report via Gemini.';
+  } catch (error: any) {
+    console.error('Error generating AI clinical summary, falling back to local clinical synthesis:', error);
+    return generateLocalClinicOnlySynthesis(patientDetails, ociResult);
+  }
+}
+
+export function generateLocalClinicOnlySynthesis(
+  patient: any,
+  oci: any
+): string {
+  const isClass2 = patient.diagnosis === 'Class II';
+  const isClass3 = patient.diagnosis === 'Class III';
+
+  let skeletalSummary = `Based on clinical examination, the patient demonstrates a ${patient.diagnosis || 'Class I'} skeletal relationship. `;
+  if (patient.facialProfile) {
+    skeletalSummary += `The facial profile suggests a ${patient.facialProfile.toLowerCase()} convexity, matching the skeletal pattern. `;
+  }
+  if (patient.facialAsymmetry && patient.facialAsymmetry !== 'None') {
+    skeletalSummary += `Facial symmetry is clinically noted as ${patient.facialAsymmetry.toLowerCase()} asymmetry. `;
+  }
+
+  let dentalSummary = `The occlusal relationship indicates a Class ${isClass2 ? 'II' : isClass3 ? 'III' : 'I'} dental malocclusion. `;
+  if (patient.overjet) {
+    dentalSummary += `Overjet is clinically measured at ${patient.overjet} mm. `;
+  }
+  if (patient.overbite) {
+    dentalSummary += `Overbite is clinically measured at ${patient.overbite} mm. `;
+  }
+  if (patient.crowdingSpacing && patient.crowdingSpacing !== 'None') {
+    dentalSummary += `Arch analysis reveals ${patient.crowdingSpacing.toLowerCase()} within the dentition. `;
+  }
+  if (patient.anteriorCrossbite && patient.anteriorCrossbite !== 'None') {
+    dentalSummary += `An anterior crossbite is clinically present (${patient.anteriorCrossbite.toLowerCase()}). `;
+  }
+  if (patient.posteriorCrossbite && patient.posteriorCrossbite !== 'None') {
+    dentalSummary += `A posterior crossbite is clinically present (${patient.posteriorCrossbite.toLowerCase()}). `;
+  }
+
+  let softTissueSummary = `Soft tissue assessment shows ${patient.lips === 'Incompetent' ? 'incompetent lips at rest' : 'competent lips'}. `;
+  if (patient.smileAnalysis) {
+    softTissueSummary += `Smile characteristics indicate ${patient.smileAnalysis.toLowerCase()}. `;
+  }
+
+  let functionalSummary = `Functional examination shows ${patient.tmjStatus === 'Normal' ? 'healthy TMJ functions with no clicking or pain' : `TMJ findings indicating ${patient.tmjStatus.toLowerCase()}`}. `;
+  if (patient.functionalAirway) {
+    functionalSummary += `Functional airway profile is noted as ${patient.functionalAirway.toLowerCase()}. `;
+  }
+  if (patient.habits && patient.habits.length > 0) {
+    functionalSummary += `Active atypical habits include: ${patient.habits.join(', ')}. `;
+  }
+
+  let strategy = oci.interpretation;
+  let rec = oci.recommendation;
+
+  return `# Comprehensive Clinical Orthodontic Analysis & Report
+
+## 1. Clinical Case Analysis & Diagnosis
+- **Skeletal Pattern Prediction (Clinical)**: ${skeletalSummary}
+- **Dental Relationship & Malocclusion**: ${dentalSummary}
+- **Soft Tissue & Facial Esthetics**: ${softTissueSummary}
+- **Functional Examination**: ${functionalSummary}
+
+## 2. Problem List & Treatment Objectives
+- **Clinical Problem List**:
+  1. Skeletal ${patient.diagnosis || 'Class I'} discrepancy.
+  2. Dental ${isClass2 ? 'Class II' : isClass3 ? 'Class III' : 'Class I'} malocclusion.
+  ${patient.crowdingSpacing === 'Crowding' ? '3. Dental crowding and alignment deficiency.\\n' : ''}  ${patient.lips === 'Incompetent' ? '4. Lip incompetence and facial muscle strain.\\n' : ''}
+- **Treatment Objectives**:
+  1. Normalize dental arch alignment and resolve tooth crowding.
+  2. Restore normal overjet and overbite relationships.
+  3. Optimize facial soft-tissue harmony and lip competence.
+
+## 3. Treatment Strategy & Recommendations
+- **Primary Recommendation**: ${oci.treatmentSuggestion}
+- **Clinical Rationale**: The patient demonstrates a clinical difficulty rating of ${oci.totalScore}/100. ${rec}
+- **Extraction Recommendation**: ${oci.totalScore > 65 ? 'Selective extraction of premolars is recommended to gain alignment space and retract anterior segments.' : 'Non-extraction approach with selective interproximal reduction (IPR) or arch expansion.'}
+- **Anchorage Requirement**: ${oci.totalScore > 65 ? 'Moderate to maximum anchorage (consider temporary anchorage devices / TADs).' : 'Minimum anchorage.'}
+- **Surgical Probability & Difficulty**: Difficulty index is ${oci.totalScore > 85 ? 'High (orthognathic surgical consultation recommended)' : oci.totalScore > 50 ? 'Moderate' : 'Low'}.
+
+## 4. Biomechanical & Growth Management
+- **Biomechanics Strategy**: ${isClass2 ? 'Use Class II elastics or fixed functional appliances to retract maxillary segments and correct overjet.' : isClass3 ? 'Use Class III elastics or protraction face mask if patient is growing, to advance maxilla.' : 'Standard leveling and alignment mechanics.'}
+- **Growth Modification Recommendation**: ${patient.growthStatus === 'Growing' || patient.growthStatus === 'Peak Growth' ? 'Functional orthopedics indicated due to active growth status.' : 'Growth modification is not viable as growth is complete.'}
+- **Estimated Treatment Duration**: ${oci.totalScore > 75 ? '24-30 months' : oci.totalScore > 40 ? '18-24 months' : '12-18 months'}.
+
+## 5. Risk Assessment, Prognosis & Retention
+- **Risk Assessment**: Moderate risk of root resorption or relapse if skeletal boundaries are exceeded. Careful monitoring of periodontal attachment is recommended.
+- **Prognosis**: Favorable, contingent upon patient compliance with elastics and hygiene.
+- **Relapse Risk & Retention Protocol**: Relapse risk is ${oci.totalScore > 60 ? 'high' : 'moderate'}. Fixed lingual retainers on both arches coupled with clear overlay vacuum retainers at night are recommended.
+
+## 6. Professional Disclaimer
+*This report is an AI-assisted clinical decision-support tool. Final diagnosis and treatment decisions remain the responsibility of the treating orthodontist.*
+`;
 }

@@ -8,7 +8,7 @@ import {
   OciWeights,
   UserRole
 } from './src/types';
-import { calculateOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
+import { calculateOCI, calculateClinicalOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
 import { DEMO_PATIENTS } from './src/lib/demoPatients';
 
 // Async Storage DB Helpers
@@ -326,22 +326,41 @@ export default function App() {
       impa: '', l1NbDeg: '', l1NbMm: '',
       interincisalAngle: '', overjet: '', overbite: '',
       upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+      yAxis: '', coA: '', coGn: '',
       molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
       posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
     };
 
     let currentResult = activeResult;
     if (activeMode === 'clinic') {
-      const estimatedCeph = constructEstimatedCeph(details);
-      currentResult = calculateOCI(estimatedCeph, weights);
+      currentResult = calculateClinicalOCI(details, weights);
     } else if (activeCeph) {
       currentResult = calculateOCI(activeCeph, weights);
     }
 
+    const finalCeph: CephalometricInput = activeMode === 'clinic' ? {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '',
+      impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: details.overjet || '', overbite: details.overbite || '',
+      upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+      yAxis: '', coA: '', coGn: '',
+      molarRelation: details.molarRelationRight || '',
+      canineRelation: details.canineRelationRight || '',
+      crossbite: details.anteriorCrossbite === 'Single Tooth' || details.anteriorCrossbite === 'Multiple' ? 'Anterior' : 'None',
+      deepBite: details.overbite !== undefined && Number(details.overbite) > 3.5 ? Number(details.overbite) - 2.5 : 0,
+      openBite: details.overbite !== undefined && Number(details.overbite) < 0 ? Math.abs(Number(details.overbite)) : 0,
+      curveOfSpee: details.crowdingSpacing === 'Crowding' ? 2.0 : 1.0,
+      midlineDeviation: 0,
+      posteriorCrossbite: details.posteriorCrossbite || 'None',
+      archWidthDifference: details.posteriorCrossbite === 'Unilateral' ? -2.0 : details.posteriorCrossbite === 'Bilateral' ? -4.0 : 0,
+      dentalMidlineDev: 0
+    } : currentCeph;
+
     const draftAssessment: Assessment = {
       id: uuid,
       patientDetails: details,
-      cephalometricInput: activeMode === 'clinic' ? constructEstimatedCeph(details) : currentCeph,
+      cephalometricInput: finalCeph,
       ociResult: currentResult || {
         totalScore: 0,
         interpretation: 'Normal',
@@ -407,17 +426,34 @@ export default function App() {
     setActivePatient(details);
     
     if (activeMode === 'clinic') {
-      const estimatedCeph = constructEstimatedCeph(details);
-      setActiveCeph(estimatedCeph);
+      const emptyCeph: CephalometricInput = {
+        anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+        u1Sn: '', u1NaDeg: '', u1NaMm: '',
+        impa: '', l1NbDeg: '', l1NbMm: '',
+        interincisalAngle: '', overjet: details.overjet || '', overbite: details.overbite || '',
+        upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
+        yAxis: '', coA: '', coGn: '',
+        molarRelation: details.molarRelationRight || '',
+        canineRelation: details.canineRelationRight || '',
+        crossbite: details.anteriorCrossbite === 'Single Tooth' || details.anteriorCrossbite === 'Multiple' ? 'Anterior' : 'None',
+        deepBite: details.overbite !== undefined && Number(details.overbite) > 3.5 ? Number(details.overbite) - 2.5 : 0,
+        openBite: details.overbite !== undefined && Number(details.overbite) < 0 ? Math.abs(Number(details.overbite)) : 0,
+        curveOfSpee: details.crowdingSpacing === 'Crowding' ? 2.0 : 1.0,
+        midlineDeviation: 0,
+        posteriorCrossbite: details.posteriorCrossbite || 'None',
+        archWidthDifference: details.posteriorCrossbite === 'Unilateral' ? -2.0 : details.posteriorCrossbite === 'Bilateral' ? -4.0 : 0,
+        dentalMidlineDev: 0
+      };
+      setActiveCeph(emptyCeph);
       
-      const result = calculateOCI(estimatedCeph, weights);
+      const result = calculateClinicalOCI(details, weights);
       setActiveResult(result);
       
       const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       const finalAssessment: Assessment = {
         id: uuid,
         patientDetails: details,
-        cephalometricInput: estimatedCeph,
+        cephalometricInput: emptyCeph,
         ociResult: result,
         aiSummary: "Synthesizing orthodontic report...",
         createdAt: new Date().toISOString()

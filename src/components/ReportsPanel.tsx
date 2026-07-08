@@ -106,22 +106,24 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   const report = getReportData(selectedAssessment);
   const total = selectedAssessment.ociResult.totalScore;
 
-  const snaVal = Number(selectedAssessment.cephalometricInput.sna) || 82;
-  const snbVal = Number(selectedAssessment.cephalometricInput.snb) || 80;
-  const anbVal = Number(selectedAssessment.cephalometricInput.anb) || 2;
-  const fmaVal = Number(selectedAssessment.cephalometricInput.fma) || 25;
-
-  const u1SnVal = Number(selectedAssessment.cephalometricInput.u1Sn) || 104;
-  const impaVal = Number(selectedAssessment.cephalometricInput.impa) || 90;
-  const overjetVal = Number(selectedAssessment.cephalometricInput.overjet) || 2.5;
-
-  const upperLipELineVal = Number(selectedAssessment.cephalometricInput.upperLipELine) || -2;
-  const lowerLipELineVal = Number(selectedAssessment.cephalometricInput.lowerLipELine) || 0;
-  const nasolabialAngleVal = Number(selectedAssessment.cephalometricInput.nasolabialAngle) || 102;
-  const facialConvexityVal = Number(selectedAssessment.cephalometricInput.facialConvexity) || 8;
-
+  const isClinicMode = selectedAssessment.patientDetails.analysisMode === 'clinic';
   const isClass1 = selectedAssessment.patientDetails.diagnosis === 'Class I';
-  const isClass2 = selectedAssessment.patientDetails.diagnosis === 'Class II' || anbVal > 4.5;
+  const isClass2 = selectedAssessment.patientDetails.diagnosis === 'Class II';
+  const isClass3 = selectedAssessment.patientDetails.diagnosis === 'Class III';
+
+  const snaVal = isClinicMode ? (isClass2 ? 84 : isClass3 ? 78 : 82) : (Number(selectedAssessment.cephalometricInput.sna) || 82);
+  const snbVal = isClinicMode ? (isClass2 ? 78 : isClass3 ? 80 : 80) : (Number(selectedAssessment.cephalometricInput.snb) || 80);
+  const anbVal = isClinicMode ? (isClass2 ? 6.0 : isClass3 ? -2.0 : 2.0) : (Number(selectedAssessment.cephalometricInput.anb) || 2);
+  const fmaVal = isClinicMode ? (selectedAssessment.patientDetails.facialProfile === 'Convex' ? 29 : selectedAssessment.patientDetails.facialProfile === 'Concave' ? 20 : 25) : (Number(selectedAssessment.cephalometricInput.fma) || 25);
+
+  const u1SnVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 112 : 104) : (Number(selectedAssessment.cephalometricInput.u1Sn) || 104);
+  const impaVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 83 : 90) : (Number(selectedAssessment.cephalometricInput.impa) || 90);
+  const overjetVal = isClinicMode ? (selectedAssessment.patientDetails.overjet !== undefined && selectedAssessment.patientDetails.overjet !== '' ? Number(selectedAssessment.patientDetails.overjet) : 2.5) : (Number(selectedAssessment.cephalometricInput.overjet) || 2.5);
+
+  const upperLipELineVal = isClinicMode ? (isClass2 ? 1 : isClass3 ? -3 : -2) : (Number(selectedAssessment.cephalometricInput.upperLipELine) || -2);
+  const lowerLipELineVal = isClinicMode ? (isClass2 ? 2 : isClass3 ? -1 : 0) : (Number(selectedAssessment.cephalometricInput.lowerLipELine) || 0);
+  const nasolabialAngleVal = isClinicMode ? (isClass2 ? 92 : isClass3 ? 108 : 102) : (Number(selectedAssessment.cephalometricInput.nasolabialAngle) || 102);
+  const facialConvexityVal = isClinicMode ? (isClass2 ? 18 : isClass3 ? 6 : 12) : (Number(selectedAssessment.cephalometricInput.facialConvexity) || 8);
 
   // 1. Skeletal Deviations
   const snaDev = Math.max(0.5, Math.abs(snaVal - 82));
@@ -624,7 +626,11 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               <View style={tw`space-y-1`}>
                 <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI selected this diagnosis</Text>
                 <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  Based on the patient's skeletal parameters (ANB: {typeof selectedAssessment.cephalometricInput.anb === 'number' ? selectedAssessment.cephalometricInput.anb : parseFloat(selectedAssessment.cephalometricInput.anb as any) || 2}°, Wits: {typeof selectedAssessment.cephalometricInput.wits === 'number' ? selectedAssessment.cephalometricInput.wits : parseFloat(selectedAssessment.cephalometricInput.wits as any) || 0}mm), the engine mapped a Skeletal {selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a {selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
+                  {isClinicMode ? (
+                    `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
+                  ) : (
+                    `Based on the patient's skeletal parameters (ANB: ${typeof selectedAssessment.cephalometricInput.anb === 'number' ? selectedAssessment.cephalometricInput.anb : parseFloat(selectedAssessment.cephalometricInput.anb as any) || 2}°, Wits: ${typeof selectedAssessment.cephalometricInput.wits === 'number' ? selectedAssessment.cephalometricInput.wits : parseFloat(selectedAssessment.cephalometricInput.wits as any) || 0}mm), the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
+                  )}
                 </Text>
               </View>
 
@@ -632,7 +638,11 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               <View style={tw`space-y-1`}>
                 <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI detected these compensations</Text>
                 <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  The lower incisor sagittal inclination (IMPA: {typeof selectedAssessment.cephalometricInput.impa === 'number' ? selectedAssessment.cephalometricInput.impa : parseFloat(selectedAssessment.cephalometricInput.impa as any) || 90}°) and upper incisor inclination (U1-SN: {typeof selectedAssessment.cephalometricInput.u1Sn === 'number' ? selectedAssessment.cephalometricInput.u1Sn : parseFloat(selectedAssessment.cephalometricInput.u1Sn as any) || 104}°) demonstrate a {selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
+                  {isClinicMode ? (
+                    `The clinical lower incisor position and upper incisor position demonstrate a ${selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These features represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.`
+                  ) : (
+                    `The lower incisor sagittal inclination (IMPA: ${typeof selectedAssessment.cephalometricInput.impa === 'number' ? selectedAssessment.cephalometricInput.impa : parseFloat(selectedAssessment.cephalometricInput.impa as any) || 90}°) and upper incisor inclination (U1-SN: ${typeof selectedAssessment.cephalometricInput.u1Sn === 'number' ? selectedAssessment.cephalometricInput.u1Sn : parseFloat(selectedAssessment.cephalometricInput.u1Sn as any) || 104}°) demonstrate a ${selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.`
+                  )}
                 </Text>
               </View>
 
