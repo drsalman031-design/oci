@@ -7,6 +7,7 @@ import {
   AISelfValidator 
 } from './aiCore';
 import { ClinicalNarrativeQA } from './narrativeQA';
+import { PatientDetails } from '../types';
 
 // Helper to get Gemini API Key safely
 function getGeminiApiKey(): string {
@@ -486,4 +487,123 @@ export function generateLocalClinicOnlySynthesis(
   
   const validation = AISelfValidator.validate(reportMarkdown, 'clinic', patient, emptyCeph, oci);
   return validation.cleanedText;
+}
+
+export async function uriToBase64(uri: string): Promise<{ data: string; mimeType: string }> {
+  if (uri.startsWith('data:')) {
+    const parts = uri.split(',');
+    const mime = parts[0].split(':')[1].split(';')[0];
+    return { data: parts[1], mimeType: mime };
+  }
+  
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = reader.result as string;
+      const parts = base64data.split(',');
+      const mime = parts[0].split(':')[1].split(';')[0];
+      resolve({ data: parts[1], mimeType: mime });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+export async function runMultimodalVisionAI(
+  photos: Record<string, string>,
+  patient: PatientDetails
+): Promise<any> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API Key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY in your environment variables.");
+  }
+
+  const imageParts: any[] = [];
+  
+  for (const slotKey of Object.keys(photos)) {
+    const uri = photos[slotKey];
+    if (uri && uri !== 'MOCK_IMAGE') {
+      try {
+        const { data, mimeType } = await uriToBase64(uri);
+        imageParts.push({
+          inlineData: {
+            mimeType,
+            data
+          }
+        });
+      } catch (err) {
+        console.warn(`Failed to convert image ${slotKey} to base64:`, err);
+      }
+    }
+  }
+
+  const promptText = `
+You are a board-certified consulting orthodontist. Analyze the attached clinical photographs (extraoral/intraoral) alongside the clinical details of this patient, and return structured observations.
+
+Patient Demographics:
+- Name: ${patient.name || 'Anonymous'}
+- Age: ${patient.age || 'N/A'} years old
+- Gender: ${patient.gender || 'N/A'}
+- Chief Complaint: ${patient.chiefComplaint || 'N/A'}
+
+Clinical Examination Findings:
+- Clinician Profile Entry: ${patient.facialProfile || 'N/A'}
+- Clinician Symmetry Entry: ${patient.facialAsymmetry || 'N/A'}
+- Clinician Lip Competence Entry: ${patient.lips || 'N/A'}
+- Clinician Crowding Entry: ${patient.crowdingSpacing || 'N/A'}
+- Clinician Overjet Entry: ${patient.overjet !== undefined ? patient.overjet + 'mm' : 'N/A'}
+- Clinician Overbite Entry: ${patient.overbite !== undefined ? patient.overbite + 'mm' : 'N/A'}
+
+Analyze the images to extract observations for the following parameters. 
+Return your response STRICTLY as a raw JSON object matching this schema (do NOT wrap it in markdown code blocks like \`\`\`json):
+{
+  "extraoral": {
+    "facial_profile": "Convex | Concave | Straight",
+    "facial_symmetry": "Symmetric | Mild asymmetry | Moderate asymmetry | Severe asymmetry",
+    "lip_competence": "Competent | Incompetent | Potentially competent"
+  },
+  "intraoral": {
+    "molar_relationship": "Class I | Class II | Class III | Unclear",
+    "overjet": "Normal | Increased | Decreased | Reverse",
+    "crowding": "None | Mild | Moderate | Severe"
+  },
+  "confidence": {
+    "facial_profile": 0.95,
+    "crowding": 0.93
+  }
+}
+
+Do NOT write any diagnosis, treatment plans, or recommendations in this stage. Return ONLY the JSON observations.
+`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: promptText },
+          ...imageParts
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json"
+    }
+  };
+
+  const responseJson = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+  const text = responseJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("No response content returned by Gemini vision model.");
+  }
+
+  try {
+    const observations = JSON.parse(text.trim());
+    return observations;
+  } catch (err) {
+    console.error("Failed to parse Gemini vision response:", text);
+    throw new Error("Invalid JSON structure returned by Gemini vision model.");
+  }
 }

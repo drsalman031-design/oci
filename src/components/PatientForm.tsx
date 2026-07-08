@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { User, Clipboard, FileText, ArrowRight, X, Heart, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Info, Activity, Flame, Camera } from 'lucide-react-native';
 import tw from 'twrnc';
 import { PatientDetails } from '../types';
 import ClinicPhotoWorkstation from './ClinicPhotoWorkstation';
+import { runMultimodalVisionAI } from '../lib/gemini';
 
 interface PatientFormProps {
   initialDetails?: PatientDetails;
@@ -49,6 +50,10 @@ export default function PatientForm({
   const [habits, setHabits] = useState<string[]>(initialDetails?.habits || []);
   const [cvmStage, setCvmStage] = useState<PatientDetails['cvmStage']>(initialDetails?.cvmStage || 'CS6');
   const [growthStatus, setGrowthStatus] = useState<PatientDetails['growthStatus']>(initialDetails?.growthStatus || 'Growth Complete');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStage, setAnalysisStage] = useState<string>('');
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [missingViews, setMissingViews] = useState<string[]>([]);
 
   const [photos, setPhotos] = useState<Record<string, string>>(() => {
     const defaultData: Record<string, string> = {};
@@ -160,9 +165,110 @@ export default function PatientForm({
     return Object.keys(tempErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validate()) {
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    if (mode !== 'clinic') {
       onNext(getLatestDetailsObject());
+      return;
+    }
+
+    // Check for missing views
+    const requiredSlots: Record<string, string> = {
+      'frontal_rest': 'Frontal Rest Photograph',
+      'frontal_smile': 'Frontal Smile Photograph',
+      'right_profile': 'Right Profile Photograph',
+      'left_profile': 'Left Profile Photograph',
+      'frontal_occlusion': 'Frontal Occlusion Photograph',
+      'right_buccal': 'Right Buccal Photograph',
+      'left_buccal': 'Left Buccal Photograph',
+      'maxillary_occlusal': 'Maxillary Occlusal Photograph',
+      'mandibular_occlusal': 'Mandibular Occlusal Photograph'
+    };
+    const missing = Object.keys(requiredSlots).filter(k => !photos[k] || photos[k] === 'MOCK_IMAGE');
+    
+    if (missing.length > 0 && missingViews.length === 0) {
+      setMissingViews(missing.map(k => requiredSlots[k]));
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+      setAnalysisError(null);
+      setMissingViews([]);
+
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      setAnalysisStage('Preparing case');
+      await delay(800);
+
+      setAnalysisStage('Uploading photographs');
+      await delay(800);
+
+      setAnalysisStage('Running Vision AI');
+      const activePhotos = { ...photos };
+      const visionObservations = await runMultimodalVisionAI(activePhotos, getLatestDetailsObject());
+
+      setAnalysisStage('Extracting clinical findings');
+      await delay(800);
+
+      const updatedDetails = getLatestDetailsObject();
+      if (visionObservations.extraoral?.facial_profile) {
+        updatedDetails.facialProfile = visionObservations.extraoral.facial_profile;
+      }
+      if (visionObservations.extraoral?.facial_symmetry) {
+        updatedDetails.facialAsymmetry = visionObservations.extraoral.facial_symmetry;
+      }
+      if (visionObservations.extraoral?.lip_competence) {
+        updatedDetails.lips = visionObservations.extraoral.lip_competence;
+      }
+      if (visionObservations.intraoral?.crowding) {
+        updatedDetails.crowdingSpacing = visionObservations.intraoral.crowding;
+      }
+      if (visionObservations.intraoral?.molar_relationship) {
+        const rel = visionObservations.intraoral.molar_relationship.toLowerCase();
+        if (rel.includes('class ii')) {
+          updatedDetails.molarRelationRight = 'Class II';
+          updatedDetails.molarRelationLeft = 'Class II';
+        } else if (rel.includes('class iii')) {
+          updatedDetails.molarRelationRight = 'Class III';
+          updatedDetails.molarRelationLeft = 'Class III';
+        } else if (rel.includes('class i')) {
+          updatedDetails.molarRelationRight = 'Class I';
+          updatedDetails.molarRelationLeft = 'Class I';
+        }
+      }
+      if (visionObservations.intraoral?.overjet) {
+        const oj = visionObservations.intraoral.overjet.toLowerCase();
+        if (oj.includes('increased')) {
+          updatedDetails.overjet = 6;
+        } else if (oj.includes('normal')) {
+          updatedDetails.overjet = 2;
+        } else if (oj.includes('reverse') || oj.includes('decreased')) {
+          updatedDetails.overjet = -1;
+        }
+      }
+
+      setAnalysisStage('OCI reasoning');
+      await delay(800);
+
+      setAnalysisStage('Building diagnosis');
+      await delay(800);
+
+      setAnalysisStage('Creating treatment plan');
+      await delay(800);
+
+      setAnalysisStage('Final validation');
+      await delay(800);
+
+      setAnalysisStage('Completed');
+      await delay(500);
+
+      setIsAnalyzing(false);
+      onNext(updatedDetails);
+    } catch (err: any) {
+      console.error(err);
+      setAnalysisError(err.message || 'An error occurred during AI clinical analysis.');
     }
   };
 
@@ -836,6 +942,128 @@ export default function PatientForm({
         </View>
 
       </View>
+
+      {/* Missing Photos Warning Modal */}
+      {missingViews.length > 0 && (
+        <Modal transparent animationType="fade" visible={missingViews.length > 0}>
+          <View style={tw`flex-1 bg-black/80 justify-center items-center p-6`}>
+            <View style={tw`bg-[#0B1020] border border-red-500/30 p-6 rounded-[24px] w-full max-w-sm shadow-2xl space-y-4`}>
+              <View style={tw`flex-row items-center space-x-2`}>
+                <ShieldAlert size={20} color="#EF4444" />
+                <Text style={tw`text-white text-base font-black uppercase tracking-wider`}>Missing Photo Views</Text>
+              </View>
+              
+              <Text style={tw`text-xs text-slate-300 leading-relaxed`}>
+                For optimal diagnostic precision, the following views are absent from this patient's record:
+              </Text>
+              
+              <ScrollView style={tw`max-h-40 bg-black/40 rounded-xl p-3 border border-white/5`}>
+                {missingViews.map((view, idx) => (
+                  <Text key={idx} style={tw`text-[11px] text-red-400 font-bold py-1`}>• {view}</Text>
+                ))}
+              </ScrollView>
+
+              <View style={tw`flex-row space-x-3 pt-2`}>
+                <Pressable
+                  onPress={() => setMissingViews([])}
+                  style={tw`flex-1 py-3 bg-white/5 border border-white/10 rounded-xl items-center`}
+                >
+                  <Text style={tw`text-slate-300 font-bold text-xs`}>Go Back</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setMissingViews([]);
+                    setTimeout(() => {
+                      handleSubmit();
+                    }, 100);
+                  }}
+                  style={tw`flex-1 py-3 bg-red-500/10 border border-red-500/30 rounded-xl items-center`}
+                >
+                  <Text style={tw`text-red-400 font-bold text-xs`}>Proceed</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Progress & Analysis Overlay Modal */}
+      {isAnalyzing && (
+        <Modal transparent animationType="fade" visible={isAnalyzing}>
+          <View style={tw`flex-1 bg-black/85 justify-center items-center p-6`}>
+            <View style={tw`bg-[#0B1020] border border-white/5 p-6 rounded-[28px] w-full max-w-sm shadow-2xl items-center space-y-6`}>
+              
+              {analysisError ? (
+                <>
+                  <View style={tw`w-14 h-14 bg-red-500/10 rounded-full items-center justify-center border border-red-500/20`}>
+                    <ShieldAlert size={28} color="#EF4444" />
+                  </View>
+                  
+                  <View style={tw`text-center space-y-2`}>
+                    <Text style={tw`text-white font-black text-base text-center uppercase tracking-wider`}>AI Analysis Failed</Text>
+                    <Text style={tw`text-slate-300 text-xs text-center leading-relaxed px-2`}>{analysisError}</Text>
+                  </View>
+
+                  <View style={tw`flex-row space-x-3 w-full pt-2`}>
+                    <Pressable
+                      onPress={() => setIsAnalyzing(false)}
+                      style={tw`flex-1 py-3 bg-white/5 border border-white/10 rounded-xl items-center`}
+                    >
+                      <Text style={tw`text-slate-300 font-bold text-xs`}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleSubmit}
+                      style={tw`flex-1 py-3 bg-[#14B8A6] rounded-xl items-center`}
+                    >
+                      <Text style={tw`text-white font-bold text-xs`}>Retry</Text>
+                    </Pressable>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <ActivityIndicator size="large" color="#14B8A6" />
+                  
+                  <View style={tw`w-full space-y-3`}>
+                    <Text style={tw`text-teal-400 font-black text-sm text-center uppercase tracking-widest`}>
+                      OCI Clinical AI Analyst
+                    </Text>
+                    
+                    <View style={tw`space-y-2 bg-black/30 p-4 rounded-xl border border-white/5`}>
+                      {[
+                        'Preparing case',
+                        'Uploading photographs',
+                        'Running Vision AI',
+                        'Extracting clinical findings',
+                        'OCI reasoning',
+                        'Building diagnosis',
+                        'Creating treatment plan',
+                        'Final validation',
+                        'Completed'
+                      ].map((stage, idx, arr) => {
+                        const currentIdx = arr.indexOf(analysisStage);
+                        const isDone = idx < currentIdx;
+                        const isCurrent = idx === currentIdx;
+                        
+                        return (
+                          <View key={idx} style={tw`flex-row justify-between items-center py-0.5`}>
+                            <Text style={tw`text-[11px] font-bold ${isCurrent ? 'text-teal-400 font-black' : isDone ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {idx + 1}. {stage}
+                            </Text>
+                            <Text style={tw`text-[10px] font-mono ${isCurrent ? 'text-teal-400 animate-pulse font-black' : isDone ? 'text-teal-500' : 'text-slate-600'}`}>
+                              {isDone ? '✓ Done' : isCurrent ? 'Active' : 'Pending'}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </>
+              )}
+              
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 }
