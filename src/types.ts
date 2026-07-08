@@ -27,6 +27,8 @@ export interface PatientDetails {
   cvmStage?: 'CS1' | 'CS2' | 'CS3' | 'CS4' | 'CS5' | 'CS6' | '';
   growthStatus?: 'Growing' | 'Peak Growth' | 'Decelerating Growth' | 'Growth Complete' | '';
   analysisMode?: 'clinic' | 'ceph' | 'turbo';
+  clinicalPhotos?: Record<string, string>;
+  clinicalPhotoFindings?: string[];
 }
 
 export interface CephalometricInput {

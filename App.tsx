@@ -48,6 +48,7 @@ import GoogleDriveSync from './src/components/GoogleDriveSync';
 import StressTestingPanel from './src/components/StressTestingPanel';
 import DevPinVerificationScreen from './src/components/DevPinVerificationScreen';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
+import ClinicPhotoWorkstation from './src/components/ClinicPhotoWorkstation';
 
 // Icons
 import { 
@@ -125,7 +126,7 @@ export default function App() {
   };
 
   // Core Navigation
-  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'stress-testing' | 'treatment-planning'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'stress-testing' | 'treatment-planning' | 'clinic-photo-upload'>('splash');
   
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -539,10 +540,26 @@ export default function App() {
       setActiveResult(result);
       
       await saveActiveWorkspace(details, emptyCeph, result, "Synthesizing orthodontic report...");
-      setScreen('results');
+      setScreen('clinic-photo-upload');
     } else {
       await saveActiveWorkspace(details, null, null);
       setScreen('ceph-input');
+    }
+  };
+
+  const handleClinicPhotoComplete = async (photos: Record<string, string>, findings: string[]) => {
+    if (activePatient) {
+      const updatedPatient: PatientDetails = {
+        ...activePatient,
+        clinicalPhotos: photos,
+        clinicalPhotoFindings: findings
+      };
+      setActivePatient(updatedPatient);
+
+      if (activeCeph && activeResult) {
+        await saveActiveWorkspace(updatedPatient, activeCeph, activeResult, "Compiling clinical photo analysis...");
+      }
+      setScreen('results');
     }
   };
 
@@ -775,7 +792,7 @@ export default function App() {
             </Pressable>
 
             {/* Mode-specific Unique Workspace Header and Color Accent */}
-            {['patient-form', 'ceph-input', 'results', 'treatment-planning', 'reports'].includes(screen) && (
+            {['patient-form', 'ceph-input', 'results', 'treatment-planning', 'reports', 'clinic-photo-upload'].includes(screen) && (
               <View style={tw`flex-row items-center space-x-2`}>
                 <View style={[
                   tw`px-2.5 py-1 rounded-full border flex-row items-center space-x-1.5`,
@@ -838,6 +855,14 @@ export default function App() {
                   onNext={handlePatientSubmit}
                   onCancel={() => setScreen('home')}
                   onUpdate={handleDraftUpdate}
+                />
+              )}
+
+              {screen === 'clinic-photo-upload' && activePatient && (
+                <ClinicPhotoWorkstation
+                  patientDetails={activePatient}
+                  onComplete={handleClinicPhotoComplete}
+                  onBack={() => setScreen('patient-form')}
                 />
               )}
 

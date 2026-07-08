@@ -524,105 +524,199 @@ export default function ResultsDashboard({
                   </View>
 
                   {/* Tab Contents */}
-                  {activePillarTab === 'skeletal' && (
+                  {mode === 'clinic' ? (
+                    // Clinic Mode Clinical Parameters
                     <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                      <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-bold text-white`}>Skeletal Discrepancy Factor</Text>
-                        <Text style={tw`text-xs font-black font-mono text-teal-400`}>{skeletalScoreObj.score} / 20 pts</Text>
-                      </View>
-                      
-                      {/* Progress bar */}
-                      <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-teal-400`, { width: `${(skeletalScoreObj.score / 20) * 100}%` }]} />
-                      </View>
-
-                      <View style={tw`space-y-2 pt-1`}>
-                        {[
-                          { name: 'ANB angle', val: cephalometricInput.anb !== '' ? `${cephalometricInput.anb}°` : '2°', norm: '0° to 4°', desc: 'Skeletal Jaw Relationship' },
-                          { name: 'Wits Appraisal', val: cephalometricInput.wits !== '' ? `${cephalometricInput.wits} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'A-B Sagittal Discrepancy' },
-                          { name: 'SNA / SNB', val: `${cephalometricInput.sna || 82}° / ${cephalometricInput.snb || 80}°`, norm: '82° / 80°', desc: 'Maxillary & Mandibular baselines' },
-                          { name: 'FMA (Vertical)', val: cephalometricInput.fma !== '' ? `${cephalometricInput.fma}°` : '25°', norm: '21° to 29°', desc: 'Vertical jaw growth angle' }
-                        ].map((item, i) => (
-                          <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                      {activePillarTab === 'skeletal' && (
+                        <View style={tw`space-y-2`}>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
                             <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Facial Profile Contour</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Clinically estimated sagittal jaw pattern</Text>
                             </View>
-                            <View style={tw`items-end`}>
-                              <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                              <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.facialProfile || 'Straight'}</Text>
                           </View>
-                        ))}
-                      </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Vertical Proportion Trend</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Facial height proportion assessment</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
+                              {patientDetails.facialProfile === 'Convex' ? 'High angle vertical tendency' : 'Balanced proportions'}
+                            </Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Facial Asymmetry</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Transverse skeletal symmetry</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.facialAsymmetry || 'None'}</Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {activePillarTab === 'dental' && (
+                        <View style={tw`space-y-2`}>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Molar / Canine Relationship</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Right and left occlusion views</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
+                              Molar: {patientDetails.molarRelationRight || 'Class I'} | Canine: {patientDetails.canineRelationRight || 'Class I'}
+                            </Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Overjet / Overbite</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Direct sagittal & vertical dental overlaps</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
+                              {patientDetails.overjet || '2.5'}mm / {patientDetails.overbite || '2.5'}mm
+                            </Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Dental Crowding / Spacing</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Arch perimeter requirements</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.crowdingSpacing || 'None'}</Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Crossbites (Ant / Post)</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Dental arch width coordination</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
+                              Ant: {patientDetails.anteriorCrossbite || 'None'} | Post: {patientDetails.posteriorCrossbite || 'None'}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {activePillarTab === 'softTissue' && (
+                        <View style={tw`space-y-2`}>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Lip Posture at Rest</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Competence & muscular strain indicators</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.lips || 'Competent'}</Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Smile Arc Aesthetics</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Incisor display curvature</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.smileAnalysis || 'Consonant'}</Text>
+                          </View>
+                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                            <View>
+                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Active Habits</Text>
+                              <Text style={tw`text-[8px] text-slate-500`}>Myofunctional dynamic habits</Text>
+                            </View>
+                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`} numberOfLines={1}>
+                              {patientDetails.habits && patientDetails.habits.length > 0 ? patientDetails.habits.join(', ') : 'None'}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                     </View>
-                  )}
-
-                  {activePillarTab === 'dental' && (
-                    <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                      <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-bold text-white`}>Dentoalveolar Dental Factor</Text>
-                        <Text style={tw`text-xs font-black font-mono text-teal-400`}>{totalDentalScore} / 55 pts</Text>
-                      </View>
-
-                      {/* Progress bar */}
-                      <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-cyan-400`, { width: `${(totalDentalScore / 55) * 100}%` }]} />
-                      </View>
-
-                      <View style={tw`space-y-2 pt-1`}>
-                        {[
-                          { name: 'U1-SN angle', val: cephalometricInput.u1Sn !== '' ? `${cephalometricInput.u1Sn}°` : '104°', norm: '99° to 109°', desc: 'Upper incisor position' },
-                          { name: 'IMPA (L1-MP)', val: cephalometricInput.impa !== '' ? `${cephalometricInput.impa}°` : '90°', norm: '85° to 95°', desc: 'Lower incisor tilt baseline' },
-                          { name: 'Interincisal Angle', val: cephalometricInput.interincisalAngle !== '' ? `${cephalometricInput.interincisalAngle}°` : '135°', norm: '130° to 140°', desc: 'Relative incisor alignment' },
-                          { name: 'Overjet & Overbite', val: `${cephalometricInput.overjet || 2.5}mm / ${cephalometricInput.overbite || 2.5}mm`, norm: '2.5mm / 2.5mm', desc: 'Anterior dental overlap' }
-                        ].map((item, i) => (
-                          <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
-                            </View>
-                            <View style={tw`items-end`}>
-                              <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                              <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                            </View>
+                  ) : (
+                    // Ceph or Turbo Mode Cephalometric Parameters
+                    <View style={tw`space-y-3`}>
+                      {activePillarTab === 'skeletal' && (
+                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
+                          <View style={tw`flex-row justify-between items-center`}>
+                            <Text style={tw`text-xs font-bold text-white`}>Skeletal Discrepancy Factor</Text>
+                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{skeletalScoreObj.score} / 20 pts</Text>
                           </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {activePillarTab === 'softTissue' && (
-                    <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                      <View style={tw`flex-row justify-between items-center`}>
-                        <Text style={tw`text-xs font-bold text-white`}>Soft Tissue Esthetics Factor</Text>
-                        <Text style={tw`text-xs font-black font-mono text-teal-400`}>{softTissueScoreObj.score} / 15 pts</Text>
-                      </View>
-
-                      {/* Progress bar */}
-                      <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                        <View style={[tw`h-full bg-rose-400`, { width: `${(softTissueScoreObj.score / 15) * 100}%` }]} />
-                      </View>
-
-                      <View style={tw`space-y-2 pt-1`}>
-                        {[
-                          { name: 'Upper Lip to E-Line', val: cephalometricInput.upperLipELine !== '' ? `${cephalometricInput.upperLipELine} mm` : '-2 mm', norm: '-4 to 0 mm', desc: 'Upper lip projection' },
-                          { name: 'Lower Lip to E-Line', val: cephalometricInput.lowerLipELine !== '' ? `${cephalometricInput.lowerLipELine} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'Lower lip projection' },
-                          { name: 'Nasolabial Angle', val: cephalometricInput.nasolabialAngle !== '' ? `${cephalometricInput.nasolabialAngle}°` : '102°', norm: '94° to 110°', desc: 'Subnasal contour' },
-                          { name: 'Facial Convexity', val: cephalometricInput.facialConvexity !== '' ? `${cephalometricInput.facialConvexity}°` : '12°', norm: '8° to 16°', desc: 'General aesthetic profile' }
-                        ].map((item, i) => (
-                          <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
-                            </View>
-                            <View style={tw`items-end`}>
-                              <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                              <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                            </View>
+                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
+                            <View style={[tw`h-full bg-teal-400`, { width: `${(skeletalScoreObj.score / 20) * 100}%` }]} />
                           </View>
-                        ))}
-                      </View>
+                          <View style={tw`space-y-2 pt-1`}>
+                            {[
+                              { name: 'ANB angle', val: cephalometricInput.anb !== '' ? `${cephalometricInput.anb}°` : '2°', norm: '0° to 4°', desc: 'Skeletal Jaw Relationship' },
+                              { name: 'Wits Appraisal', val: cephalometricInput.wits !== '' ? `${cephalometricInput.wits} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'A-B Sagittal Discrepancy' },
+                              { name: 'SNA / SNB', val: `${cephalometricInput.sna || 82}° / ${cephalometricInput.snb || 80}°`, norm: '82° / 80°', desc: 'Maxillary & Mandibular baselines' },
+                              { name: 'FMA (Vertical)', val: cephalometricInput.fma !== '' ? `${cephalometricInput.fma}°` : '25°', norm: '21° to 29°', desc: 'Vertical jaw growth angle' }
+                            ].map((item, i) => (
+                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                                <View>
+                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
+                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
+                                </View>
+                                <View style={tw`items-end`}>
+                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
+                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      {activePillarTab === 'dental' && (
+                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
+                          <View style={tw`flex-row justify-between items-center`}>
+                            <Text style={tw`text-xs font-bold text-white`}>Dentoalveolar Dental Factor</Text>
+                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{totalDentalScore} / 55 pts</Text>
+                          </View>
+                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
+                            <View style={[tw`h-full bg-cyan-400`, { width: `${(totalDentalScore / 55) * 100}%` }]} />
+                          </View>
+                          <View style={tw`space-y-2 pt-1`}>
+                            {[
+                              { name: 'U1-SN angle', val: cephalometricInput.u1Sn !== '' ? `${cephalometricInput.u1Sn}°` : '104°', norm: '99° to 109°', desc: 'Upper incisor position' },
+                              { name: 'IMPA (L1-MP)', val: cephalometricInput.impa !== '' ? `${cephalometricInput.impa}°` : '90°', norm: '85° to 95°', desc: 'Lower incisor tilt baseline' },
+                              { name: 'Interincisal Angle', val: cephalometricInput.interincisalAngle !== '' ? `${cephalometricInput.interincisalAngle}°` : '135°', norm: '130° to 140°', desc: 'Relative incisor alignment' },
+                              { name: 'Overjet & Overbite', val: `${cephalometricInput.overjet || 2.5}mm / ${cephalometricInput.overbite || 2.5}mm`, norm: '2.5mm / 2.5mm', desc: 'Anterior dental overlap' }
+                            ].map((item, i) => (
+                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                                <View>
+                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
+                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
+                                </View>
+                                <View style={tw`items-end`}>
+                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
+                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      {activePillarTab === 'softTissue' && (
+                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
+                          <View style={tw`flex-row justify-between items-center`}>
+                            <Text style={tw`text-xs font-bold text-white`}>Soft Tissue Esthetics Factor</Text>
+                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{softTissueScoreObj.score} / 15 pts</Text>
+                          </View>
+                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
+                            <View style={[tw`h-full bg-rose-400`, { width: `${(softTissueScoreObj.score / 15) * 100}%` }]} />
+                          </View>
+                          <View style={tw`space-y-2 pt-1`}>
+                            {[
+                              { name: 'Upper Lip to E-Line', val: cephalometricInput.upperLipELine !== '' ? `${cephalometricInput.upperLipELine} mm` : '-2 mm', norm: '-4 to 0 mm', desc: 'Upper lip projection' },
+                              { name: 'Lower Lip to E-Line', val: cephalometricInput.lowerLipELine !== '' ? `${cephalometricInput.lowerLipELine} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'Lower lip projection' },
+                              { name: 'Nasolabial Angle', val: cephalometricInput.nasolabialAngle !== '' ? `${cephalometricInput.nasolabialAngle}°` : '102°', norm: '94° to 110°', desc: 'Subnasal contour' },
+                              { name: 'Facial Convexity', val: cephalometricInput.facialConvexity !== '' ? `${cephalometricInput.facialConvexity}°` : '12°', norm: '8° to 16°', desc: 'General aesthetic profile' }
+                            ].map((item, i) => (
+                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
+                                <View>
+                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
+                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
+                                </View>
+                                <View style={tw`items-end`}>
+                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
+                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
                     </View>
                   )}
 

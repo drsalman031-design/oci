@@ -331,7 +331,7 @@ export class ReportGenerator {
 
 ## 1. Diagnosis
 - **Skeletal & Vertical Profile**: ${decision.diagnosis}. ${decision.verticalPattern}.
-- **Growth Stage**: ${decision.growthStatus || 'Growth completed / Adult phase'}.
+${isClinic && (patient.facialProfile === 'Convex' || patient.facialProfile === 'Concave') ? `- **Clinical Impression**: Facial appearance suggests a possible skeletal discrepancy. Confirmation with cephalometric analysis is recommended.\n` : ''}- **Growth Stage**: ${decision.growthStatus || 'Growth completed / Adult phase'}.
 
 ## 2. Problem List
 ${finalPlan.problemList.map((p: string, i: number) => `  ${i + 1}. ${p}`).join('\n')}
