@@ -34,6 +34,7 @@ import {
   ShieldAlert as ShieldIcon
 } from 'lucide-react-native';
 import tw from 'twrnc';
+import { setDynamicApiKey } from '../lib/gemini';
 import { sha256, encryptBackup, decryptBackup } from '../lib/crypto';
 import { 
   dbGetProfile, 
@@ -106,6 +107,8 @@ export default function SettingsPanel({
   // AI Preferences
   const [aiAssistanceLevel, setAiAssistanceLevel] = useState<'high' | 'med' | 'low'>('high');
   const [aiEngineMode] = useState('OCI v2.4 Pro Core');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
 
   // Evidence / Guideline version
   const [guidelineVersion] = useState('ABO 2026 Reference Standards');
@@ -165,6 +168,9 @@ export default function SettingsPanel({
 
         const savedAnonymize = await dbGetSetting<boolean>('oci_anonymize', false);
         setAnonymizeReports(savedAnonymize);
+
+        const savedGeminiKey = await AsyncStorage.getItem('oci_gemini_api_key') || '';
+        setGeminiKey(savedGeminiKey);
       } catch (e) {
         console.log('Failed to load SettingsPanel database config', e);
       }
@@ -186,6 +192,16 @@ export default function SettingsPanel({
       }
     } catch (e) {
       showTemporaryStatus('Failed to update clinical profile.');
+    }
+  };
+
+  const saveGeminiKey = async () => {
+    try {
+      await AsyncStorage.setItem('oci_gemini_api_key', geminiKey.trim());
+      setDynamicApiKey(geminiKey.trim());
+      showTemporaryStatus('Gemini API Key saved successfully.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save Gemini API Key.');
     }
   };
 
@@ -1064,6 +1080,57 @@ export default function SettingsPanel({
                 <View style={tw`w-5 h-5 rounded border ${localEncryption ? 'bg-teal-500 border-teal-400 items-center justify-center' : 'border-slate-700'}`}>
                   {localEncryption && <CheckCircle size={10} color="#000" />}
                 </View>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {/* Gemini API Key Configuration */}
+        <View style={tw`bg-[#0B1020]/90 rounded-[24px] border border-white/5 overflow-hidden shadow-xl`}>
+          <Pressable 
+            onPress={() => toggleSection('gemini_api')}
+            style={tw`flex-row justify-between items-center p-5 bg-black/20`}
+          >
+            <View style={tw`flex-row items-center space-x-3`}>
+              <BrainCircuit size={16} color="#14B8A6" />
+              <Text style={tw`text-xs font-black text-slate-200 uppercase tracking-wider`}>Gemini API Configuration</Text>
+            </View>
+            <View style={tw`w-6 h-6 rounded-full bg-white/5 items-center justify-center`}>
+              {activeSection === 'gemini_api' ? <ChevronUp size={14} color="#14B8A6" /> : <ChevronDown size={14} color="#14B8A6" />}
+            </View>
+          </Pressable>
+
+          {activeSection === 'gemini_api' && (
+            <View style={tw`p-5 space-y-4`}>
+              <Text style={tw`text-xs text-slate-400 leading-normal`}>
+                Paste your Google Gemini API Key here. This key is used to execute real multimodal Vision AI case analysis and clinical report summaries. The key is securely saved locally on your device's persistent storage.
+              </Text>
+
+              <View style={tw`space-y-1`}>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Gemini API Key</Text>
+                <View style={tw`flex-row items-center w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4`}>
+                  <TextInput 
+                    value={geminiKey}
+                    onChangeText={setGeminiKey}
+                    secureTextEntry={!showGeminiKey}
+                    style={tw`flex-1 text-white text-xs font-mono h-full p-0`}
+                    placeholder="AIzaSy..."
+                    placeholderTextColor="#475569"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <Pressable onPress={() => setShowGeminiKey(!showGeminiKey)} style={tw`p-1`}>
+                    {showGeminiKey ? <EyeOff size={15} color="#94A3B8" /> : <Eye size={15} color="#94A3B8" />}
+                  </Pressable>
+                </View>
+              </View>
+
+              <Pressable 
+                onPress={saveGeminiKey}
+                style={tw`flex-row items-center justify-center bg-teal-500/10 border border-teal-500/30 py-3 rounded-xl`}
+              >
+                <Save size={13} color="#14B8A6" style={tw`mr-2`} />
+                <Text style={tw`text-xs font-black text-teal-400 uppercase`}>Save Gemini API Key</Text>
               </Pressable>
             </View>
           )}

@@ -49,6 +49,7 @@ import StressTestingPanel from './src/components/StressTestingPanel';
 import DevPinVerificationScreen from './src/components/DevPinVerificationScreen';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ClinicPhotoWorkstation from './src/components/ClinicPhotoWorkstation';
+import { setDynamicApiKey } from './src/lib/gemini';
 
 // Icons
 import { 
@@ -175,6 +176,11 @@ export default function App() {
         if (!v5Cleared) {
           await dbClearAllData();
           await AsyncStorage.setItem('has_wiped_demo_patients_v5', 'true');
+        }
+
+        const savedKey = await AsyncStorage.getItem('oci_gemini_api_key');
+        if (savedKey) {
+          setDynamicApiKey(savedKey);
         }
 
         // Pre-seed default OCI Administrator and Developer credentials

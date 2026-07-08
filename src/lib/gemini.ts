@@ -9,9 +9,15 @@ import {
 import { ClinicalNarrativeQA } from './narrativeQA';
 import { PatientDetails } from '../types';
 
-// Helper to get Gemini API Key safely
-function getGeminiApiKey(): string {
+let dynamicApiKey = '';
+
+export function setDynamicApiKey(key: string) {
+  dynamicApiKey = key;
+}
+
+export function getGeminiApiKey(): string {
   try {
+    if (dynamicApiKey) return dynamicApiKey;
     if (typeof process !== 'undefined' && process.env) {
       return process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
     }
