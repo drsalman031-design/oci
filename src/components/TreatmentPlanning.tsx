@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, LayoutAnimation, Platform, UIManager } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   Award, 
   Activity, 
@@ -37,6 +38,38 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   const [expandedSection, setExpandedSection] = useState<'cdss' | 'planner' | 'biomechanics' | null>('cdss');
   const [intelligenceExpanded, setIntelligenceExpanded] = useState(false);
 
+  // Load expanded states on mount
+  useEffect(() => {
+    async function loadExpandedStates() {
+      try {
+        const expSec = await AsyncStorage.getItem('oci_tp_expanded_section');
+        const intelExp = await AsyncStorage.getItem('oci_tp_intel_expanded');
+        if (expSec !== null) setExpandedSection(expSec === '' ? null : expSec as any);
+        if (intelExp !== null) setIntelligenceExpanded(intelExp === 'true');
+      } catch (err) {
+        console.log('Error loading tp expanded states:', err);
+      }
+    }
+    loadExpandedStates();
+  }, []);
+
+  // Save expanded states on change
+  useEffect(() => {
+    try {
+      AsyncStorage.setItem('oci_tp_expanded_section', expandedSection || '');
+    } catch (err) {
+      console.log('Error saving tp expanded section:', err);
+    }
+  }, [expandedSection]);
+
+  useEffect(() => {
+    try {
+      AsyncStorage.setItem('oci_tp_intel_expanded', String(intelligenceExpanded));
+    } catch (err) {
+      console.log('Error saving tp intel expanded:', err);
+    }
+  }, [intelligenceExpanded]);
+
   const toggleSection = (section: 'cdss' | 'planner' | 'biomechanics') => {
     if (Platform.OS === 'android') {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -66,11 +99,14 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   // Load and pre-populate options when selected patient changes
   useEffect(() => {
     if (!selectedId) return;
-    const assessment = savedAssessments.find(a => a.id === selectedId);
-    if (!assessment) return;
+    const rawAssessment = savedAssessments.find(a => a.id === selectedId);
+    if (!rawAssessment) return;
 
-    const details = assessment.patientDetails;
-    const adv = assessment.advanced;
+    const modeVal = rawAssessment.patientDetails.analysisMode || 'turbo';
+    const workspaceVal = modeVal === 'clinic' ? rawAssessment.clinicWorkspace : modeVal === 'ceph' ? rawAssessment.cephWorkspace : rawAssessment.turboWorkspace;
+
+    const details = rawAssessment.patientDetails;
+    const adv = workspaceVal?.advanced || {};
 
     // Smart defaults based on patient age and properties
     const age = Number(details.age) || 0;
@@ -94,7 +130,33 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
   }, [selectedId, savedAssessments]);
 
   // Find currently selected assessment
-  const activeAssessment = savedAssessments.find(a => a.id === selectedId);
+  const rawActiveAssessment = savedAssessments.find(a => a.id === selectedId);
+
+  const activeMode = rawActiveAssessment?.patientDetails?.analysisMode || 'turbo';
+  const activeWorkspace = activeMode === 'clinic' ? rawActiveAssessment?.clinicWorkspace : activeMode === 'ceph' ? rawActiveAssessment?.cephWorkspace : rawActiveAssessment?.turboWorkspace;
+
+  const activeAssessment: any = rawActiveAssessment ? {
+    ...rawActiveAssessment,
+    cephalometricInput: (activeWorkspace as any)?.cephalometricInput || {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    },
+    ociResult: (activeWorkspace as any)?.ociResult || {
+      totalScore: 0,
+      interpretation: 'Normal',
+      recommendation: '',
+      categoryScores: [],
+      verticalPattern: 'Normodivergent',
+      compensationLevel: 'Normal',
+      severityMap: { upperIncisors: 'green', lowerIncisors: 'green', softTissue: 'green', occlusion: 'green', transverse: 'green' }
+    },
+    aiSummary: (activeWorkspace as any)?.aiSummary || 'No summary generated yet.',
+    advanced: (activeWorkspace as any)?.advanced || {}
+  } : undefined;
 
   // Safe numerical fallback helper
   const getNumVal = (val: string | number | undefined, fallback = 0): number => {
@@ -151,14 +213,34 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
         growthStatus: ageGroup === 'growing' ? 'Active Growth Stage (Peak Vel.)' : 'Skeletally Mature (Completed)',
       };
 
-      const updatedAssessment: Assessment = {
-        ...activeAssessment,
-        advanced: updatedAdvanced,
-        patientDetails: {
-          ...activeAssessment.patientDetails,
-          clinicalNotes: clinicianOverride || activeAssessment.patientDetails.clinicalNotes
-        }
-      };
+      const originalAssessment = savedAssessments.find(a => a.id === activeAssessment.id);
+      if (!originalAssessment) return;
+      const workspaceMode = originalAssessment.patientDetails.analysisMode || 'turbo';
+      const updatedAssessment = { ...originalAssessment };
+      if (workspaceMode === 'clinic' && updatedAssessment.clinicWorkspace) {
+        updatedAssessment.clinicWorkspace = {
+          ...updatedAssessment.clinicWorkspace,
+          advanced: updatedAdvanced,
+          patientDetails: {
+            ...updatedAssessment.clinicWorkspace.patientDetails,
+            clinicalNotes: clinicianOverride || updatedAssessment.clinicWorkspace.patientDetails.clinicalNotes
+          }
+        };
+      } else if (workspaceMode === 'ceph' && updatedAssessment.cephWorkspace) {
+        updatedAssessment.cephWorkspace = {
+          ...updatedAssessment.cephWorkspace,
+          advanced: updatedAdvanced
+        };
+      } else if (workspaceMode === 'turbo' && updatedAssessment.turboWorkspace) {
+        updatedAssessment.turboWorkspace = {
+          ...updatedAssessment.turboWorkspace,
+          advanced: updatedAdvanced,
+          patientDetails: {
+            ...updatedAssessment.turboWorkspace.patientDetails,
+            clinicalNotes: clinicianOverride || updatedAssessment.turboWorkspace.patientDetails.clinicalNotes
+          }
+        };
+      }
 
       onUpdateAssessment(updatedAssessment);
       setIsSaving(false);
@@ -186,14 +268,34 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
       growthStatus: ageGroup === 'growing' ? 'Active Growth Stage (Peak Vel.)' : 'Skeletally Mature (Completed)',
     };
 
-    const updatedAssessment: Assessment = {
-      ...activeAssessment,
-      advanced: updatedAdvanced,
-      patientDetails: {
-        ...activeAssessment.patientDetails,
-        clinicalNotes: clinicianOverride || activeAssessment.patientDetails.clinicalNotes
-      }
-    };
+    const originalAssessment = savedAssessments.find(a => a.id === activeAssessment.id);
+    if (!originalAssessment) return;
+    const workspaceMode = originalAssessment.patientDetails.analysisMode || 'turbo';
+    const updatedAssessment = { ...originalAssessment };
+    if (workspaceMode === 'clinic' && updatedAssessment.clinicWorkspace) {
+      updatedAssessment.clinicWorkspace = {
+        ...updatedAssessment.clinicWorkspace,
+        advanced: updatedAdvanced,
+        patientDetails: {
+          ...updatedAssessment.clinicWorkspace.patientDetails,
+          clinicalNotes: clinicianOverride || updatedAssessment.clinicWorkspace.patientDetails.clinicalNotes
+        }
+      };
+    } else if (workspaceMode === 'ceph' && updatedAssessment.cephWorkspace) {
+      updatedAssessment.cephWorkspace = {
+        ...updatedAssessment.cephWorkspace,
+        advanced: updatedAdvanced
+      };
+    } else if (workspaceMode === 'turbo' && updatedAssessment.turboWorkspace) {
+      updatedAssessment.turboWorkspace = {
+        ...updatedAssessment.turboWorkspace,
+        advanced: updatedAdvanced,
+        patientDetails: {
+          ...updatedAssessment.turboWorkspace.patientDetails,
+          clinicalNotes: clinicianOverride || updatedAssessment.turboWorkspace.patientDetails.clinicalNotes
+        }
+      };
+    }
 
     onUpdateAssessment(updatedAssessment);
     setIsSaved(true);

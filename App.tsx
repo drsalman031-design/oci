@@ -6,7 +6,11 @@ import {
   OciResult, 
   Assessment, 
   OciWeights,
-  UserRole
+  UserRole,
+  ClinicWorkspaceData,
+  CephWorkspaceData,
+  TurboWorkspaceData,
+  AdvancedClinicalIntelligence
 } from './src/types';
 import { calculateOCI, calculateClinicalOCI, DEFAULT_WEIGHTS } from './src/scoringEngine';
 import { DEMO_PATIENTS } from './src/lib/demoPatients';
@@ -24,7 +28,8 @@ import {
   dbGetProfile,
   dbSeedAdmin,
   dbSetActiveUser,
-  dbGetActiveUser
+  dbGetActiveUser,
+  sanitizeAssessment
 } from './src/lib/db';
 
 // Components
@@ -244,12 +249,55 @@ export default function App() {
 
         const storedTheme = await dbGetSetting<boolean>('oci_dark_mode', true);
         setDarkMode(storedTheme);
+
+        // State Restoration
+        try {
+          const savedScreen = await AsyncStorage.getItem('oci_persistence_screen');
+          const savedMode = await AsyncStorage.getItem('oci_persistence_mode') as 'clinic' | 'ceph' | 'turbo' | null;
+          const savedEditingId = await AsyncStorage.getItem('oci_persistence_editing_id');
+          const savedPatientStr = await AsyncStorage.getItem('oci_persistence_active_patient');
+          const savedCephStr = await AsyncStorage.getItem('oci_persistence_active_ceph');
+          const savedResultStr = await AsyncStorage.getItem('oci_persistence_active_result');
+
+          if (savedScreen && savedScreen !== 'splash') {
+            setScreen(savedScreen as any);
+          } else {
+            setScreen('home');
+          }
+          if (savedMode) setActiveMode(savedMode);
+          if (savedEditingId) setEditingAssessmentId(savedEditingId);
+          if (savedPatientStr) setActivePatient(JSON.parse(savedPatientStr));
+          if (savedCephStr) setActiveCeph(JSON.parse(savedCephStr));
+          if (savedResultStr) setActiveResult(JSON.parse(savedResultStr));
+        } catch (restoreErr) {
+          console.log('Error restoring workspace states:', restoreErr);
+          setScreen('home');
+        }
       } catch (e) {
         console.error('Error loading clinical AsyncStorage database:', e);
       }
     }
     loadIndexedData();
   }, []);
+
+  // Save navigation states on change
+  useEffect(() => {
+    if (screen !== 'splash') {
+      try {
+        AsyncStorage.setItem('oci_persistence_screen', screen);
+      } catch (err) {
+        console.log('Error persisting screen:', err);
+      }
+    }
+  }, [screen]);
+
+  useEffect(() => {
+    try {
+      AsyncStorage.setItem('oci_persistence_mode', activeMode);
+    } catch (err) {
+      console.log('Error persisting mode:', err);
+    }
+  }, [activeMode]);
 
   const handleLoginSuccess = async (email: string, isGoogle: boolean) => {
     dbSetActiveUser(email);
@@ -313,113 +361,154 @@ export default function App() {
     setScreen('patient-form');
   };
 
-  const handleDraftUpdate = async (details: PatientDetails) => {
-    setActivePatient(details);
+  const saveActiveWorkspace = async (
+    patientVal: PatientDetails | null,
+    cephVal: CephalometricInput | null,
+    resultVal: OciResult | null,
+    summaryVal?: string,
+    advVal?: AdvancedClinicalIntelligence
+  ) => {
     const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     if (!editingAssessmentId) {
       setEditingAssessmentId(uuid);
+      await AsyncStorage.setItem('oci_persistence_editing_id', uuid);
     }
 
-    const currentCeph = activeCeph || {
+    const existing = savedAssessments.find(a => a.id === uuid);
+    
+    const defaultSharedDetails: PatientDetails = {
+      name: patientVal?.name || existing?.patientDetails?.name || '',
+      age: patientVal?.age !== undefined ? patientVal.age : (existing?.patientDetails?.age || ''),
+      gender: patientVal?.gender || existing?.patientDetails?.gender || '',
+      caseNumber: patientVal?.caseNumber || existing?.patientDetails?.caseNumber || '',
+      date: patientVal?.date || existing?.patientDetails?.date || new Date().toISOString(),
+      diagnosis: patientVal?.diagnosis || existing?.patientDetails?.diagnosis || '',
+      clinicalNotes: patientVal?.clinicalNotes || existing?.patientDetails?.clinicalNotes || '',
+      analysisMode: activeMode
+    };
+
+    const emptyCeph: CephalometricInput = {
       anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
-      u1Sn: '', u1NaDeg: '', u1NaMm: '',
-      impa: '', l1NbDeg: '', l1NbMm: '',
-      interincisalAngle: '', overjet: '', overbite: '',
-      upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
-      yAxis: '', coA: '', coGn: '',
-      molarRelation: '', canineRelation: '', crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
       posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
     };
 
-    let currentResult = activeResult;
-    if (activeMode === 'clinic') {
-      currentResult = calculateClinicalOCI(details, weights);
-    } else if (activeCeph) {
-      currentResult = calculateOCI(activeCeph, weights);
-    }
-
-    const finalCeph: CephalometricInput = activeMode === 'clinic' ? {
-      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
-      u1Sn: '', u1NaDeg: '', u1NaMm: '',
-      impa: '', l1NbDeg: '', l1NbMm: '',
-      interincisalAngle: '', overjet: details.overjet || '', overbite: details.overbite || '',
-      upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
-      yAxis: '', coA: '', coGn: '',
-      molarRelation: details.molarRelationRight || '',
-      canineRelation: details.canineRelationRight || '',
-      crossbite: details.anteriorCrossbite === 'Single Tooth' || details.anteriorCrossbite === 'Multiple' ? 'Anterior' : 'None',
-      deepBite: details.overbite !== undefined && Number(details.overbite) > 3.5 ? Number(details.overbite) - 2.5 : 0,
-      openBite: details.overbite !== undefined && Number(details.overbite) < 0 ? Math.abs(Number(details.overbite)) : 0,
-      curveOfSpee: details.crowdingSpacing === 'Crowding' ? 2.0 : 1.0,
-      midlineDeviation: 0,
-      posteriorCrossbite: details.posteriorCrossbite || 'None',
-      archWidthDifference: details.posteriorCrossbite === 'Unilateral' ? -2.0 : details.posteriorCrossbite === 'Bilateral' ? -4.0 : 0,
-      dentalMidlineDev: 0
-    } : currentCeph;
-
-    const draftAssessment: Assessment = {
-      id: uuid,
-      patientDetails: details,
-      cephalometricInput: finalCeph,
-      ociResult: currentResult || {
-        totalScore: 0,
-        interpretation: 'Normal',
-        recommendation: '',
-        categoryScores: [],
-        severityMap: {
-          upperIncisors: 'green',
-          lowerIncisors: 'green',
-          softTissue: 'green',
-          occlusion: 'green',
-          transverse: 'green'
-        }
-      },
-      aiSummary: 'Draft in progress...',
-      createdAt: new Date().toISOString()
+    const emptyPatient: PatientDetails = {
+      name: defaultSharedDetails.name,
+      age: defaultSharedDetails.age,
+      gender: defaultSharedDetails.gender,
+      caseNumber: defaultSharedDetails.caseNumber,
+      date: defaultSharedDetails.date,
+      diagnosis: '',
+      clinicalNotes: '',
+      facialProfile: '',
+      smileAnalysis: '',
+      crowdingSpacing: '',
+      dentitionPhase: '',
+      chiefComplaint: '',
+      facialAsymmetry: '',
+      lips: '',
+      molarRelationRight: '',
+      molarRelationLeft: '',
+      canineRelationRight: '',
+      canineRelationLeft: '',
+      overjet: '',
+      overbite: '',
+      anteriorCrossbite: '',
+      posteriorCrossbite: '',
+      functionalAirway: '',
+      tmjStatus: '',
+      habits: [],
+      cvmStage: '',
+      growthStatus: '',
+      analysisMode: 'clinic'
     };
 
-    const exists = savedAssessments.some(a => a.id === uuid);
-    let nextAssessments: Assessment[];
-    if (exists) {
-      nextAssessments = savedAssessments.map(a => a.id === uuid ? draftAssessment : a);
-    } else {
-      nextAssessments = [draftAssessment, ...savedAssessments];
-    }
-    setSavedAssessments(nextAssessments);
+    const clinicWorkspace: ClinicWorkspaceData = existing?.clinicWorkspace ? { ...existing.clinicWorkspace } : {
+      patientDetails: emptyPatient, ociResult: null, aiSummary: '', status: 'Not Started'
+    };
+    const cephWorkspace: CephWorkspaceData = existing?.cephWorkspace ? { ...existing.cephWorkspace } : {
+      cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
+    };
+    const turboWorkspace: TurboWorkspaceData = existing?.turboWorkspace ? { ...existing.turboWorkspace } : {
+      patientDetails: emptyPatient, cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
+    };
 
-    try {
-      await dbSaveAssessment(draftAssessment);
-    } catch (err) {
-      console.log('Failed to background auto-save details draft:', err);
+    if (activeMode === 'clinic') {
+      if (patientVal) {
+        clinicWorkspace.patientDetails = { ...clinicWorkspace.patientDetails, ...patientVal };
+        clinicWorkspace.status = resultVal ? 'Completed' : (patientVal.diagnosis ? 'In Progress' : 'Not Started');
+      }
+      if (resultVal) clinicWorkspace.ociResult = resultVal;
+      if (summaryVal !== undefined) clinicWorkspace.aiSummary = summaryVal;
+      if (advVal !== undefined) clinicWorkspace.advanced = advVal;
+    } else if (activeMode === 'ceph') {
+      if (cephVal) {
+        cephWorkspace.cephalometricInput = { ...cephWorkspace.cephalometricInput, ...cephVal };
+        cephWorkspace.status = resultVal ? 'Completed' : (cephVal.anb !== '' ? 'In Progress' : 'Not Started');
+      }
+      if (resultVal) cephWorkspace.ociResult = resultVal;
+      if (summaryVal !== undefined) cephWorkspace.aiSummary = summaryVal;
+      if (advVal !== undefined) cephWorkspace.advanced = advVal;
+    } else if (activeMode === 'turbo') {
+      if (patientVal) {
+        turboWorkspace.patientDetails = { ...turboWorkspace.patientDetails, ...patientVal };
+      }
+      if (cephVal) {
+        turboWorkspace.cephalometricInput = { ...turboWorkspace.cephalometricInput, ...cephVal };
+      }
+      const hasClinical = patientVal?.diagnosis || turboWorkspace.patientDetails.diagnosis;
+      const hasCeph = cephVal?.anb !== '' || turboWorkspace.cephalometricInput.anb !== '';
+      
+      turboWorkspace.status = resultVal ? 'Completed' : ((hasClinical || hasCeph) ? 'In Progress' : 'Not Started');
+      if (resultVal) turboWorkspace.ociResult = resultVal;
+      if (summaryVal !== undefined) turboWorkspace.aiSummary = summaryVal;
+      if (advVal !== undefined) turboWorkspace.advanced = advVal;
     }
+
+    const updatedAssessment: Assessment = {
+      id: uuid,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      patientDetails: defaultSharedDetails,
+      clinicWorkspace,
+      cephWorkspace,
+      turboWorkspace
+    };
+
+    const nextAssessments = savedAssessments.some(a => a.id === uuid)
+      ? savedAssessments.map(a => a.id === uuid ? updatedAssessment : a)
+      : [updatedAssessment, ...savedAssessments];
+
+    setSavedAssessments(nextAssessments);
+    await dbSaveAssessment(updatedAssessment);
+
+    // Save persistence states
+    await AsyncStorage.setItem('oci_persistence_active_patient', JSON.stringify(patientVal || activePatient));
+    await AsyncStorage.setItem('oci_persistence_active_ceph', JSON.stringify(cephVal || activeCeph));
+    await AsyncStorage.setItem('oci_persistence_active_result', JSON.stringify(resultVal || activeResult));
+  };
+
+  const handleDraftUpdate = async (details: PatientDetails) => {
+    setActivePatient(details);
+    let result: OciResult | null = null;
+    if (activeMode === 'clinic') {
+      result = calculateClinicalOCI(details, weights);
+      setActiveResult(result);
+    }
+    await saveActiveWorkspace(details, null, result);
   };
 
   const handleCephUpdate = async (input: CephalometricInput) => {
     setActiveCeph(input);
-    if (!activePatient) return;
-    const uuid = editingAssessmentId;
-    if (!uuid) return;
-
-    const result = calculateOCI(input, weights);
-    setActiveResult(result);
-
-    const draftAssessment: Assessment = {
-      id: uuid,
-      patientDetails: activePatient,
-      cephalometricInput: input,
-      ociResult: result,
-      aiSummary: 'Draft in progress...',
-      createdAt: new Date().toISOString()
-    };
-
-    const nextAssessments = savedAssessments.map(a => a.id === uuid ? draftAssessment : a);
-    setSavedAssessments(nextAssessments);
-
-    try {
-      await dbSaveAssessment(draftAssessment);
-    } catch (err) {
-      console.log('Failed to background auto-save ceph draft:', err);
+    let result: OciResult | null = null;
+    if (activeMode === 'ceph') {
+      result = calculateOCI(input, weights);
+      setActiveResult(result);
     }
+    await saveActiveWorkspace(null, input, result);
   };
 
   const handlePatientSubmit = async (details: PatientDetails) => {
@@ -449,27 +538,10 @@ export default function App() {
       const result = calculateClinicalOCI(details, weights);
       setActiveResult(result);
       
-      const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-      const finalAssessment: Assessment = {
-        id: uuid,
-        patientDetails: details,
-        cephalometricInput: emptyCeph,
-        ociResult: result,
-        aiSummary: "Synthesizing orthodontic report...",
-        createdAt: new Date().toISOString()
-      };
-      
-      const nextAssessments = savedAssessments.map(a => a.id === uuid ? finalAssessment : a);
-      setSavedAssessments(nextAssessments);
-      
-      try {
-        await dbSaveAssessment(finalAssessment);
-      } catch (err) {
-        console.error("Failed to auto-save clinical assessment:", err);
-      }
-      setEditingAssessmentId(uuid);
+      await saveActiveWorkspace(details, emptyCeph, result, "Synthesizing orthodontic report...");
       setScreen('results');
     } else {
+      await saveActiveWorkspace(details, null, null);
       setScreen('ceph-input');
     }
   };
@@ -477,6 +549,7 @@ export default function App() {
   const handleCephSubmit = async (input: CephalometricInput) => {
     setActiveCeph(input);
     const result = calculateOCI(input, weights);
+    setActiveResult(result);
     
     let derivedDiagnosis: 'Class I' | 'Class II' | 'Class III' = 'Class I';
     if (input.anb !== '') {
@@ -495,91 +568,18 @@ export default function App() {
       setActivePatient(updatedPatient);
     }
 
-    setActiveResult(result);
-
-    if (updatedPatient) {
-      const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-      
-      const newAssessment: Assessment = {
-        id: uuid,
-        patientDetails: updatedPatient,
-        cephalometricInput: input,
-        ociResult: result,
-        aiSummary: "Synthesizing orthodontic report...",
-        createdAt: new Date().toISOString()
-      };
-
-      const exists = savedAssessments.some(a => a.id === uuid);
-      let nextAssessments: Assessment[];
-      if (exists) {
-        nextAssessments = savedAssessments.map(a => a.id === uuid ? newAssessment : a);
-      } else {
-        nextAssessments = [newAssessment, ...savedAssessments];
-      }
-      setSavedAssessments(nextAssessments);
-      
-      try {
-        await dbSaveAssessment(newAssessment);
-      } catch (err) {
-        console.error("Failed to auto-save assessment:", err);
-      }
-      setEditingAssessmentId(uuid);
-    }
-
+    await saveActiveWorkspace(updatedPatient, input, result, "Synthesizing orthodontic report...");
     setScreen('results');
   };
 
   const handleSaveAssessment = async (aiSummaryText: string) => {
-    if (!activePatient || !activeCeph || !activeResult) return;
-
-    if (editingAssessmentId) {
-      // Update existing record
-      const updatedAssessment: Assessment = {
-        id: editingAssessmentId,
-        patientDetails: activePatient,
-        cephalometricInput: activeCeph,
-        ociResult: activeResult,
-        aiSummary: aiSummaryText,
-        createdAt: new Date().toISOString()
-      };
-
-      const nextAssessments = savedAssessments.map(a => a.id === editingAssessmentId ? updatedAssessment : a);
-      setSavedAssessments(nextAssessments);
-      await dbSaveAssessment(updatedAssessment);
-      setEditingAssessmentId(null);
-      
-      // Also automatically update Google Drive backup if connected
-      const connected = await AsyncStorage.getItem('oci_gdrive_connected') === 'true';
-      if (connected) {
-        const payloadStr = await AsyncStorage.getItem('oci_gdrive_backup_payload');
-        if (payloadStr) {
-          const payload = JSON.parse(payloadStr);
-          const updatedCloud = (payload.assessments as Assessment[]).map(a => a.id === editingAssessmentId ? updatedAssessment : a);
-          payload.assessments = updatedCloud;
-          await AsyncStorage.setItem('oci_gdrive_backup_payload', JSON.stringify(payload));
-        }
-      }
-
-      safeAlert("Assessment Updated", "The patient record has been successfully updated in-place.");
-    } else {
-      // Create a robust GUID
-      const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-
-      const newAssessment: Assessment = {
-        id: uuid,
-        patientDetails: activePatient,
-        cephalometricInput: activeCeph,
-        ociResult: activeResult,
-        aiSummary: aiSummaryText,
-        createdAt: new Date().toISOString()
-      };
-
-      const nextAssessments = [newAssessment, ...savedAssessments];
-      setSavedAssessments(nextAssessments);
-      await dbSaveAssessment(newAssessment);
-
-      safeAlert("Assessment Saved", "The patient record has been compiled and saved locally.");
-    }
+    await saveActiveWorkspace(activePatient, activeCeph, activeResult, aiSummaryText);
+    setEditingAssessmentId(null);
+    await AsyncStorage.removeItem('oci_persistence_editing_id');
+    await AsyncStorage.removeItem('oci_persistence_active_patient');
+    await AsyncStorage.removeItem('oci_persistence_active_ceph');
+    await AsyncStorage.removeItem('oci_persistence_active_result');
+    safeAlert("Assessment Saved", "The patient record has been compiled and saved locally.");
   };
 
   const handleDeleteAssessment = async (id: string) => {
@@ -603,7 +603,8 @@ export default function App() {
 
   const handleDuplicateAssessment = async (assessment: Assessment) => {
     const uuid = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-    const duplicatedAssessment: Assessment = {
+    const rawDuplicated = {
+      ...assessment,
       id: uuid,
       patientDetails: {
         ...assessment.patientDetails,
@@ -611,12 +612,9 @@ export default function App() {
         caseNumber: `${assessment.patientDetails.caseNumber}-DUP`,
         date: new Date().toISOString().split('T')[0]
       },
-      cephalometricInput: { ...assessment.cephalometricInput },
-      ociResult: { ...assessment.ociResult },
-      aiSummary: assessment.aiSummary,
-      advanced: assessment.advanced ? { ...assessment.advanced } : undefined,
       createdAt: new Date().toISOString()
     };
+    const duplicatedAssessment = sanitizeAssessment(rawDuplicated);
 
     const nextAssessments = [duplicatedAssessment, ...savedAssessments];
     setSavedAssessments(nextAssessments);
@@ -638,11 +636,81 @@ export default function App() {
     safeAlert("Record Duplicated", `Successfully created copy: ${duplicatedAssessment.patientDetails.name}`);
   };
 
-  const handleEditAssessment = (assessment: Assessment) => {
+  const loadWorkspaceForMode = (assessment: Assessment, mode: 'clinic' | 'ceph' | 'turbo') => {
+    setActiveMode(mode);
     setEditingAssessmentId(assessment.id);
-    setActivePatient(assessment.patientDetails);
-    setActiveCeph(assessment.cephalometricInput);
-    setActiveResult(assessment.ociResult);
+    AsyncStorage.setItem('oci_persistence_editing_id', assessment.id);
+    AsyncStorage.setItem('oci_persistence_mode', mode);
+    
+    const emptyCeph: CephalometricInput = {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    };
+
+    const emptyPatient: PatientDetails = {
+      name: assessment.patientDetails.name,
+      age: assessment.patientDetails.age,
+      gender: assessment.patientDetails.gender,
+      caseNumber: assessment.patientDetails.caseNumber,
+      date: assessment.patientDetails.date,
+      diagnosis: '',
+      clinicalNotes: '',
+      facialProfile: '',
+      smileAnalysis: '',
+      crowdingSpacing: '',
+      dentitionPhase: '',
+      chiefComplaint: '',
+      facialAsymmetry: '',
+      lips: '',
+      molarRelationRight: '',
+      molarRelationLeft: '',
+      canineRelationRight: '',
+      canineRelationLeft: '',
+      overjet: '',
+      overbite: '',
+      anteriorCrossbite: '',
+      posteriorCrossbite: '',
+      functionalAirway: '',
+      tmjStatus: '',
+      habits: [],
+      cvmStage: '',
+      growthStatus: '',
+      analysisMode: 'clinic'
+    };
+
+    let pat = emptyPatient;
+    let ceph = emptyCeph;
+    let res: OciResult | null = null;
+
+    if (mode === 'clinic') {
+      pat = assessment.clinicWorkspace?.patientDetails || emptyPatient;
+      ceph = emptyCeph;
+      res = assessment.clinicWorkspace?.ociResult || null;
+    } else if (mode === 'ceph') {
+      pat = emptyPatient;
+      ceph = assessment.cephWorkspace?.cephalometricInput || emptyCeph;
+      res = assessment.cephWorkspace?.ociResult || null;
+    } else if (mode === 'turbo') {
+      pat = assessment.turboWorkspace?.patientDetails || emptyPatient;
+      ceph = assessment.turboWorkspace?.cephalometricInput || emptyCeph;
+      res = assessment.turboWorkspace?.ociResult || null;
+    }
+
+    setActivePatient(pat);
+    setActiveCeph(ceph);
+    setActiveResult(res);
+
+    AsyncStorage.setItem('oci_persistence_active_patient', JSON.stringify(pat));
+    AsyncStorage.setItem('oci_persistence_active_ceph', JSON.stringify(ceph));
+    AsyncStorage.setItem('oci_persistence_active_result', JSON.stringify(res));
+  };
+
+  const handleEditAssessment = (assessment: Assessment) => {
+    loadWorkspaceForMode(assessment, activeMode);
     setScreen('patient-form');
   };
 
@@ -696,15 +764,51 @@ export default function App() {
 
         {/* 2. Top Navigation Bar (Hidden during Splash or if Not Authenticated) */}
         {screen !== 'splash' && userEmail && (
-          <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3.5 flex-row items-center justify-between`}>
-            <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center`}>
+          <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3 flex-row items-center justify-between`}>
+            <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center space-x-2`}>
               <View>
-                <Text style={tw`font-extrabold text-sm text-white tracking-wide`}>
+                <Text style={tw`font-extrabold text-xs text-white tracking-wide`}>
                   OCI ANALYZER
                 </Text>
-                <Text style={tw`text-[8px] font-bold uppercase text-[#22D3EE] tracking-wider`}>AI DECISION SYSTEM</Text>
+                <Text style={tw`text-[7px] font-bold uppercase text-[#22D3EE] tracking-wider`}>AI DECISION SYSTEM</Text>
               </View>
             </Pressable>
+
+            {/* Mode-specific Unique Workspace Header and Color Accent */}
+            {['patient-form', 'ceph-input', 'results', 'treatment-planning', 'reports'].includes(screen) && (
+              <View style={tw`flex-row items-center space-x-2`}>
+                <View style={[
+                  tw`px-2.5 py-1 rounded-full border flex-row items-center space-x-1.5`,
+                  activeMode === 'clinic' ? tw`bg-emerald-500/10 border-emerald-500/30` :
+                  activeMode === 'ceph' ? tw`bg-blue-500/10 border-blue-500/30` :
+                  tw`bg-amber-500/10 border-amber-500/30`
+                ]}>
+                  <View style={[
+                    tw`w-1.5 h-1.5 rounded-full`,
+                    activeMode === 'clinic' ? tw`bg-emerald-400` :
+                    activeMode === 'ceph' ? tw`bg-blue-400` :
+                    tw`bg-amber-400`
+                  ]} />
+                  <View>
+                    <Text style={[
+                      tw`text-[8px] font-black uppercase tracking-wider font-mono`,
+                      activeMode === 'clinic' ? tw`text-emerald-400` :
+                      activeMode === 'ceph' ? tw`text-blue-400` :
+                      tw`text-amber-400`
+                    ]}>
+                      {activeMode === 'clinic' ? '🩺 CLINIC MODE' :
+                       activeMode === 'ceph' ? '📐 CEPH MODE' :
+                       '🚀 OCI TURBO MODE'}
+                    </Text>
+                    <Text style={tw`text-[6px] text-slate-400 font-mono`}>
+                      {activeMode === 'clinic' ? 'Clinical Intelligence Engine • Chairside Decision Support' :
+                       activeMode === 'ceph' ? 'Cephalometric Intelligence Engine • Quantitative Orthodontic Analysis' :
+                       'Integrated Intelligence Engine • Clinical + Cephalometric Fusion'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -753,16 +857,22 @@ export default function App() {
                   patientDetails={activePatient}
                   cephalometricInput={activeCeph}
                   ociResult={activeResult}
+                  mode={activeMode}
                   onSaveAssessment={handleSaveAssessment}
                   onOpenPdf={(editedSummaryText) => {
-                    setPdfReportAssessment({
+                    const rawPreview = {
                       id: 'preview',
-                      patientDetails: activePatient,
+                      createdAt: new Date().toISOString(),
+                      patientDetails: {
+                        ...activePatient,
+                        analysisMode: activeMode
+                      },
                       cephalometricInput: activeCeph,
                       ociResult: activeResult,
-                      aiSummary: editedSummaryText,
-                      createdAt: new Date().toISOString()
-                    });
+                      aiSummary: editedSummaryText
+                    };
+                    const previewAssessment = sanitizeAssessment(rawPreview);
+                    setPdfReportAssessment(previewAssessment);
                   }}
                   onBack={() => setScreen('ceph-input')}
                 />
@@ -772,9 +882,7 @@ export default function App() {
                 <HistoryList
                   assessments={savedAssessments}
                   onSelect={(item) => {
-                    setActivePatient(item.patientDetails);
-                    setActiveCeph(item.cephalometricInput);
-                    setActiveResult(item.ociResult);
+                    loadWorkspaceForMode(item, activeMode);
                     setScreen('results');
                   }}
                   onDuplicate={handleDuplicateAssessment}

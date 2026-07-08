@@ -59,6 +59,12 @@ export default function HistoryList({
     checkDrive();
   }, [assessments]);
 
+  const getActiveScore = (item: Assessment) => {
+    const mode = item.patientDetails.analysisMode || 'turbo';
+    const workspace = mode === 'clinic' ? item.clinicWorkspace : mode === 'ceph' ? item.cephWorkspace : item.turboWorkspace;
+    return workspace?.ociResult?.totalScore || 0;
+  };
+
   // Filter & Search logic
   const filtered = assessments.filter(a => {
     const nameMatch = a.patientDetails.name.toLowerCase().includes(search.toLowerCase());
@@ -75,7 +81,7 @@ export default function HistoryList({
     } else if (sortBy === 'name') {
       comparison = a.patientDetails.name.localeCompare(b.patientDetails.name);
     } else if (sortBy === 'score') {
-      comparison = a.ociResult.totalScore - b.ociResult.totalScore;
+      comparison = getActiveScore(a) - getActiveScore(b);
     }
 
     return sortOrder === 'desc' ? -comparison : comparison;
@@ -246,7 +252,8 @@ export default function HistoryList({
         <View style={tw`space-y-4`}>
           {sorted.length > 0 ? (
             sorted.map((item) => {
-              const colors = getScoreColorPalette(item.ociResult.totalScore);
+              const activeScore = getActiveScore(item);
+              const colors = getScoreColorPalette(activeScore);
               return (
                 <View 
                   key={item.id} 
@@ -272,11 +279,11 @@ export default function HistoryList({
                         </View>
                       </View>
                     </View>
-
+ 
                     {/* Premium index severity capsule */}
                     <View style={tw`px-3 py-1.5 rounded-xl border flex-row items-center space-x-1.5 ${colors.bg}`}>
                       <View style={[tw`w-1.5 h-1.5 rounded-full`, { backgroundColor: colors.glow }]} />
-                      <Text style={tw`text-[10px] font-black font-mono ${colors.text}`}>OCI: {item.ociResult.totalScore}%</Text>
+                      <Text style={tw`text-[10px] font-black font-mono ${colors.text}`}>OCI: {activeScore}%</Text>
                     </View>
                   </View>
 
@@ -293,6 +300,63 @@ export default function HistoryList({
                     <View style={tw`flex-1 items-center`}>
                       <Text style={tw`text-[8px] text-slate-400 font-mono uppercase tracking-widest`}>Demographic</Text>
                       <Text style={tw`text-xs font-extrabold text-slate-200 mt-0.5`}>{item.patientDetails.age || 'N/A'}y / {item.patientDetails.gender[0] || '?'}</Text>
+                    </View>
+                  </View>
+
+                  {/* Workspace Status Tracking */}
+                  <View style={tw`bg-black/20 p-3 rounded-2xl border border-white/5 space-y-2 mb-3`}>
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <View style={tw`flex-row items-center space-x-1.5`}>
+                        <Text style={tw`text-[10px]`}>🩺</Text>
+                        <Text style={tw`text-[9px] font-semibold text-slate-300`}>Clinical Assessment</Text>
+                      </View>
+                      <View style={[tw`px-2 py-0.5 rounded border`, 
+                        item.clinicWorkspace?.status === 'Completed' ? tw`bg-emerald-500/10 border-emerald-500/30` :
+                        item.clinicWorkspace?.status === 'In Progress' ? tw`bg-amber-500/10 border-amber-500/30` :
+                        tw`bg-slate-500/10 border-slate-500/30`
+                      ]}>
+                        <Text style={[tw`text-[8px] font-black uppercase tracking-wider`,
+                          item.clinicWorkspace?.status === 'Completed' ? tw`text-emerald-400` :
+                          item.clinicWorkspace?.status === 'In Progress' ? tw`text-amber-400` :
+                          tw`text-slate-400`
+                        ]}>{item.clinicWorkspace?.status || 'Not Started'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <View style={tw`flex-row items-center space-x-1.5`}>
+                        <Text style={tw`text-[10px]`}>📐</Text>
+                        <Text style={tw`text-[9px] font-semibold text-slate-300`}>Cephalometric Analysis</Text>
+                      </View>
+                      <View style={[tw`px-2 py-0.5 rounded border`, 
+                        item.cephWorkspace?.status === 'Completed' ? tw`bg-emerald-500/10 border-emerald-500/30` :
+                        item.cephWorkspace?.status === 'In Progress' ? tw`bg-amber-500/10 border-amber-500/30` :
+                        tw`bg-slate-500/10 border-slate-500/30`
+                      ]}>
+                        <Text style={[tw`text-[8px] font-black uppercase tracking-wider`,
+                          item.cephWorkspace?.status === 'Completed' ? tw`text-emerald-400` :
+                          item.cephWorkspace?.status === 'In Progress' ? tw`text-amber-400` :
+                          tw`text-slate-400`
+                        ]}>{item.cephWorkspace?.status || 'Not Started'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={tw`flex-row justify-between items-center`}>
+                      <View style={tw`flex-row items-center space-x-1.5`}>
+                        <Text style={tw`text-[10px]`}>🚀</Text>
+                        <Text style={tw`text-[9px] font-semibold text-slate-300`}>OCI Turbo Analysis</Text>
+                      </View>
+                      <View style={[tw`px-2 py-0.5 rounded border`, 
+                        (item.clinicWorkspace?.status === 'Completed' && item.cephWorkspace?.status === 'Completed') 
+                          ? (item.turboWorkspace?.status === 'Completed' ? tw`bg-emerald-500/10 border-emerald-500/30` : tw`bg-amber-500/10 border-amber-500/30`)
+                          : tw`bg-red-500/10 border-red-500/30`
+                      ]}>
+                        <Text style={[tw`text-[8px] font-black uppercase tracking-wider`,
+                          (item.clinicWorkspace?.status === 'Completed' && item.cephWorkspace?.status === 'Completed')
+                            ? (item.turboWorkspace?.status === 'Completed' ? tw`text-emerald-400` : tw`text-amber-400`)
+                            : tw`text-red-400`
+                        ]}>{(item.clinicWorkspace?.status === 'Completed' && item.cephWorkspace?.status === 'Completed') ? (item.turboWorkspace?.status || 'In Progress') : 'Locked'}</Text>
+                      </View>
                     </View>
                   </View>
 

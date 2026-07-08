@@ -47,13 +47,25 @@ export default function Home({
 }: HomeProps) {
   
   // Real patient state integration with actual database values
+  const getActiveScore = (item: Assessment) => {
+    const mode = item.patientDetails.analysisMode || 'turbo';
+    const workspace = mode === 'clinic' ? item.clinicWorkspace : mode === 'ceph' ? item.cephWorkspace : item.turboWorkspace;
+    return workspace?.ociResult?.totalScore || 0;
+  };
+
+  const getActiveAdvanced = (item: Assessment) => {
+    const mode = item.patientDetails.analysisMode || 'turbo';
+    const workspace = mode === 'clinic' ? item.clinicWorkspace : mode === 'ceph' ? item.cephWorkspace : item.turboWorkspace;
+    return workspace?.advanced || {};
+  };
+
   const totalReports = savedAssessments.length;
   
   // Custom display statistics dynamically derived from active patient records (no fake additions)
   const totalAnalysesDisplay = totalReports.toLocaleString();
   
   const avgOciVal = totalReports > 0 
-    ? Math.round(savedAssessments.reduce((sum, item) => sum + item.ociResult.totalScore, 0) / totalReports)
+    ? Math.round(savedAssessments.reduce((sum, item) => sum + getActiveScore(item), 0) / totalReports)
     : 0;
   const averageOciDisplay = totalReports > 0 ? `${(avgOciVal / 10).toFixed(1)}/10 (${avgOciVal}%)` : '0.0/10 (0%)';
 
@@ -66,7 +78,7 @@ export default function Home({
 
   // Dynamic AI confidence statistics from database
   const validConfidences = savedAssessments
-    .map(a => parseInt(a.advanced?.diagnosticConfidence || '0'))
+    .map(a => parseInt(getActiveAdvanced(a)?.diagnosticConfidence || '0'))
     .filter(v => v > 0);
   const avgConfidenceVal = validConfidences.length > 0
     ? Math.round(validConfidences.reduce((sum, v) => sum + v, 0) / validConfidences.length)
@@ -74,7 +86,7 @@ export default function Home({
   const aiAccuracyDisplay = avgConfidenceVal > 0 ? `${avgConfidenceVal}%` : 'N/A';
 
   const validTxConfidences = savedAssessments
-    .map(a => parseInt(a.advanced?.treatmentConfidence || '0'))
+    .map(a => parseInt(getActiveAdvanced(a)?.treatmentConfidence || '0'))
     .filter(v => v > 0);
   const avgTxConfidenceVal = validTxConfidences.length > 0
     ? Math.round(validTxConfidences.reduce((sum, v) => sum + v, 0) / validTxConfidences.length)
@@ -86,14 +98,14 @@ export default function Home({
   const class3Count = savedAssessments.filter(a => a.patientDetails.diagnosis === 'Class III').length;
   const class1Count = savedAssessments.filter(a => a.patientDetails.diagnosis === 'Class I').length;
 
-  const realSevereCount = savedAssessments.filter(a => a.ociResult.totalScore > 60).length;
+  const realSevereCount = savedAssessments.filter(a => getActiveScore(a) > 60).length;
 
   // 5 OCI severity categories (Minimal, Mild, Moderate, Severe, Extreme)
-  const minimalCount = savedAssessments.filter(a => a.ociResult.totalScore <= 20).length;
-  const mildCount = savedAssessments.filter(a => a.ociResult.totalScore > 20 && a.ociResult.totalScore <= 40).length;
-  const moderateCount = savedAssessments.filter(a => a.ociResult.totalScore > 40 && a.ociResult.totalScore <= 60).length;
-  const severeCount = savedAssessments.filter(a => a.ociResult.totalScore > 60 && a.ociResult.totalScore <= 80).length;
-  const extremeCount = savedAssessments.filter(a => a.ociResult.totalScore > 80).length;
+  const minimalCount = savedAssessments.filter(a => getActiveScore(a) <= 20).length;
+  const mildCount = savedAssessments.filter(a => getActiveScore(a) > 20 && getActiveScore(a) <= 40).length;
+  const moderateCount = savedAssessments.filter(a => getActiveScore(a) > 40 && getActiveScore(a) <= 60).length;
+  const severeCount = savedAssessments.filter(a => getActiveScore(a) > 60 && getActiveScore(a) <= 80).length;
+  const extremeCount = savedAssessments.filter(a => getActiveScore(a) > 80).length;
 
   // Visual percentages for distribution
   const minPct = totalReports > 0 ? Math.round((minimalCount / totalReports) * 100) : 18;
@@ -109,8 +121,8 @@ export default function Home({
 
   // Determine Most Recommended Treatment Approach
   let mostRecommendedTx = 'Growth Modification';
-  const surgicalCount = savedAssessments.filter(a => a.ociResult.totalScore > 60).length;
-  const camoCount = savedAssessments.filter(a => a.ociResult.totalScore > 20 && a.ociResult.totalScore <= 60).length;
+  const surgicalCount = savedAssessments.filter(a => getActiveScore(a) > 60).length;
+  const camoCount = savedAssessments.filter(a => getActiveScore(a) > 20 && getActiveScore(a) <= 60).length;
   if (surgicalCount > camoCount && surgicalCount > minimalCount) mostRecommendedTx = 'Surgical Referral';
   else if (minimalCount > camoCount && minimalCount > surgicalCount) mostRecommendedTx = 'Mild Alignment';
 
@@ -147,85 +159,79 @@ export default function Home({
           <Text style={tw`text-xs font-extrabold text-teal-400 uppercase tracking-widest font-mono`}>Select Intelligent Analysis Mode</Text>
           
           {/* Card 1: Clinic Mode */}
-          <Pressable
-            onPress={() => onNewAssessment('clinic')}
-            style={({ pressed }) => [
-              tw`bg-gradient-to-br from-[#0A1A2E]/90 to-[#050B16]/95 border border-white/5 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
-              pressed ? tw`opacity-90 scale-[0.99]` : null
-            ]}
-          >
+          <View style={tw`bg-gradient-to-br from-[#0A1A2E]/90 to-[#050B16]/95 border border-emerald-500/20 rounded-3xl p-6 shadow-2xl relative overflow-hidden min-h-[190px] justify-between`}>
             <View style={tw`absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl`} />
-            <View style={tw`flex-1 pr-4`}>
+            <View style={tw`space-y-1.5`}>
               <View style={tw`flex-row items-center space-x-2`}>
-                <View style={tw`bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30`}>
-                  <Text style={tw`text-emerald-400 text-[8px] font-black uppercase tracking-wider`}>Clinic Mode</Text>
+                <View style={tw`bg-emerald-500/15 px-2.5 py-0.5 rounded border border-emerald-500/30`}>
+                  <Text style={tw`text-emerald-400 text-[8px] font-black uppercase tracking-wider`}>🩺 CLINIC MODE</Text>
                 </View>
-                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 85%</Text>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Rapid Chairside Clinical Intelligence</Text>
               </View>
-              <Text style={tw`text-base font-black text-white mt-1.5`}>Rapid Chairside Clinical Intelligence</Text>
-              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
-                Generate a complete orthodontic diagnosis and treatment plan using structured clinical findings only.
+              <Text style={tw`text-[11px] text-slate-400 mt-2 leading-relaxed`}>
+                Generate complete diagnosis and treatment planning using only clinical examination.
               </Text>
             </View>
-            <View style={tw`w-12 h-12 bg-emerald-500/10 rounded-2xl items-center justify-center border border-emerald-500/20`}>
-              <Activity size={20} color="#10B981" />
-            </View>
-          </Pressable>
+            <Pressable
+              onPress={() => onNewAssessment('clinic')}
+              style={({ pressed }) => [
+                tw`bg-emerald-600/90 py-2.5 rounded-xl items-center justify-center mt-3 border border-emerald-500/30 shadow-md`,
+                pressed ? tw`opacity-80 scale-[0.98]` : null
+              ]}
+            >
+              <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>ENTER CLINIC MODE</Text>
+            </Pressable>
+          </View>
 
           {/* Card 2: Ceph Mode */}
-          <Pressable
-            onPress={() => onNewAssessment('ceph')}
-            style={({ pressed }) => [
-              tw`bg-gradient-to-br from-[#120F2B]/90 to-[#060512]/95 border border-white/5 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
-              pressed ? tw`opacity-90 scale-[0.99]` : null
-            ]}
-          >
-            <View style={tw`absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-xl`} />
-            <View style={tw`flex-1 pr-4`}>
+          <View style={tw`bg-gradient-to-br from-[#120F2B]/90 to-[#060512]/95 border border-blue-500/20 rounded-3xl p-6 shadow-2xl relative overflow-hidden min-h-[190px] justify-between`}>
+            <View style={tw`absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl`} />
+            <View style={tw`space-y-1.5`}>
               <View style={tw`flex-row items-center space-x-2`}>
-                <View style={tw`bg-violet-500/15 px-2 py-0.5 rounded border border-violet-500/30`}>
-                  <Text style={tw`text-violet-400 text-[8px] font-black uppercase tracking-wider`}>Ceph Mode</Text>
+                <View style={tw`bg-blue-500/15 px-2.5 py-0.5 rounded border border-blue-500/30`}>
+                  <Text style={tw`text-blue-400 text-[8px] font-black uppercase tracking-wider`}>📐 CEPH MODE</Text>
                 </View>
-                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 90%</Text>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Comprehensive Cephalometric Intelligence</Text>
               </View>
-              <Text style={tw`text-base font-black text-white mt-1.5`}>Comprehensive Cephalometric Intelligence</Text>
-              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
-                Generate a complete orthodontic diagnosis and treatment plan using cephalometric measurements.
+              <Text style={tw`text-[11px] text-slate-400 mt-2 leading-relaxed`}>
+                Generate complete diagnosis and treatment planning using cephalometric measurements.
               </Text>
             </View>
-            <View style={tw`w-12 h-12 bg-violet-500/10 rounded-2xl items-center justify-center border border-violet-500/20`}>
-              <Layers size={20} color="#8B5CF6" />
-            </View>
-          </Pressable>
+            <Pressable
+              onPress={() => onNewAssessment('ceph')}
+              style={({ pressed }) => [
+                tw`bg-blue-600/90 py-2.5 rounded-xl items-center justify-center mt-3 border border-blue-500/30 shadow-md`,
+                pressed ? tw`opacity-80 scale-[0.98]` : null
+              ]}
+            >
+              <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>ENTER CEPH MODE</Text>
+            </Pressable>
+          </View>
 
           {/* Card 3: OCI Turbo Mode */}
-          <Pressable
-            onPress={() => onNewAssessment('turbo')}
-            style={({ pressed }) => [
-              tw`bg-gradient-to-br from-[#1A122C]/90 to-[#07050E]/95 border border-cyan-500/20 rounded-3xl p-5 shadow-2xl relative overflow-hidden flex-row items-center justify-between`,
-              pressed ? tw`opacity-90 scale-[0.99]` : null
-            ]}
-          >
-            <View style={tw`absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl`} />
-            <View style={tw`flex-1 pr-4`}>
+          <View style={tw`bg-gradient-to-br from-[#1A122C]/90 to-[#07050E]/95 border border-amber-500/20 rounded-3xl p-6 shadow-2xl relative overflow-hidden min-h-[190px] justify-between`}>
+            <View style={tw`absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl`} />
+            <View style={tw`space-y-1.5`}>
               <View style={tw`flex-row items-center space-x-2`}>
-                <View style={tw`bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/40`}>
-                  <Text style={tw`text-cyan-300 text-[8px] font-black uppercase tracking-wider`}>OCI Turbo Mode</Text>
+                <View style={tw`bg-amber-500/15 px-2.5 py-0.5 rounded border border-amber-500/30`}>
+                  <Text style={tw`text-amber-400 text-[8px] font-black uppercase tracking-wider`}>🚀 OCI TURBO MODE</Text>
                 </View>
-                <View style={tw`bg-amber-500/20 px-1.5 py-0.5 rounded`}>
-                  <Text style={tw`text-amber-400 text-[7px] font-black`}>RECOMMENDED</Text>
-                </View>
-                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Confidence: 98%</Text>
+                <Text style={tw`text-[10px] text-slate-400 font-mono`}>Integrated OCI Intelligence</Text>
               </View>
-              <Text style={tw`text-base font-black text-white mt-1.5`}>Integrated Clinical + Cephalometric Intelligence</Text>
-              <Text style={tw`text-[11px] text-slate-400 mt-1 leading-relaxed`}>
-                Combine clinical findings and cephalometric analysis to produce the highest-confidence diagnosis, treatment plan, and comprehensive OCI report.
+              <Text style={tw`text-[11px] text-slate-400 mt-2 leading-relaxed`}>
+                Generate the highest confidence diagnosis by combining Clinical + Cephalometric findings.
               </Text>
             </View>
-            <View style={tw`w-12 h-12 bg-cyan-500/10 rounded-2xl items-center justify-center border border-cyan-500/20`}>
-              <Brain size={20} color="#22D3EE" />
-            </View>
-          </Pressable>
+            <Pressable
+              onPress={() => onNewAssessment('turbo')}
+              style={({ pressed }) => [
+                tw`bg-amber-600/90 py-2.5 rounded-xl items-center justify-center mt-3 border border-amber-500/30 shadow-md`,
+                pressed ? tw`opacity-80 scale-[0.98]` : null
+              ]}
+            >
+              <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>ENTER TURBO MODE</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* ====================================================
@@ -439,7 +445,7 @@ export default function Home({
                     </View>
                   </View>
                   <View style={tw`items-end`}>
-                    <Text style={tw`text-sm font-black text-teal-400 font-mono`}>{item.ociResult.totalScore}%</Text>
+                    <Text style={tw`text-sm font-black text-teal-400 font-mono`}>{getActiveScore(item)}%</Text>
                     <Text style={tw`text-[7px] text-slate-500 font-mono font-bold uppercase`}>OCI SCORE</Text>
                   </View>
                 </View>

@@ -1,5 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Assessment, OciWeights, UserProfile, UserRole, UserPermission } from '../types';
+import { 
+  Assessment, 
+  OciWeights, 
+  UserProfile, 
+  UserRole, 
+  UserPermission, 
+  PatientDetails, 
+  CephalometricInput, 
+  OciResult, 
+  ClinicWorkspaceData, 
+  CephWorkspaceData, 
+  TurboWorkspaceData 
+} from '../types';
 import { sha256 } from './crypto';
 
 export interface OciSettings {
@@ -342,15 +354,112 @@ export async function dbDeleteUserProfile(email: string): Promise<boolean> {
 
 
 // ASSESSMENTS (PATIENT DISCOVERY RECORDS) - MULTI-USER SECURE SANDBOX
+export function sanitizeAssessment(assessment: any): Assessment {
+  if (!assessment) return {} as any;
+  const sharedDetails: PatientDetails = {
+    name: assessment.patientDetails?.name || '',
+    age: assessment.patientDetails?.age || '',
+    gender: assessment.patientDetails?.gender || '',
+    caseNumber: assessment.patientDetails?.caseNumber || '',
+    date: assessment.patientDetails?.date || new Date().toISOString(),
+    diagnosis: assessment.patientDetails?.diagnosis || '',
+    clinicalNotes: assessment.patientDetails?.clinicalNotes || '',
+    analysisMode: assessment.patientDetails?.analysisMode || 'turbo'
+  };
+
+  const emptyCeph: CephalometricInput = {
+    anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+    u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+    interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+    nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+    crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+    posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+  };
+
+  const emptyPatient: PatientDetails = {
+    name: sharedDetails.name,
+    age: sharedDetails.age,
+    gender: sharedDetails.gender,
+    caseNumber: sharedDetails.caseNumber,
+    date: sharedDetails.date,
+    diagnosis: '',
+    clinicalNotes: '',
+    facialProfile: '',
+    smileAnalysis: '',
+    crowdingSpacing: '',
+    dentitionPhase: '',
+    chiefComplaint: '',
+    facialAsymmetry: '',
+    lips: '',
+    molarRelationRight: '',
+    molarRelationLeft: '',
+    canineRelationRight: '',
+    canineRelationLeft: '',
+    overjet: '',
+    overbite: '',
+    anteriorCrossbite: '',
+    posteriorCrossbite: '',
+    functionalAirway: '',
+    tmjStatus: '',
+    habits: [],
+    cvmStage: '',
+    growthStatus: '',
+    analysisMode: 'clinic'
+  };
+
+  const clinicWorkspace: ClinicWorkspaceData = assessment.clinicWorkspace || {
+    patientDetails: assessment.patientDetails?.analysisMode === 'clinic' 
+      ? { ...assessment.patientDetails, ...sharedDetails }
+      : { ...emptyPatient, ...sharedDetails },
+    ociResult: assessment.patientDetails?.analysisMode === 'clinic' ? (assessment.ociResult || null) : null,
+    aiSummary: assessment.patientDetails?.analysisMode === 'clinic' ? (assessment.aiSummary || '') : '',
+    advanced: assessment.patientDetails?.analysisMode === 'clinic' ? assessment.advanced : undefined,
+    status: assessment.patientDetails?.analysisMode === 'clinic' ? 'Completed' : 'Not Started'
+  };
+
+  const cephWorkspace: CephWorkspaceData = assessment.cephWorkspace || {
+    cephalometricInput: assessment.patientDetails?.analysisMode === 'ceph' 
+      ? { ...emptyCeph, ...assessment.cephalometricInput }
+      : { ...emptyCeph },
+    ociResult: assessment.patientDetails?.analysisMode === 'ceph' ? (assessment.ociResult || null) : null,
+    aiSummary: assessment.patientDetails?.analysisMode === 'ceph' ? (assessment.aiSummary || '') : '',
+    advanced: assessment.patientDetails?.analysisMode === 'ceph' ? assessment.advanced : undefined,
+    status: assessment.patientDetails?.analysisMode === 'ceph' ? 'Completed' : 'Not Started'
+  };
+
+  const turboWorkspace: TurboWorkspaceData = assessment.turboWorkspace || {
+    patientDetails: assessment.patientDetails?.analysisMode === 'turbo' 
+      ? { ...assessment.patientDetails, ...sharedDetails }
+      : { ...emptyPatient, ...sharedDetails },
+    cephalometricInput: assessment.patientDetails?.analysisMode === 'turbo' 
+      ? { ...emptyCeph, ...assessment.cephalometricInput }
+      : { ...emptyCeph },
+    ociResult: assessment.patientDetails?.analysisMode === 'turbo' ? (assessment.ociResult || null) : null,
+    aiSummary: assessment.patientDetails?.analysisMode === 'turbo' ? (assessment.aiSummary || '') : '',
+    advanced: assessment.patientDetails?.analysisMode === 'turbo' ? assessment.advanced : undefined,
+    status: assessment.patientDetails?.analysisMode === 'turbo' ? 'Completed' : 'Not Started'
+  };
+
+  return {
+    id: assessment.id,
+    createdAt: assessment.createdAt || new Date().toISOString(),
+    patientDetails: sharedDetails,
+    clinicWorkspace,
+    cephWorkspace,
+    turboWorkspace
+  };
+}
+
 export async function dbSaveAssessment(assessment: Assessment): Promise<void> {
   try {
     const key = getAssessmentsKey();
     const assessments = await dbGetAssessments();
-    const index = assessments.findIndex((a) => a.id === assessment.id);
+    const sanitized = sanitizeAssessment(assessment);
+    const index = assessments.findIndex((a) => a.id === sanitized.id);
     if (index !== -1) {
-      assessments[index] = assessment;
+      assessments[index] = sanitized;
     } else {
-      assessments.push(assessment);
+      assessments.push(sanitized);
     }
     await AsyncStorage.setItem(key, JSON.stringify(assessments));
   } catch (error) {
@@ -364,10 +473,10 @@ export async function dbGetAssessments(): Promise<Assessment[]> {
     const key = getAssessmentsKey();
     const data = await AsyncStorage.getItem(key);
     if (!data) return [];
-    const assessments = JSON.parse(data) as Assessment[];
+    const assessments = JSON.parse(data) as any[];
     // Sort assessments by createdAt descending
-    assessments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    return assessments;
+    assessments.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
+    return assessments.map(sanitizeAssessment);
   } catch (error) {
     console.error('Error getting assessments from AsyncStorage:', error);
     return [];
@@ -461,8 +570,8 @@ export async function dbImportBackup(backupJsonStr: string): Promise<boolean> {
       const mergedMap = new Map<string, Assessment>();
       currentAssessments.forEach(item => mergedMap.set(item.id, item));
       newAssessments.forEach(item => {
-        if (item.id && item.patientDetails && item.ociResult) {
-          mergedMap.set(item.id, item);
+        if (item.id && item.patientDetails) {
+          mergedMap.set(item.id, sanitizeAssessment(item));
         }
       });
       

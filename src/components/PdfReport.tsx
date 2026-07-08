@@ -43,7 +43,30 @@ interface PdfReportProps {
  * Resolves advanced clinical intelligence fields for the given assessment.
  * Supports pre-populated seeded gold-standard cases, and calculates fallback options dynamically for new manually created patients.
  */
-export function getReportData(assessment: Assessment) {
+export function getReportData(propAssessment: Assessment) {
+  const activeMode = propAssessment.patientDetails.analysisMode || 'turbo';
+  const activeWorkspace = activeMode === 'clinic' ? propAssessment.clinicWorkspace : activeMode === 'ceph' ? propAssessment.cephWorkspace : propAssessment.turboWorkspace;
+  const assessment: any = {
+    ...propAssessment,
+    cephalometricInput: (activeWorkspace as any)?.cephalometricInput || {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    },
+    ociResult: (activeWorkspace as any)?.ociResult || {
+      totalScore: 0,
+      interpretation: 'Normal',
+      recommendation: '',
+      categoryScores: [],
+      verticalPattern: 'Normodivergent',
+      compensationLevel: 'Normal',
+      severityMap: { upperIncisors: 'green', lowerIncisors: 'green', softTissue: 'green', occlusion: 'green', transverse: 'green' }
+    },
+    advanced: (activeWorkspace as any)?.advanced || {}
+  };
   const adv = assessment.advanced || {};
   let rawData: any;
   
@@ -274,12 +297,37 @@ export function ReactDonutChart({ segments, size = 100, strokeWidth = 10 }: { se
   );
 }
 
-export default function PdfReport({ assessment, onClose }: PdfReportProps) {
+export default function PdfReport({ assessment: propAssessment, onClose }: PdfReportProps) {
   const [clinicName, setClinicName] = useState('Central Orthodontic Clinic');
   const [doctorName, setDoctorName] = useState('Dr. Salman, MDS (Orthodontics)');
   const [sigText, setSigText] = useState('Dr. Salman');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState('');
+
+  const activeMode = propAssessment.patientDetails.analysisMode || 'turbo';
+  const activeWorkspace = activeMode === 'clinic' ? propAssessment.clinicWorkspace : activeMode === 'ceph' ? propAssessment.cephWorkspace : propAssessment.turboWorkspace;
+
+  const assessment: any = {
+    ...propAssessment,
+    cephalometricInput: (activeWorkspace as any)?.cephalometricInput || {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    },
+    ociResult: (activeWorkspace as any)?.ociResult || {
+      totalScore: 0,
+      interpretation: 'Normal',
+      recommendation: '',
+      categoryScores: [],
+      verticalPattern: 'Normodivergent',
+      compensationLevel: 'Normal',
+      severityMap: { upperIncisors: 'green', lowerIncisors: 'green', softTissue: 'green', occlusion: 'green', transverse: 'green' }
+    },
+    aiSummary: (activeWorkspace as any)?.aiSummary || 'No summary generated yet.'
+  };
 
   const report = getReportData(assessment);
   const total = assessment.ociResult.totalScore;
@@ -407,9 +455,13 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
   // Build AI summaries & interpretations
   const skeletalSummary = `Skeletal compensation is clinically classified as ${severityLabel.toLowerCase()}. The dominant loading is driven by the ${dominantSkeletalComponent} (${dominantSkeletalPct}%), reflecting active sagittal base masking. In response, dentoalveolar structures are adapting to maintain aesthetic facial coordinates.`;
 
-  const dentalSummary = `Comprehensive dental analysis indicates major compensatory angulation. Lower incisor inclination (IMPA=${impaVal}°, contributing ${lowerIncisorPct}%) and upper incisors (U1-SN=${u1SnVal}°, contributing ${upperIncisorPct}%) exhibit significant reciprocal tipping. This high-torque masking conceals the skeletal jaw discrepancy but severely limits traditional orthodontic alignment without decompensation or therapeutic extractions.`;
+  const dentalSummary = isClinicMode 
+    ? `Comprehensive clinical dental analysis indicates compensatory sagittal occlusion. Lower incisor position and upper incisors exhibit clinical tipping in response to skeletal disharmony. These features maintain profile coordinates but limit traditional orthodontic alignment without clinical decompensation or therapeutic extractions.`
+    : `Comprehensive dental analysis indicates major compensatory angulation. Lower incisor inclination (IMPA=${impaVal}°, contributing ${lowerIncisorPct}%) and upper incisors (U1-SN=${u1SnVal}°, contributing ${upperIncisorPct}%) exhibit significant reciprocal tipping. This high-torque masking conceals the skeletal jaw discrepancy but severely limits traditional orthodontic alignment without decompensation or therapeutic extractions.`;
 
-  const softTissueSummary = `The soft tissue envelope is heavily influenced by underlying dental compensations, with ${profileVal} facial profile coordinates. The lips (Upper: ${upperLipELineVal}mm, Lower: ${lowerLipELineVal}mm, contributing ${upperLipPct + lowerLipPct}%) show active tension to overcome skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} disharmony. This masks bone discrepancies but compromises long-term lip competence and chin-neck esthetics.`;
+  const softTissueSummary = isClinicMode
+    ? `The soft tissue envelope is influenced by underlying dental positions. The lips show active muscle tension to maintain lip competence. This masks skeletal imbalances but compromises long-term soft tissue esthetics and profile harmony.`
+    : `The soft tissue envelope is heavily influenced by underlying dental compensations, with ${profileVal} facial profile coordinates. The lips (Upper: ${upperLipELineVal}mm, Lower: ${lowerLipELineVal}mm, contributing ${upperLipPct + lowerLipPct}%) show active tension to overcome skeletal Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} disharmony. This masks bone discrepancies but compromises long-term lip competence and chin-neck esthetics.`;
 
   // Segment declarations for both React JSX and PDF templates
   const overallSegments: DonutSegment[] = [
@@ -774,12 +826,8 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
 
           <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
             <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 2 of 6</p>
-            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
-          </div>
-        </div>
-
-        <!-- PAGE 3: CEPHALOMETRIC OR CLINICAL ANALYSIS TABLE -->
-        ${assessment.patientDetails.analysisMode === 'clinic' ? `
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>        <!-- PAGE 3: CEPHALOMETRIC OR CLINICAL ANALYSIS TABLE -->
+        ${(assessment.patientDetails.analysisMode === 'clinic' || assessment.patientDetails.analysisMode === 'turbo') ? `
         <div class="pdf-page">
           <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
           <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
@@ -787,7 +835,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
               <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Clinical Examination Matrix & Findings</h3>
-              <span class="text-[9px] text-slate-400 font-mono">Page 3 of 6</span>
+              <span class="text-[9px] text-slate-400 font-mono">Page 3A of 6</span>
             </div>
 
             <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
@@ -861,11 +909,13 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           </div>
 
           <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3 of 6</p>
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3A</p>
             <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
           </div>
         </div>
-        ` : `
+        ` : ''}
+
+        ${(assessment.patientDetails.analysisMode === 'ceph' || assessment.patientDetails.analysisMode === 'turbo') ? `
         <div class="pdf-page">
           <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900"></div>
           <div class="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-teal-500/30 rounded-tr-3xl"></div>
@@ -873,7 +923,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
               <h3 class="text-lg font-black text-slate-900 heading-font uppercase">Cephalometric Metric Profile & Deviations</h3>
-              <span class="text-[9px] text-slate-400 font-mono">Page 3 of 6</span>
+              <span class="text-[9px] text-slate-400 font-mono">Page 3B of 6</span>
             </div>
 
             <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
@@ -892,18 +942,18 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
-                  \${tableRowsHtml}
+                  ${tableRowsHtml}
                 </tbody>
               </table>
             </div>
           </div>
 
           <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px;">
-            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3 of 6</p>
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 3.0 • Page 3B</p>
             <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
           </div>
         </div>
-        `}
+        ` : ''}
 
         <!-- PAGE 4: MULTIDIMENSIONAL SUB-LOAD GRAPHICS -->
         <div class="pdf-page">
@@ -1049,8 +1099,8 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
               <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1.5">
                 <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Treatment Objectives</h4>
                 <div class="space-y-1 pl-1 text-[10px] leading-relaxed text-slate-700">
-                  <p><strong>• Skeletal:</strong> ${anbVal > 4.5 ? `Promote orthopedic redirection of the maxilla and/or encourage mandibular growth advancement to resolve the Class II discrepancy (ANB: ${anbVal}°).` : anbVal < 0.5 ? `Decompensate the arch to prepare for orthognathic surgery or restrict mandibular projection (ANB: ${anbVal}°).` : `Maintain the existing skeletal sagittal relationship (ANB: ${anbVal}°).`}</p>
-                  <p><strong>• Dental:</strong> ${impaVal > 95 ? `Retract and upright the proclined mandibular incisors (IMPA: ${impaVal}°) to restore proper labiolingual inclination.` : impaVal < 85 ? `Procline and decompensate the retroclined mandibular incisors (IMPA: ${impaVal}°).` : `Maintain correct lower incisor sagittal inclination (IMPA: ${impaVal}°).`}</p>
+                  <p><strong>• Skeletal:</strong> ${isClinicMode ? `Promote growth modification or orthognathic redirection as clinically indicated for Class ${anbVal > 4.5 ? 'II' : anbVal < 0 ? 'III' : 'I'} sagittal discrepancy.` : (anbVal > 4.5 ? `Promote orthopedic redirection of the maxilla and/or encourage mandibular growth advancement to resolve the Class II discrepancy (ANB: ${anbVal}°).` : anbVal < 0.5 ? `Decompensate the arch to prepare for orthognathic surgery or restrict mandibular projection (ANB: ${anbVal}°).` : `Maintain the existing skeletal sagittal relationship (ANB: ${anbVal}°).`)}</p>
+                  <p><strong>• Dental:</strong> ${isClinicMode ? `Align and upright incisors relative to supporting alveolar bone to establish proper axial coordinates.` : (impaVal > 95 ? `Retract and upright the proclined mandibular incisors (IMPA: ${impaVal}°) to restore proper labiolingual inclination.` : impaVal < 85 ? `Procline and decompensate the retroclined mandibular incisors (IMPA: ${impaVal}°).` : `Maintain correct lower incisor sagittal inclination (IMPA: ${impaVal}°).`)}</p>
                   <p><strong>• Facial & Occlusal:</strong> Coordinate arches, lip profile support, and establish Class I molar/canine intercuspation (OJ: ${overjetVal}mm, OB: ${overbiteVal}mm).</p>
                 </div>
               </div>
@@ -1060,7 +1110,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
                 <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Treatment Sequence</h4>
                 <div class="space-y-1 pl-1 text-[10px] leading-relaxed text-slate-700">
                   <p><strong>1. Leveling & Alignment:</strong> Resolve initial crowding and rotation utilizing light forces (.014 to .018 NiTi wires).</p>
-                  <p><strong>2. Sagittal & Torque Coordination:</strong> Establish buccal coordination using Class ${anbVal > 4.5 ? 'II' : 'I'} elastics and coordinate arch widths.</p>
+                  <p><strong>2. Sagittal & Torque Coordination:</strong> Establish buccal coordination using sagittal coordination elastics and coordinate arch widths.</p>
                   <p><strong>3. Finishing & Retention:</strong> artistic detailing bends, establish ideal overbite, and place fixed/removable retainers.</p>
                 </div>
               </div>
@@ -1086,7 +1136,7 @@ export default function PdfReport({ assessment, onClose }: PdfReportProps) {
               <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-150 space-y-1.5">
                 <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest font-mono">Biomechanical Vectors</h4>
                 <div class="grid grid-cols-2 gap-3 text-[10px] pl-1 text-slate-700">
-                  <p><strong>• Torque control:</strong> Active utility arches or high-torque bracket values (current IMPA: ${impaVal}°).</p>
+                  <p><strong>• Torque control:</strong> Active utility arches or torque prescription bracket values ${isClinicMode ? '' : `(current IMPA: ${impaVal}°)`}.</p>
                   <p><strong>• Vertical control:</strong> Intrusion arches to resolve deep bite of ${overbiteVal}mm.</p>
                   <p><strong>• Expansion:</strong> Slowly expand arches to resolve crowding without buccal plate compromise.</p>
                   <p><strong>• Sagittal elastics:</strong> Light intermaxillary elastics for active sagittal coordination.</p>

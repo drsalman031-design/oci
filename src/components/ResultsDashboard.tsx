@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   Award, 
   Sparkles, 
@@ -27,6 +28,7 @@ interface ResultsDashboardProps {
   onSaveAssessment: (aiSummary: string) => void;
   onOpenPdf: (aiSummary: string) => void;
   onBack: () => void;
+  mode?: 'clinic' | 'ceph' | 'turbo';
 }
 
 export default function ResultsDashboard({
@@ -35,7 +37,8 @@ export default function ResultsDashboard({
   ociResult,
   onSaveAssessment,
   onOpenPdf,
-  onBack
+  onBack,
+  mode = 'turbo'
 }: ResultsDashboardProps) {
   const [aiSummary, setAiSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
@@ -45,6 +48,38 @@ export default function ResultsDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [activePillarTab, setActivePillarTab] = useState<'skeletal' | 'dental' | 'softTissue'>('skeletal');
   const [activePlanTab, setActivePlanTab] = useState<'orthopedic' | 'camouflage' | 'surgical' | 'retention'>('camouflage');
+
+  // Load persisted tabs on mount
+  useEffect(() => {
+    async function loadTabs() {
+      try {
+        const pillar = await AsyncStorage.getItem('oci_rd_active_pillar_tab');
+        const plan = await AsyncStorage.getItem('oci_rd_active_plan_tab');
+        if (pillar) setActivePillarTab(pillar as any);
+        if (plan) setActivePlanTab(plan as any);
+      } catch (err) {
+        console.log('Error loading rd tabs:', err);
+      }
+    }
+    loadTabs();
+  }, []);
+
+  // Save tabs on change
+  useEffect(() => {
+    try {
+      AsyncStorage.setItem('oci_rd_active_pillar_tab', activePillarTab);
+    } catch (err) {
+      console.log('Error saving rd active pillar tab:', err);
+    }
+  }, [activePillarTab]);
+
+  useEffect(() => {
+    try {
+      AsyncStorage.setItem('oci_rd_active_plan_tab', activePlanTab);
+    } catch (err) {
+      console.log('Error saving rd active plan tab:', err);
+    }
+  }, [activePlanTab]);
 
   // Fetch AI Clinical Summary on mount (fallback to local synthesis) and auto-save it
   useEffect(() => {
@@ -133,43 +168,47 @@ export default function ResultsDashboard({
             <Text style={tw`text-xs text-slate-400`}>Review instant computational compensations & diagnostic limits</Text>
           </View>
           
-          <View style={tw`flex-row gap-2.5 w-full`}>
-            <Pressable
-              onPress={onBack}
-              style={({ pressed }) => [
-                tw`flex-1 py-3.5 bg-white/5 border border-white/10 rounded-2xl items-center`,
-                pressed ? tw`bg-white/10` : null
-              ]}
-            >
-              <Text style={tw`text-xs font-black text-slate-300 uppercase tracking-widest`}>Modify Input</Text>
-            </Pressable>
+          <View style={tw`space-y-2.5 w-full`}>
+            <View style={tw`flex-row gap-2.5 w-full`}>
+              <Pressable
+                onPress={onBack}
+                style={({ pressed }) => [
+                  tw`flex-1 py-3.5 bg-white/5 border border-white/10 rounded-2xl items-center`,
+                  pressed ? tw`bg-white/10` : null
+                ]}
+              >
+                <Text style={tw`text-xs font-black text-slate-300 uppercase tracking-widest`}>Modify Input</Text>
+              </Pressable>
+
+              <Pressable
+                disabled={true}
+                style={tw`flex-row items-center justify-center flex-1 py-3.5 ${isSaving ? 'bg-amber-600/10 border-amber-500/20' : 'bg-emerald-600/10 border-emerald-500/20'} rounded-2xl border`}
+              >
+                {isSaving ? (
+                  <>
+                    <ActivityIndicator size="small" color="#F59E0B" style={tw`mr-1.5`} />
+                    <Text style={tw`text-xs font-black text-amber-400 uppercase tracking-widest`}>Saving...</Text>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={13} color="#10B981" style={tw`mr-1.5`} />
+                    <Text style={tw`text-xs font-black text-emerald-400 uppercase tracking-widest`}>Auto-Saved</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
 
             <Pressable
               onPress={() => onOpenPdf(editedSummary)}
               style={({ pressed }) => [
-                tw`flex-row items-center justify-center flex-1 py-3.5 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl`,
+                tw`flex-row items-center justify-center w-full py-4 bg-cyan-500/10 border border-cyan-500/25 rounded-2xl shadow-md`,
                 pressed ? tw`bg-[#22D3EE]/20` : null
               ]}
             >
-              <FileText size={13} color="#22D3EE" style={tw`mr-1.5`} />
-              <Text style={tw`text-xs font-black text-cyan-400 uppercase tracking-widest`}>PDF Report</Text>
-            </Pressable>
-
-            <Pressable
-              disabled={true}
-              style={tw`flex-row items-center justify-center flex-1 py-3.5 ${isSaving ? 'bg-amber-600/10 border-amber-500/20' : 'bg-emerald-600/10 border-emerald-500/20'} rounded-2xl border`}
-            >
-              {isSaving ? (
-                <>
-                  <ActivityIndicator size="small" color="#F59E0B" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-black text-amber-400 uppercase tracking-widest`}>Saving...</Text>
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={13} color="#10B981" style={tw`mr-1.5`} />
-                  <Text style={tw`text-xs font-black text-emerald-400 uppercase tracking-widest`}>Auto-Saved</Text>
-                </>
-              )}
+              <FileText size={14} color="#22D3EE" style={tw`mr-2`} />
+              <Text style={tw`text-xs font-black text-cyan-400 uppercase tracking-widest`}>
+                {mode === 'clinic' ? 'Export Clinical Report (PDF)' : mode === 'ceph' ? 'Export Cephalometric Report (PDF)' : 'Export OCI Turbo Report (PDF)'}
+              </Text>
             </Pressable>
           </View>
         </View>

@@ -121,7 +121,8 @@ export class ClinicalNarrativeQA {
       const forbiddenKeywords = [
         'ANB', 'SNA', 'SNB', 'Wits', 'IMPA', 'FMA', 'U1-SN', 'SN-MP',
         'Cephalogram', 'Cephalometric', 'Radiograph', 'Radiographic',
-        'CBCT', 'OPG', 'Measurement', 'Angular Measurement', 'Linear Measurement'
+        'CBCT', 'OPG', 'Measurement', 'Angular Measurement', 'Linear Measurement',
+        'Dental Torque', 'Arch Allocation', 'Cephalometric Compensation'
       ];
       
       const lines = cleaned.split('\n');
@@ -143,9 +144,12 @@ export class ClinicalNarrativeQA {
         cleanLine = cleanLine.replace(/\bOPG\b/gi, 'clinical assessment');
         cleanLine = cleanLine.replace(/\b(angular\s+)?measurement(s)?\b/gi, 'clinical assessment');
         cleanLine = cleanLine.replace(/\blinear\s+measurement(s)?\b/gi, 'clinical assessment');
+        cleanLine = cleanLine.replace(/\bdental\s+torque\b/gi, 'incisor torque control');
+        cleanLine = cleanLine.replace(/\barch\s+allocation\b/gi, 'arch length alignment');
+        cleanLine = cleanLine.replace(/\bcephalometric\s+compensation\b/gi, 'dentoalveolar camouflage');
         
         const containsForbidden = forbiddenKeywords.some(keyword => {
-          const regex = new RegExp('\\b' + keyword + '\\b', 'i');
+          const regex = new RegExp('\\b' + keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '\\b', 'i');
           return regex.test(cleanLine);
         });
         
@@ -155,6 +159,24 @@ export class ClinicalNarrativeQA {
         return cleanLine;
       }).filter(line => line.trim() !== '');
       
+      cleaned = cleanLines.join('\n');
+    }
+
+    if (context?.patient?.analysisMode === 'ceph') {
+      // Ceph Mode must never infer clinical findings that were not entered
+      // Strip any unentered clinical descriptors like habits, airway type, TMJ status
+      const unenteredInferences = ['mouth breeder', 'clicking tmj', 'thumb sucking', 'tongue thrust', 'atypical habit'];
+      const lines = cleaned.split('\n');
+      const cleanLines = lines.map(line => {
+        let cleanLine = line;
+        unenteredInferences.forEach(inf => {
+          const regex = new RegExp('\\b' + inf + '\\b', 'i');
+          if (regex.test(cleanLine)) {
+            cleanLine = cleanLine.replace(regex, 'skeletal/dentoalveolar features');
+          }
+        });
+        return cleanLine;
+      });
       cleaned = cleanLines.join('\n');
     }
 

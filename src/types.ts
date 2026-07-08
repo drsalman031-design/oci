@@ -159,14 +159,38 @@ export interface AdvancedClinicalIntelligence {
   finalClinicalSummary?: string;
 }
 
-export interface Assessment {
-  id: string;
+export interface ClinicWorkspaceData {
+  patientDetails: PatientDetails;
+  ociResult: OciResult | null;
+  aiSummary: string;
+  advanced?: AdvancedClinicalIntelligence;
+  status: 'Not Started' | 'In Progress' | 'Completed';
+}
+
+export interface CephWorkspaceData {
+  cephalometricInput: CephalometricInput;
+  ociResult: OciResult | null;
+  aiSummary: string;
+  advanced?: AdvancedClinicalIntelligence;
+  status: 'Not Started' | 'In Progress' | 'Completed';
+}
+
+export interface TurboWorkspaceData {
   patientDetails: PatientDetails;
   cephalometricInput: CephalometricInput;
-  ociResult: OciResult;
+  ociResult: OciResult | null;
   aiSummary: string;
-  createdAt: string;
   advanced?: AdvancedClinicalIntelligence;
+  status: 'Not Started' | 'In Progress' | 'Completed';
+}
+
+export interface Assessment {
+  id: string;
+  createdAt: string;
+  patientDetails: PatientDetails; // Shared basic info: name, age, gender, caseNumber, date
+  clinicWorkspace: ClinicWorkspaceData;
+  cephWorkspace: CephWorkspaceData;
+  turboWorkspace: TurboWorkspaceData;
 }
 
 export interface NormativeRange {

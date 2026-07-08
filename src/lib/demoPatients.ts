@@ -102,7 +102,7 @@ const advanced1: AdvancedClinicalIntelligence = {
   finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class I, Average growth pattern, Mild crowding. 2. Etiology: Minor dental-arch discrepancy. 3. Growth Status: CS4 (Post-Peak). 4. OCI Severity: Normal (0.8/10). 5. Recommended Treatment: Clear aligners or fixed braces, non-extraction. 6. Prognosis: Excellent.'
 };
 
-const demo1: Assessment = {
+const demo1: any = {
   id: 'OCI-DEMO-001',
   patientDetails: details1,
   cephalometricInput: input1,
@@ -214,7 +214,7 @@ const advanced2: AdvancedClinicalIntelligence = {
   finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class II Div 1, Mandibular retrusion, Active growth. 2. Etiology: Skeletal-driven retrognathia. 3. Growth Status: CS3 (Pre-Peak). 4. OCI Severity: Moderate (3.8/10). 5. Recommended Treatment: Phase 1 Twin Block, Phase 2 fixed braces. 6. Prognosis: Very Good.'
 };
 
-const demo2: Assessment = {
+const demo2: any = {
   id: 'OCI-DEMO-002',
   patientDetails: details2,
   cephalometricInput: input2,
@@ -326,7 +326,7 @@ const advanced3: AdvancedClinicalIntelligence = {
   finalClinicalSummary: '1. Chief Diagnosis: Skeletal Class III, Mandibular prognathism, Maxillary retrusion, Growth Complete. 2. Etiology: Combined skeletal sagittal discrepancy. 3. Growth Status: CS6 (Mature). 4. OCI Severity: Surgical-level (7.8/10). 5. Recommended Treatment: Combined Orthognathic Surgery. 6. Prognosis: Good.'
 };
 
-const demo3: Assessment = {
+const demo3: any = {
   id: 'OCI-DEMO-003',
   patientDetails: details3,
   cephalometricInput: input3,
@@ -336,4 +336,4 @@ const demo3: Assessment = {
   advanced: advanced3
 };
 
-export const DEMO_PATIENTS: Assessment[] = [demo1, demo2, demo3];
+export const DEMO_PATIENTS: any[] = [demo1, demo2, demo3];

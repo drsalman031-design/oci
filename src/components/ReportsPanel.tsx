@@ -46,7 +46,33 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   };
 
   // Find selected assessment or fallback
-  const selectedAssessment = savedAssessments.find(a => a.id === selectedId) || savedAssessments[0];
+  const rawSelectedAssessment = savedAssessments.find(a => a.id === selectedId) || savedAssessments[0];
+
+  const activeMode = rawSelectedAssessment?.patientDetails?.analysisMode || 'turbo';
+  const activeWorkspace = activeMode === 'clinic' ? rawSelectedAssessment?.clinicWorkspace : activeMode === 'ceph' ? rawSelectedAssessment?.cephWorkspace : rawSelectedAssessment?.turboWorkspace;
+
+  const selectedAssessment: any = rawSelectedAssessment ? {
+    ...rawSelectedAssessment,
+    cephalometricInput: (activeWorkspace as any)?.cephalometricInput || {
+      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+    },
+    ociResult: (activeWorkspace as any)?.ociResult || {
+      totalScore: 0,
+      interpretation: 'Normal',
+      recommendation: '',
+      categoryScores: [],
+      verticalPattern: 'Normodivergent',
+      compensationLevel: 'Normal',
+      severityMap: { upperIncisors: 'green', lowerIncisors: 'green', softTissue: 'green', occlusion: 'green', transverse: 'green' }
+    },
+    aiSummary: (activeWorkspace as any)?.aiSummary || 'No summary generated yet.',
+    advanced: (activeWorkspace as any)?.advanced || {}
+  } : rawSelectedAssessment;
 
   useEffect(() => {
     if (savedAssessments.length > 0 && !selectedId) {
