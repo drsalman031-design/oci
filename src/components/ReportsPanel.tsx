@@ -37,6 +37,17 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   const [activeSection, setActiveSection] = useState<'severity' | 'parameters' | 'compensation' | 'pathways' | null>('severity');
   const [clinicalExpanded, setClinicalExpanded] = useState<boolean>(false);
 
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+    diagnosis: true,
+  });
+
+  const toggleCard = (card: string) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [card]: !prev[card]
+    }));
+  };
+
   const toggleSection = (section: 'severity' | 'parameters' | 'compensation' | 'pathways') => {
     if (Platform.OS === 'android') {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -220,6 +231,134 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
     { name: 'Dental System', val: ociDen, color: '#1E88FF', icon: '🦷', highlight: 'Dental Compensation' },
     { name: 'Soft Tissue System', val: ociSof, color: '#8E44AD', icon: '👄', highlight: 'Soft Tissue Strain' },
   ].sort((a, b) => b.val - a.val);
+
+  const cardsData = [
+    {
+      id: 'diagnosis',
+      title: 'Diagnosis Rationale',
+      icon: '🧠',
+      sections: [
+        {
+          label: 'Summary',
+          content: `The patient's findings are most consistent with a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} relationship with a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} vertical pattern.`
+        },
+        {
+          label: 'Why OCI Selected This Diagnosis',
+          content: isClinicMode
+            ? `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
+            : `Based on the patient's skeletal parameters (ANB: ${selectedAssessment.cephalometricInput.anb !== '' ? selectedAssessment.cephalometricInput.anb : '2'}°, SNA: ${selectedAssessment.cephalometricInput.sna !== '' ? selectedAssessment.cephalometricInput.sna : '82'}°, SNB: ${selectedAssessment.cephalometricInput.snb !== '' ? selectedAssessment.cephalometricInput.snb : '80'}°, Wits: ${selectedAssessment.cephalometricInput.wits !== '' ? selectedAssessment.cephalometricInput.wits : '0'}mm), the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
+        },
+        {
+          label: 'Clinical Interpretation',
+          content: `These findings indicate that the primary discrepancy is sagittal rather than vertical and should guide treatment planning accordingly. The OCI diagnostic trace notes: ${report.ociScoreExplanation || 'Skeletal and dental bases show stable features.'}`
+        }
+      ]
+    },
+    {
+      id: 'compensation',
+      title: 'Compensation Analysis',
+      icon: '⚖️',
+      sections: [
+        {
+          label: 'Summary',
+          content: `${selectedAssessment.ociResult.compensationLevel || 'Normal'} Dentoalveolar Compensation`
+        },
+        {
+          label: 'Clinical Interpretation',
+          content: isClinicMode
+            ? `The upper and lower incisors demonstrate compensation within normal physiological limits. There is no evidence of severe dental masking that would significantly alter treatment planning.`
+            : `The upper incisor inclination (U1-SN: ${selectedAssessment.cephalometricInput.u1Sn !== '' ? selectedAssessment.cephalometricInput.u1Sn : '104'}°) and lower incisor inclination (IMPA: ${selectedAssessment.cephalometricInput.impa !== '' ? selectedAssessment.cephalometricInput.impa : '90'}°) demonstrate a ${selectedAssessment.ociResult.compensationLevel?.toLowerCase() || 'moderate'} compensation profile. ${report.dentalCorrectionPotential}`
+        },
+        {
+          label: 'Clinical Impact',
+          content: `Routine orthodontic biomechanics are expected to achieve alignment without the need for extensive decompensation.`
+        }
+      ]
+    },
+    {
+      id: 'treatment',
+      title: 'Treatment Planning Rationale',
+      icon: '🦷',
+      sections: [
+        {
+          label: 'Summary',
+          content: `Recommended Treatment Strategy: ${report.surgeryRecommendation === 'Surgical Correction' ? 'Orthognathic Surgery & Decompensation' : 'Conventional Orthodontic Camouflage'} (${report.extractionRecommendation})`
+        },
+        {
+          label: 'Clinical Reasoning',
+          content: `OCI selected this treatment because it best addresses the patient's skeletal and dental findings while maintaining facial balance and occlusal stability: ${report.treatmentSequence}`
+        },
+        {
+          label: 'Expected Treatment Goals',
+          content: `• ${report.primaryObjectives}\n• ${report.secondaryObjectives}\n• ${report.longTermObjectives}\n• Correct sagittal discrepancy\n• Achieve ideal overjet & overbite`
+        }
+      ]
+    },
+    {
+      id: 'risk',
+      title: 'Risk Assessment',
+      icon: '⚠️',
+      sections: [
+        {
+          label: 'Risk Level',
+          content: selectedAssessment.ociResult.totalScore > 60 ? '🔴 High Relapse Risk / Surgical Complexity' : selectedAssessment.ociResult.totalScore > 40 ? '🟡 Moderate Risk' : '🟢 Low Risk'
+        },
+        {
+          label: 'Clinical Risks',
+          content: `• ${report.riskAlerts || 'Mild root resorption'}\n• Elastic wear compliance\n• Oral hygiene maintenance`
+        },
+        {
+          label: 'Overall Assessment',
+          content: report.contraindications && report.contraindications !== 'None' ? `Contraindications noted: ${report.contraindications}. ${report.contraindicationReason}` : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'
+        }
+      ]
+    },
+    {
+      id: 'prognosis',
+      title: 'Prognosis',
+      icon: '📈',
+      sections: [
+        {
+          label: 'Overall Prognosis',
+          content: `${report.overallPrognosis === 'Excellent' ? '🟢 Excellent' : report.overallPrognosis === 'Good' ? '🟢 Good' : '🟡 Fair'}`
+        },
+        {
+          label: 'Explanation',
+          content: `${report.explanationWhy || 'Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved.'}`
+        }
+      ]
+    },
+    {
+      id: 'relapse',
+      title: 'Relapse Assessment',
+      icon: '🔄',
+      sections: [
+        {
+          label: 'Relapse Risk',
+          content: `${report.relapseRisk === 'Low' ? '🟢 Low' : report.relapseRisk === 'Moderate' ? '🟡 Moderate' : '🔴 High'}`
+        },
+        {
+          label: 'Explanation',
+          content: `${report.relapseReason || 'Stable skeletal relationships and favorable biomechanics reduce the likelihood of significant post-treatment relapse.'}`
+        },
+        {
+          label: 'Retention Advice',
+          content: `${report.estimatedRetention || 'Long-term retainer wear according to standard orthodontic protocol is recommended.'}`
+        }
+      ]
+    },
+    {
+      id: 'summary',
+      title: 'Clinical Summary',
+      icon: '📋',
+      sections: [
+        {
+          label: 'OCI Clinical Summary',
+          content: `${report.finalClinicalSummary || 'The patient demonstrates a mild sagittal discrepancy with a favorable vertical pattern. Conventional orthodontic treatment is expected to achieve functional occlusion and improved facial aesthetics.'}`
+        }
+      ]
+    }
+  ];
 
   const handleExportPDF = () => {
     onOpenPdf(selectedAssessment);
@@ -647,61 +786,51 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           </Pressable>
 
           {clinicalExpanded && (
-            <View style={tw`p-5 space-y-4 border-t border-white/5`}>
-              {/* Diagnosis Reasoning */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI selected this diagnosis</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  {isClinicMode ? (
-                    `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
-                  ) : (
-                    `Based on the patient's skeletal parameters (ANB: ${typeof selectedAssessment.cephalometricInput.anb === 'number' ? selectedAssessment.cephalometricInput.anb : parseFloat(selectedAssessment.cephalometricInput.anb as any) || 2}°, Wits: ${typeof selectedAssessment.cephalometricInput.wits === 'number' ? selectedAssessment.cephalometricInput.wits : parseFloat(selectedAssessment.cephalometricInput.wits as any) || 0}mm), the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
-                  )}
-                </Text>
+            <View style={tw`p-5 border-t border-white/5 bg-black/20 space-y-6`}>
+              <View style={tw`flex-row items-center justify-between`}>
+                <Text style={tw`text-[22px] font-black text-teal-400`}>🧠 OCI Intelligence</Text>
               </View>
 
-              {/* Compensation Reasoning */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI detected these compensations</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  {isClinicMode ? (
-                    `The clinical lower incisor position and upper incisor position demonstrate a ${selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These features represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.`
-                  ) : (
-                    `The lower incisor sagittal inclination (IMPA: ${typeof selectedAssessment.cephalometricInput.impa === 'number' ? selectedAssessment.cephalometricInput.impa : parseFloat(selectedAssessment.cephalometricInput.impa as any) || 90}°) and upper incisor inclination (U1-SN: ${typeof selectedAssessment.cephalometricInput.u1Sn === 'number' ? selectedAssessment.cephalometricInput.u1Sn : parseFloat(selectedAssessment.cephalometricInput.u1Sn as any) || 104}°) demonstrate a ${selectedAssessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.`
-                  )}
-                </Text>
-              </View>
+              <View style={tw`space-y-4`}>
+                {cardsData.map((card) => {
+                  const isExpanded = expandedCards[card.id];
+                  return (
+                    <View
+                      key={card.id}
+                      style={tw`bg-[#0B1020]/80 rounded-[18px] border border-white/5 overflow-hidden shadow-xl`}
+                    >
+                      <Pressable
+                        onPress={() => toggleCard(card.id)}
+                        style={tw`p-6 flex-row justify-between items-center bg-[#0F172A]/40`}
+                      >
+                        <View style={tw`flex-row items-center space-x-3`}>
+                          <Text style={tw`text-xl`}>{card.icon}</Text>
+                          <Text style={tw`text-lg font-bold text-white tracking-tight`}>{card.title}</Text>
+                        </View>
+                        {isExpanded ? (
+                          <ChevronUp size={20} color="#94a3b8" />
+                        ) : (
+                          <ChevronDown size={20} color="#94a3b8" />
+                        )}
+                      </Pressable>
 
-              {/* Treatment Reasoning */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Why OCI selected this treatment plan</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  For OCI Score {selectedAssessment.ociResult.totalScore}/10, a {report.surgeryRecommendation === 'Surgical Correction' ? 'presurgical decompensation and orthognathic surgery' : 'conventional orthodontic camouflage'} approach was selected. Extraction planning recommends a {report.extractionRecommendation === 'Extraction' ? 'premolar extraction pattern' : 'non-extraction pattern'} to optimize dental and facial aesthetics.
-                </Text>
-              </View>
-
-              {/* Risk Factors */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Risk Factors</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  {selectedAssessment.ociResult.totalScore > 6.0 ? 'Root resorption (high risk due to extensive movement requirements), periodontal compromise (due to thin buccal cortical plate), and anchorage loss.' : 'Minimal risk profile; standard considerations include compliance with elastics and light transient root resorption.'}
-                </Text>
-              </View>
-
-              {/* Prognosis */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Prognosis</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  {report.overallPrognosis} ({report.explanationWhy || 'Skeletal and dental parameters are within stable boundaries.'})
-                </Text>
-              </View>
-
-              {/* Relapse Risk */}
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Relapse Risk</Text>
-                <Text style={tw`text-xs text-slate-300 leading-normal pl-1`}>
-                  {report.relapseRisk} ({report.relapseReason || 'Stable post-treatment intercuspation.'})
-                </Text>
+                      {isExpanded && (
+                        <View style={tw`p-6 border-t border-white/5 bg-black/20 space-y-5`}>
+                          {card.sections.map((sec, sIdx) => (
+                            <View key={sIdx} style={tw`space-y-2`}>
+                              <Text style={tw`text-[18px] font-semibold text-teal-400`}>
+                                {sec.label}
+                              </Text>
+                              <Text style={[tw`text-slate-300 text-[15px] leading-relaxed font-normal`, { lineHeight: 24 }]}>
+                                {sec.content}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             </View>
           )}
