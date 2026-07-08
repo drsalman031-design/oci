@@ -13,12 +13,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react-native';
 import MarkdownRenderer from './MarkdownRenderer';
 import { generateClinicalSummary, generateLocalClinicalSynthesis } from '../lib/gemini';
 import tw from 'twrnc';
-import { OciResult, CephalometricInput, PatientDetails } from '../types';
+import { OciResult, CephalometricInput, PatientDetails, Assessment } from '../types';
+import { getReportData } from './PdfReport';
 import SvgCharts from './SvgCharts';
 
 interface ResultsDashboardProps {
@@ -48,6 +51,173 @@ export default function ResultsDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [activePillarTab, setActivePillarTab] = useState<'skeletal' | 'dental' | 'softTissue'>('skeletal');
   const [activePlanTab, setActivePlanTab] = useState<'orthopedic' | 'camouflage' | 'surgical' | 'retention'>('camouflage');
+
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+    diagnosis: true,
+  });
+
+  const toggleCard = (card: string) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [card]: !prev[card]
+    }));
+  };
+
+  // Construct temporary assessment object to map clinical intelligence values
+  const tempAssessment: any = {
+    patientDetails: {
+      ...patientDetails,
+      analysisMode: mode
+    },
+    clinicWorkspace: mode === 'clinic' ? {
+      patientDetails,
+      ociResult,
+      aiSummary: editedSummary,
+      status: 'Completed'
+    } : undefined,
+    cephWorkspace: mode === 'ceph' ? {
+      cephalometricInput,
+      ociResult,
+      aiSummary: editedSummary,
+      status: 'Completed'
+    } : undefined,
+    turboWorkspace: mode === 'turbo' ? {
+      patientDetails,
+      cephalometricInput,
+      ociResult,
+      aiSummary: editedSummary,
+      status: 'Completed'
+    } : undefined
+  };
+  const report = getReportData(tempAssessment);
+
+  const cardsData = [
+    {
+      id: 'diagnosis',
+      title: 'Diagnosis Rationale',
+      icon: '🧠',
+      sections: [
+        {
+          label: 'Summary',
+          content: `The patient's findings are most consistent with a Skeletal ${patientDetails.diagnosis || 'Class I'} relationship with a ${ociResult.verticalPattern || 'Normodivergent'} vertical pattern.`
+        },
+        {
+          label: 'Why OCI Selected This Diagnosis',
+          content: mode === 'clinic'
+            ? `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${ociResult.verticalPattern || 'Normodivergent'} tendency.`
+            : `Based on the patient's skeletal parameters (ANB: ${cephalometricInput.anb !== '' ? cephalometricInput.anb : '2'}°, SNA: ${cephalometricInput.sna !== '' ? cephalometricInput.sna : '82'}°, SNB: ${cephalometricInput.snb !== '' ? cephalometricInput.snb : '80'}°, Wits: ${cephalometricInput.wits !== '' ? cephalometricInput.wits : '0'}mm), the engine mapped a Skeletal ${patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${ociResult.verticalPattern || 'Normodivergent'} tendency.`
+        },
+        {
+          label: 'Clinical Interpretation',
+          content: `These findings indicate that the primary discrepancy is sagittal rather than vertical and should guide treatment planning accordingly. The OCI diagnostic trace notes: ${report.ociScoreExplanation || 'Skeletal and dental bases show stable features.'}`
+        }
+      ]
+    },
+    {
+      id: 'compensation',
+      title: 'Compensation Analysis',
+      icon: '⚖️',
+      sections: [
+        {
+          label: 'Summary',
+          content: `${ociResult.compensationLevel || 'Normal'} Dentoalveolar Compensation`
+        },
+        {
+          label: 'Clinical Interpretation',
+          content: mode === 'clinic'
+            ? `The upper and lower incisors demonstrate compensation within normal physiological limits. There is no evidence of severe dental masking that would significantly alter treatment planning.`
+            : `The upper incisor inclination (U1-SN: ${cephalometricInput.u1Sn !== '' ? cephalometricInput.u1Sn : '104'}°) and lower incisor inclination (IMPA: ${cephalometricInput.impa !== '' ? cephalometricInput.impa : '90'}°) demonstrate a ${ociResult.compensationLevel?.toLowerCase() || 'moderate'} compensation profile. ${report.dentalCorrectionPotential}`
+        },
+        {
+          label: 'Clinical Impact',
+          content: `Routine orthodontic biomechanics are expected to achieve alignment without the need for extensive decompensation.`
+        }
+      ]
+    },
+    {
+      id: 'treatment',
+      title: 'Treatment Planning Rationale',
+      icon: '🦷',
+      sections: [
+        {
+          label: 'Summary',
+          content: `Recommended Treatment Strategy: ${report.surgeryRecommendation === 'Surgical Correction' ? 'Orthognathic Surgery & Decompensation' : 'Conventional Orthodontic Camouflage'} (${report.extractionRecommendation})`
+        },
+        {
+          label: 'Clinical Reasoning',
+          content: `OCI selected this treatment because it best addresses the patient's skeletal and dental findings while maintaining facial balance and occlusal stability: ${report.treatmentSequence}`
+        },
+        {
+          label: 'Expected Treatment Goals',
+          content: `• ${report.primaryObjectives}\n• ${report.secondaryObjectives}\n• ${report.longTermObjectives}\n• Correct sagittal discrepancy\n• Achieve ideal overjet & overbite`
+        }
+      ]
+    },
+    {
+      id: 'risk',
+      title: 'Risk Assessment',
+      icon: '⚠️',
+      sections: [
+        {
+          label: 'Risk Level',
+          content: ociResult.totalScore > 60 ? '🔴 High Relapse Risk / Surgical Complexity' : ociResult.totalScore > 40 ? '🟡 Moderate Risk' : '🟢 Low Risk'
+        },
+        {
+          label: 'Clinical Risks',
+          content: `• ${report.riskAlerts || 'Mild root resorption'}\n• Elastic wear compliance\n• Oral hygiene maintenance`
+        },
+        {
+          label: 'Overall Assessment',
+          content: report.contraindications && report.contraindications !== 'None' ? `Contraindications noted: ${report.contraindications}. ${report.contraindicationReason}` : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'
+        }
+      ]
+    },
+    {
+      id: 'prognosis',
+      title: 'Prognosis',
+      icon: '📈',
+      sections: [
+        {
+          label: 'Overall Prognosis',
+          content: `${report.overallPrognosis === 'Excellent' ? '🟢 Excellent' : report.overallPrognosis === 'Good' ? '🟢 Good' : '🟡 Fair'}`
+        },
+        {
+          label: 'Explanation',
+          content: `${report.explanationWhy || 'Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved.'}`
+        }
+      ]
+    },
+    {
+      id: 'relapse',
+      title: 'Relapse Assessment',
+      icon: '🔄',
+      sections: [
+        {
+          label: 'Relapse Risk',
+          content: `${report.relapseRisk === 'Low' ? '🟢 Low' : report.relapseRisk === 'Moderate' ? '🟡 Moderate' : '🔴 High'}`
+        },
+        {
+          label: 'Explanation',
+          content: `${report.relapseReason || 'Stable skeletal relationships and favorable biomechanics reduce the likelihood of significant post-treatment relapse.'}`
+        },
+        {
+          label: 'Retention Advice',
+          content: `${report.estimatedRetention || 'Long-term retainer wear according to standard orthodontic protocol is recommended.'}`
+        }
+      ]
+    },
+    {
+      id: 'summary',
+      title: 'Clinical Summary',
+      icon: '📋',
+      sections: [
+        {
+          label: 'OCI Clinical Summary',
+          content: `${report.finalClinicalSummary || 'The patient demonstrates a mild sagittal discrepancy with a favorable vertical pattern. Conventional orthodontic treatment is expected to achieve functional occlusion and improved facial aesthetics.'}`
+        }
+      ]
+    }
+  ];
 
   // Load persisted tabs on mount
   useEffect(() => {
@@ -617,52 +787,83 @@ export default function ResultsDashboard({
           })()}
 
         {/* Gemini Copilot Summary section with ReactMarkdown */}
-        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-6 rounded-[28px] border border-[#14B8A6]/20 space-y-4 shadow-2xl`}>
-          <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-3.5`}>
-            <View style={tw`flex-row items-center`}>
-              <Cpu size={16} color="#22D3EE" style={tw`mr-2.5`} />
-              <View>
-                <View style={tw`flex-row items-center`}>
-                  <Text style={tw`font-black text-sm text-white mr-2`}>Gemini Clinical Copilot</Text>
-                  <View style={tw`bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/25`}>
-                    <Text style={tw`text-[7px] text-[#22D3EE] font-mono font-black uppercase tracking-widest`}>LIVE CORE</Text>
-                  </View>
-                </View>
-                <Text style={tw`text-[9px] text-slate-400 mt-0.5`}>Synthesizes ANB metrics & dental tipping profiles</Text>
-              </View>
+        <View style={tw`space-y-6`}>
+          {/* Header */}
+          <View style={tw`flex-row items-center justify-between`}>
+            <View style={tw`flex-row items-center space-x-3`}>
+              <Text style={tw`text-[22px] font-black text-teal-400`}>🧠 OCI Intelligence</Text>
             </View>
-            
             <Pressable
               onPress={() => setIsEditingSummary(!isEditingSummary)}
               style={tw`flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10`}
             >
               <Edit2 size={10} color="#cbd5e1" style={tw`mr-1.5`} />
               <Text style={tw`text-[9px] font-black text-slate-300 uppercase tracking-widest`}>
-                {isEditingSummary ? 'View' : 'Edit'}
+                {isEditingSummary ? 'View Cards' : 'Edit Raw AI'}
               </Text>
             </Pressable>
           </View>
 
           {loadingSummary ? (
-            <View style={tw`py-6 items-center justify-center space-y-2`}>
+            <View style={tw`py-12 items-center justify-center space-y-2 bg-[#0B1020]/40 rounded-[18px] border border-white/5`}>
               <ActivityIndicator size="small" color="#14B8A6" />
               <Text style={tw`text-[9px] font-mono text-teal-400 font-black uppercase tracking-wider`}>SYNTHESIZING CLINICAL DATA...</Text>
             </View>
           ) : isEditingSummary ? (
-            <View style={tw`space-y-2`}>
+            <View style={tw`bg-[#0B1020]/80 p-6 rounded-[18px] border border-white/5 space-y-4`}>
               <TextInput
                 value={editedSummary}
                 onChangeText={setEditedSummary}
                 multiline
-                numberOfLines={6}
-                style={[tw`w-full px-4 py-3.5 bg-black/45 text-slate-100 font-sans text-xs rounded-2xl border border-white/10 focus:border-[#14B8A6]`, { minHeight: 120 }]}
+                numberOfLines={10}
+                style={[tw`w-full px-4 py-3.5 bg-black/45 text-slate-100 font-sans text-xs rounded-xl border border-white/10 focus:border-[#14B8A6]`, { minHeight: 180 }]}
               />
               <Text style={tw`text-[9px] font-mono text-slate-500`}>
                 You can adjust this AI text before saving to patient charts or exporting files.
               </Text>
             </View>
           ) : (
-            <MarkdownRenderer>{editedSummary}</MarkdownRenderer>
+            <View style={tw`space-y-4`}>
+              {cardsData.map((card) => {
+                const isExpanded = expandedCards[card.id];
+                return (
+                  <View
+                    key={card.id}
+                    style={tw`bg-[#0B1020]/80 rounded-[18px] border border-white/5 overflow-hidden shadow-xl`}
+                  >
+                    <Pressable
+                      onPress={() => toggleCard(card.id)}
+                      style={tw`p-6 flex-row justify-between items-center bg-[#0F172A]/40`}
+                    >
+                      <View style={tw`flex-row items-center space-x-3`}>
+                        <Text style={tw`text-xl`}>{card.icon}</Text>
+                        <Text style={tw`text-lg font-bold text-white tracking-tight`}>{card.title}</Text>
+                      </View>
+                      {isExpanded ? (
+                        <ChevronUp size={20} color="#94a3b8" />
+                      ) : (
+                        <ChevronDown size={20} color="#94a3b8" />
+                      )}
+                    </Pressable>
+
+                    {isExpanded && (
+                      <View style={tw`p-6 border-t border-white/5 bg-black/20 space-y-5`}>
+                        {card.sections.map((sec, sIdx) => (
+                          <View key={sIdx} style={tw`space-y-2`}>
+                            <Text style={tw`text-[18px] font-semibold text-teal-400`}>
+                              {sec.label}
+                            </Text>
+                            <Text style={[tw`text-slate-300 text-[15px] leading-relaxed font-normal`, { lineHeight: 24 }]}>
+                              {sec.content}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
 

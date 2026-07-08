@@ -1158,69 +1158,115 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
           
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3 mt-4">
-              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">OCI Clinical Intelligence & Decisional Trace</h3>
+              <h3 class="text-lg font-black text-slate-900 heading-font uppercase">🧠 OCI Clinical Intelligence Report</h3>
               <span class="text-[9px] text-slate-400 font-mono">Page 6 of 6</span>
             </div>
 
-            <div class="space-y-3.5 text-xs">
-              <!-- Diagnosis Reasoning -->
-              <div class="space-y-1">
-                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI selected this diagnosis</h4>
-                <p class="text-slate-700 leading-relaxed pl-1">
-                  ${assessment.patientDetails.analysisMode === 'clinic' ? `
-                    Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
-                  ` : `
-                    Based on the patient's skeletal parameters (ANB: ${anbVal}°, Wits: ${witsVal}mm), the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${assessment.ociResult.verticalPattern || 'Normodivergent'} tendency.
-                  `}
-                </p>
-              </div>
-
-              <!-- Compensation Reasoning -->
-              <div class="space-y-1">
-                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI detected these compensations</h4>
-                <p class="text-slate-700 leading-relaxed pl-1">
-                  ${assessment.patientDetails.analysisMode === 'clinic' ? `
-                    The clinical lower incisor position and upper incisor position demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These features represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
-                  ` : `
-                    The lower incisor sagittal inclination (IMPA: ${impaVal}°) and upper incisor inclination (U1-SN: ${u1SnVal}°) demonstrate a ${assessment.ociResult.compensationLevel || 'moderate'} compensation profile. These movements represent the dentoalveolar system's natural effort to mask the underlying skeletal disharmony.
-                  `}
-                </p>
-              </div>
-
-              <!-- Treatment Reasoning -->
-              <div class="space-y-1">
-                <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Why OCI selected this treatment plan</h4>
-                <p class="text-slate-700 leading-relaxed pl-1">
-                  For OCI Score ${(total/10).toFixed(1)}/10, a ${report.surgeryRecommendation === 'Surgical Correction' ? 'presurgical decompensation and orthognathic surgery' : 'conventional orthodontic camouflage'} approach was selected. Extraction planning recommends a ${report.extractionRecommendation === 'Extraction' ? 'premolar extraction pattern' : 'non-extraction pattern'} to optimize dental and facial aesthetics.
-                </p>
-              </div>
-
-              <!-- Risks & Prognosis -->
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Clinical Risk Factors</h4>
-                  <p class="text-slate-700 leading-relaxed pl-1">
-                    ${total > 60 ? 'Root resorption (high risk due to extensive movement requirements), periodontal compromise (due to thin buccal cortical plate), and anchorage loss.' : 'Minimal risk profile; standard considerations include compliance with elastics and light transient root resorption.'}
-                  </p>
+            <!-- Two-Column Cards Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+              
+              <!-- Card 1: Diagnosis Rationale -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">🧠</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Diagnosis Rationale</span>
                 </div>
-
-                <div class="space-y-1">
-                  <h4 class="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">Prognosis & Relapse Risk</h4>
-                  <p class="text-slate-700 leading-relaxed pl-1">
-                    <strong>Prognosis:</strong> ${report.overallPrognosis} (${report.explanationWhy || 'Skeletal and dental parameters are stable.'}) <br/>
-                    <strong>Relapse Risk:</strong> ${report.relapseRisk} (${report.relapseReason})
-                  </p>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Summary:</strong> The patient's findings are consistent with a Skeletal Class ${assessment.patientDetails.diagnosis === 'Class II' ? 'II' : assessment.patientDetails.diagnosis === 'Class III' ? 'III' : 'I'} relationship with a ${assessment.ociResult.verticalPattern || 'Normodivergent'} vertical pattern.</p>
+                  <p style="margin-bottom: 6px;"><strong>Why OCI Selected:</strong> ${assessment.patientDetails.analysisMode === 'clinic' ? `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${assessment.patientDetails.diagnosis || 'Class I'} sagittal pattern.` : `Based on skeletal parameters (ANB: ${anbVal}°, SNA: ${assessment.cephalometricInput.sna || '82'}°, SNB: ${assessment.cephalometricInput.snb || '80'}°), the engine mapped a Skeletal Class ${assessment.patientDetails.diagnosis === 'Class II' ? 'II' : assessment.patientDetails.diagnosis === 'Class III' ? 'III' : 'I'} pattern.`}</p>
+                  <p style="margin-bottom: 0;"><strong>Interpretation:</strong> These findings indicate that the primary discrepancy is sagittal and should guide treatment planning accordingly.</p>
                 </div>
               </div>
 
-              <!-- Specialist Sign-off Seal -->
-              <div class="pt-6 mt-6 border-t border-slate-150 flex flex-col items-center justify-center space-y-1">
-                <div class="w-full max-w-[240px] border-b border-slate-300 pb-1 text-center font-extrabold italic text-teal-600 text-sm">
-                  ${sigText}
+              <!-- Card 2: Risk Assessment -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">⚠️</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Risk Assessment</span>
                 </div>
-                <p class="text-[8px] text-slate-400 uppercase tracking-widest font-bold">Specialist Sign-off Seal</p>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Risk Level:</strong> ${total > 60 ? '<span style="color: #EF4444; font-weight: 800;">🔴 HIGH</span>' : '<span style="color: #10B981; font-weight: 800;">🟢 LOW</span>'}</p>
+                  <p style="margin-bottom: 6px;"><strong>Clinical Risks:</strong> • Root resorption risk during alignment <br/>• Elastic wear compliance <br/>• Oral hygiene maintenance</p>
+                  <p style="margin-bottom: 0;"><strong>Overall:</strong> ${total > 60 ? 'High movement mechanics require thin alveolar plate monitoring and active root evaluation.' : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'}</p>
+                </div>
               </div>
+
+              <!-- Card 3: Compensation Analysis -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">⚖️</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Compensation Analysis</span>
+                </div>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Summary:</strong> ${assessment.ociResult.compensationLevel || 'Normal'} Dentoalveolar Compensation</p>
+                  <p style="margin-bottom: 6px;"><strong>Interpretation:</strong> ${assessment.patientDetails.analysisMode === 'clinic' ? 'The clinical lower incisor position and upper incisor position demonstrate a compensation profile within physiological limits.' : `The upper incisor inclination (U1-SN: ${assessment.cephalometricInput.u1Sn || '104'}°) and lower incisor inclination (IMPA: ${assessment.cephalometricInput.impa || '90'}°) demonstrate a compensation profile.`}</p>
+                  <p style="margin-bottom: 0;"><strong>Clinical Impact:</strong> Routine orthodontic biomechanics are expected to achieve alignment without the need for extensive decompensation.</p>
+                </div>
+              </div>
+
+              <!-- Card 4: Prognosis -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">📈</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Prognosis</span>
+                </div>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Overall Prognosis:</strong> <span style="color: #10B981; font-weight: 800;">🟢 ${report.overallPrognosis || 'EXCELLENT'}</span></p>
+                  <p style="margin-bottom: 0;"><strong>Explanation:</strong> Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved. ${report.explanationWhy || ''}</p>
+                </div>
+              </div>
+
+              <!-- Card 5: Treatment Planning Rationale -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">🦷</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Treatment Planning Rationale</span>
+                </div>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Summary:</strong> Recommended Strategy: ${report.surgeryRecommendation === 'Surgical Correction' ? 'Presurgical Decompensation & Orthognathic Surgery' : 'Conventional Orthodontic Camouflage'}</p>
+                  <p style="margin-bottom: 0;"><strong>Clinical Reasoning:</strong> OCI selected this plan to best address sagittal discrepancy and restore correct overjet/overbite coordinates: ${report.treatmentSequence}</p>
+                </div>
+              </div>
+
+              <!-- Card 6: Relapse Assessment -->
+              <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                  <span style="font-size: 14px;">🔄</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Relapse Assessment</span>
+                </div>
+                <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
+                  <p style="margin-bottom: 6px;"><strong>Relapse Risk:</strong> <span style="color: #10B981; font-weight: 800;">🟢 ${report.relapseRisk || 'LOW'}</span></p>
+                  <p style="margin-bottom: 6px;"><strong>Explanation:</strong> ${report.relapseReason || 'Stable post-treatment sagittal coordinates decrease relapse potential.'}</p>
+                  <p style="margin-bottom: 0;"><strong>Retention Advice:</strong> ${report.estimatedRetention || 'Standard retention protocols (fixed lingual retainers and vacuum formed overlays) are highly recommended.'}</p>
+                </div>
+              </div>
+
             </div>
+
+            <!-- Full Width Card 7: Clinical Summary -->
+            <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; background-color: #F8FAFC; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-top: 15px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                <span style="font-size: 14px;">📋</span>
+                <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">OCI Clinical Summary</span>
+              </div>
+              <p style="font-size: 10px; line-height: 1.6; color: #334155; margin: 0;">
+                ${report.finalClinicalSummary || 'The patient demonstrates a mild sagittal discrepancy with a favorable vertical pattern. Conventional orthodontic treatment is expected to achieve functional occlusion and improved facial aesthetics. Overall prognosis is excellent, with a low anticipated relapse risk following appropriate retention.'}
+              </p>
+            </div>
+
+            <!-- Specialist Sign-off Seal -->
+            <div style="border-top: 1px solid #E2E8F0; padding-top: 15px; margin-top: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div style="width: 100%; max-width: 240px; border-bottom: 1px solid #CBD5E1; padding-bottom: 3px; text-align: center; font-weight: bold; font-style: italic; color: #0D9488; font-size: 11px;">
+                ${sigText}
+              </div>
+              <p style="font-size: 8px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold; margin-top: 4px; margin-bottom: 0;">Specialist Sign-off Seal</p>
+            </div>
+
+          </div>
+
+          <div class="text-center text-[7px] text-slate-400 pt-4 border-t border-slate-150 font-mono" style="border-top: 1px solid #E2E8F0; padding-top: 10px; margin-top: 10px;">
+            <p style="font-weight: bold; margin-bottom: 2px;">Generated by OCI Analyzer™ • Version 2.0 • Page 6 of 6</p>
+            <p style="font-style: italic; color: #64748B;"><strong style="text-transform: uppercase; font-weight: 800; color: #475569;">Clinical Decision Support Disclaimer:</strong> This report is generated using the OCI Analyzer™ (AI-Powered). OCI is intended to support orthodontic diagnosis and treatment planning. Final clinical decisions remain the responsibility of the treating orthodontist.</p>
           </div>
         </div>
       </body>
