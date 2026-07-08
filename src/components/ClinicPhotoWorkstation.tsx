@@ -21,12 +21,17 @@ import {
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import { PatientDetails } from '../types';
+import Svg, { Line, Path, Circle } from 'react-native-svg';
 
 interface ClinicPhotoWorkstationProps {
   patientDetails: PatientDetails;
   onComplete: (photos: Record<string, string>, findings: string[]) => void;
   onBack?: () => void;
   isEmbedded?: boolean;
+  landmarks?: Record<string, Record<string, { x: number; y: number }>>;
+  setLandmarks?: (landmarks: Record<string, Record<string, { x: number; y: number }>>) => void;
+  photos?: Record<string, string>;
+  setPhotos?: (photos: Record<string, string>) => void;
 }
 
 interface PhotoSlot {
@@ -37,15 +42,152 @@ interface PhotoSlot {
   required: boolean;
 }
 
+export const DEFAULT_LANDMARKS: Record<string, Record<string, { x: number; y: number }>> = {
+  frontal_rest: {
+    facialMidline: { x: 50, y: 50 },
+    rightPupil: { x: 40, y: 35 },
+    leftPupil: { x: 60, y: 35 },
+    trichion: { x: 50, y: 15 },
+    subnasale: { x: 50, y: 53 },
+    menton: { x: 50, y: 82 }
+  },
+  frontal_smile: {
+    facialMidline: { x: 50, y: 50 },
+    rightPupil: { x: 40, y: 35 },
+    leftPupil: { x: 60, y: 35 },
+    trichion: { x: 50, y: 15 },
+    subnasale: { x: 50, y: 53 },
+    menton: { x: 50, y: 82 }
+  },
+  right_profile: {
+    pronasale: { x: 62, y: 48 },
+    subnasale: { x: 55, y: 53 },
+    labraleSuperius: { x: 58, y: 59 },
+    labraleInferius: { x: 57, y: 64 },
+    pogonion: { x: 54, y: 72 }
+  },
+  left_profile: {
+    pronasale: { x: 38, y: 48 },
+    subnasale: { x: 45, y: 53 },
+    labraleSuperius: { x: 42, y: 59 },
+    labraleInferius: { x: 43, y: 64 },
+    pogonion: { x: 46, y: 72 }
+  },
+  profile_45: {
+    pronasale: { x: 62, y: 48 },
+    subnasale: { x: 55, y: 53 },
+    labraleSuperius: { x: 58, y: 59 },
+    labraleInferius: { x: 57, y: 64 },
+    pogonion: { x: 54, y: 72 }
+  },
+  frontal_occlusion: {
+    upperMidline: { x: 48, y: 48 },
+    lowerMidline: { x: 51, y: 52 }
+  },
+  right_buccal: {
+    upperMidline: { x: 45, y: 48 },
+    lowerMidline: { x: 45, y: 52 }
+  },
+  left_buccal: {
+    upperMidline: { x: 55, y: 48 },
+    lowerMidline: { x: 55, y: 52 }
+  },
+  maxillary_occlusal: {
+    archApex: { x: 50, y: 25 },
+    rightMolar: { x: 30, y: 75 },
+    leftMolar: { x: 70, y: 75 }
+  },
+  mandibular_occlusal: {
+    archApex: { x: 50, y: 25 },
+    rightMolar: { x: 30, y: 75 },
+    leftMolar: { x: 70, y: 75 }
+  }
+};
+
+export const LANDMARK_LABELS: Record<string, Record<string, string>> = {
+  frontal_rest: {
+    facialMidline: 'Facial Midline',
+    rightPupil: 'Right Pupil',
+    leftPupil: 'Left Pupil',
+    trichion: 'Trichion',
+    subnasale: 'Subnasale',
+    menton: 'Menton'
+  },
+  frontal_smile: {
+    facialMidline: 'Facial Midline',
+    rightPupil: 'Right Pupil',
+    leftPupil: 'Left Pupil',
+    trichion: 'Trichion',
+    subnasale: 'Subnasale',
+    menton: 'Menton'
+  },
+  right_profile: {
+    pronasale: 'Nose Tip (Pn)',
+    subnasale: 'Nose Base (Sn)',
+    labraleSuperius: 'Upper Lip (Ls)',
+    labraleInferius: 'Lower Lip (Li)',
+    pogonion: 'Chin Tip (Pg)'
+  },
+  left_profile: {
+    pronasale: 'Nose Tip (Pn)',
+    subnasale: 'Nose Base (Sn)',
+    labraleSuperius: 'Upper Lip (Ls)',
+    labraleInferius: 'Lower Lip (Li)',
+    pogonion: 'Chin Tip (Pg)'
+  },
+  profile_45: {
+    pronasale: 'Nose Tip (Pn)',
+    subnasale: 'Nose Base (Sn)',
+    labraleSuperius: 'Upper Lip (Ls)',
+    labraleInferius: 'Lower Lip (Li)',
+    pogonion: 'Chin Tip (Pg)'
+  },
+  frontal_occlusion: {
+    upperMidline: 'Upper Midline',
+    lowerMidline: 'Lower Midline'
+  },
+  right_buccal: {
+    upperMidline: 'Upper Line',
+    lowerMidline: 'Lower Line'
+  },
+  left_buccal: {
+    upperMidline: 'Upper Line',
+    lowerMidline: 'Lower Line'
+  },
+  maxillary_occlusal: {
+    archApex: 'Arch Apex',
+    rightMolar: 'Right Molar',
+    leftMolar: 'Left Molar'
+  },
+  mandibular_occlusal: {
+    archApex: 'Arch Apex',
+    rightMolar: 'Right Molar',
+    leftMolar: 'Left Molar'
+  }
+};
+
 export default function ClinicPhotoWorkstation({
   patientDetails,
   onComplete,
   onBack,
-  isEmbedded = false
+  isEmbedded = false,
+  landmarks: landmarksProp,
+  setLandmarks: setLandmarksProp,
+  photos: photosProp,
+  setPhotos: setPhotosProp
 }: ClinicPhotoWorkstationProps) {
-  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [localPhotos, setLocalPhotos] = useState<Record<string, string>>({});
+  const [localLandmarks, setLocalLandmarks] = useState<Record<string, Record<string, { x: number; y: number }>>>({});
+
+  const photos = photosProp || localPhotos;
+  const setPhotos = setPhotosProp || setLocalPhotos;
+
+  const landmarks = landmarksProp || localLandmarks;
+  const setLandmarks = setLandmarksProp || setLocalLandmarks;
+
   const [analyzingSlot, setAnalyzingSlot] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<string>('frontal_rest');
+  const [selectedMarkerKey, setSelectedMarkerKey] = useState<string>('facialMidline');
   const [showOverlay, setShowOverlay] = useState<boolean>(true);
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
@@ -53,6 +195,7 @@ export default function ClinicPhotoWorkstation({
   const [selectedMarker, setSelectedMarker] = useState<{ name: string; desc: string } | null>(null);
   const [isSectionExpanded, setIsSectionExpanded] = useState<boolean>(true);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [viewportLayout, setViewportLayout] = useState<{ width: number; height: number }>({ width: 300, height: 300 });
   const [qcStatus, setQcStatus] = useState<'idle' | 'validating' | 'passed' | 'failed'>('idle');
 
   // Slots List
@@ -69,19 +212,18 @@ export default function ClinicPhotoWorkstation({
     { key: 'mandibular_occlusal', label: 'Mandibular Occlusal', category: 'intraoral', description: 'Mandibular arch form and Spee curve', required: true }
   ];
 
-  // Seed default placeholders for mock experience or allow custom files
+  // Update selectedMarkerKey when activeSlot changes
   useEffect(() => {
-    const defaultData: Record<string, string> = {};
-    slots.forEach(slot => {
-      defaultData[slot.key] = patientDetails.clinicalPhotos?.[slot.key] || 'MOCK_IMAGE';
-    });
-    setPhotos(defaultData);
-  }, []);
+    const keys = Object.keys(DEFAULT_LANDMARKS[activeSlot] || {});
+    if (keys.length > 0) {
+      setSelectedMarkerKey(keys[0]);
+    }
+  }, [activeSlot]);
 
   // Auto-sync photos & findings to parent
   useEffect(() => {
     onComplete(photos, generateClinicalFindings().map(f => f.text));
-  }, [photos, patientDetails]);
+  }, [photos, activeSlot, patientDetails.diagnosis, patientDetails.facialProfile, patientDetails.lips]);
 
   const handleFileUpload = async (slotKey: string, fileType: 'camera' | 'gallery') => {
     try {
@@ -119,10 +261,10 @@ export default function ClinicPhotoWorkstation({
           if (!uri) {
             throw new Error("Invalid image URI returned by camera.");
           }
-          setPhotos(prev => ({
-            ...prev,
+          setPhotos({
+            ...photos,
             [slotKey]: uri
-          }));
+          });
           Alert.alert("Success", `${slots.find(s => s.key === slotKey)?.label || 'Photo'} successfully captured!`);
         }
       } else {
@@ -159,10 +301,10 @@ export default function ClinicPhotoWorkstation({
           if (!uri) {
             throw new Error("Invalid image URI returned by gallery.");
           }
-          setPhotos(prev => ({
-            ...prev,
+          setPhotos({
+            ...photos,
             [slotKey]: uri
-          }));
+          });
           Alert.alert("Success", `${slots.find(s => s.key === slotKey)?.label || 'Photo'} successfully uploaded!`);
         }
       }
@@ -175,11 +317,9 @@ export default function ClinicPhotoWorkstation({
   };
 
   const handleDeletePhoto = (slotKey: string) => {
-    setPhotos(prev => {
-      const next = { ...prev };
-      delete next[slotKey];
-      return next;
-    });
+    const nextPhotos = { ...photos };
+    delete nextPhotos[slotKey];
+    setPhotos(nextPhotos);
   };
 
   const handleZoom = (direction: 'in' | 'out') => {
@@ -192,6 +332,21 @@ export default function ClinicPhotoWorkstation({
   const handleResetZoom = () => {
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleImagePress = (event: any) => {
+    if (!showOverlay) return;
+    const { locationX, locationY } = event.nativeEvent;
+    const xPct = Math.max(0, Math.min(100, Math.round((locationX / viewportLayout.width) * 100)));
+    const yPct = Math.max(0, Math.min(100, Math.round((locationY / viewportLayout.height) * 100)));
+    
+    const slotLandmarks = { ...(landmarks[activeSlot] || DEFAULT_LANDMARKS[activeSlot] || {}) };
+    slotLandmarks[selectedMarkerKey] = { x: xPct, y: yPct };
+    
+    setLandmarks({
+      ...landmarks,
+      [activeSlot]: slotLandmarks
+    });
   };
 
   // Generate dynamic clinical findings based on patient selection & profile
@@ -290,46 +445,123 @@ export default function ClinicPhotoWorkstation({
   const renderActiveOverlay = () => {
     const isProfile = activeSlot.includes('profile');
     const isIntraoral = activeSlot.includes('occlusion') || activeSlot.includes('buccal') || activeSlot.includes('occlusal');
-    const isSmile = activeSlot === 'frontal_smile';
+    const isArch = activeSlot.includes('occlusal');
 
-    // Render interactive landmarks based on slot type
-    if (isProfile) {
+    // Helper to get landmark x and y percentages
+    const getPoint = (key: string) => {
       return (
-        <View style={tw`absolute inset-0 w-full h-full`}>
-          <Text style={{ color: '#EF4444', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '34%', left: '62%' }}>E-LINE</Text>
-          <Text style={{ color: '#10B981', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '43%', left: '34%' }}>CONVEXITY CURVE</Text>
-        </View>
+        landmarks[activeSlot]?.[key] || 
+        DEFAULT_LANDMARKS[activeSlot]?.[key] || 
+        { x: 50, y: 50 }
       );
-    }
+    };
 
-    if (isIntraoral) {
-      const isArch = activeSlot.includes('occlusal');
-      if (isArch) {
-        return (
-          <View style={tw`absolute inset-0 w-full h-full`}>
-            <Text style={{ color: '#EF4444', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '18%', left: '51%' }}>DENTAL MIDLINE</Text>
-            <Text style={{ color: '#EF4444', fontSize: 8, position: 'absolute', top: '32%', left: '54%' }}>CROWDING ZONE</Text>
-          </View>
-        );
-      }
+    const keys = Object.keys(DEFAULT_LANDMARKS[activeSlot] || {});
 
-      // Frontal dental bite view
-      return (
-        <View style={tw`absolute inset-0 w-full h-full`}>
-          <Text style={{ color: '#3B82F6', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '35%', left: '23%' }}>UPPER MIDLINE</Text>
-          <Text style={{ color: '#EF4444', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '67%', left: '54%' }}>LOWER MIDLINE (SHIFTED)</Text>
-          <Text style={{ color: '#10B981', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '50%', left: '59%' }}>OVERBITE ZONE</Text>
-        </View>
-      );
-    }
-
-    // Default Face view
     return (
       <View style={tw`absolute inset-0 w-full h-full`}>
-        <Text style={{ color: '#EF4444', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '10%', left: '51%' }}>FACIAL MIDLINE</Text>
-        <Text style={{ color: '#3B82F6', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '28%', left: '65%' }}>BIPUPILLARY AXIS</Text>
-        <Text style={{ color: '#10B981', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '51%', left: '73%' }}>MIDDLE THIRD</Text>
-        <Text style={{ color: '#10B981', fontSize: 8, fontWeight: 'bold', position: 'absolute', top: '79%', left: '73%' }}>LOWER THIRD</Text>
+        <Svg width="100%" height="100%" viewBox="0 0 100 100" style={{ position: 'absolute', inset: 0 }}>
+          {/* Face (Rest/Smile) Views */}
+          {!isProfile && !isIntraoral && (() => {
+            const facialMidline = getPoint('facialMidline');
+            const rightPupil = getPoint('rightPupil');
+            const leftPupil = getPoint('leftPupil');
+            const trichion = getPoint('trichion');
+            const subnasale = getPoint('subnasale');
+            const menton = getPoint('menton');
+            return (
+              <>
+                {/* Facial Midline: vertical red line */}
+                <Line x1={facialMidline.x} y1={0} x2={facialMidline.x} y2={100} stroke="#EF4444" strokeWidth={1} strokeDasharray="1,1" />
+                {/* Bipupillary Axis: horizontal blue line */}
+                <Line x1={rightPupil.x} y1={rightPupil.y} x2={leftPupil.x} y2={leftPupil.y} stroke="#3B82F6" strokeWidth={1} />
+                {/* Vertical Thirds: green horizontal lines */}
+                <Line x1={0} y1={trichion.y} x2={100} y2={trichion.y} stroke="#10B981" strokeWidth={0.8} strokeDasharray="2,2" />
+                <Line x1={0} y1={subnasale.y} x2={100} y2={subnasale.y} stroke="#10B981" strokeWidth={0.8} strokeDasharray="2,2" />
+                <Line x1={0} y1={menton.y} x2={100} y2={menton.y} stroke="#10B981" strokeWidth={0.8} strokeDasharray="2,2" />
+              </>
+            );
+          })()}
+
+          {/* Profile Views */}
+          {isProfile && (() => {
+            const pronasale = getPoint('pronasale');
+            const subnasale = getPoint('subnasale');
+            const labraleSuperius = getPoint('labraleSuperius');
+            const labraleInferius = getPoint('labraleInferius');
+            const pogonion = getPoint('pogonion');
+            return (
+              <>
+                {/* Rickett's E-Line: red line from Nose Tip to Chin Tip */}
+                <Line x1={pronasale.x} y1={pronasale.y} x2={pogonion.x} y2={pogonion.y} stroke="#EF4444" strokeWidth={1} />
+                {/* Convexity Profile Curve: green line connecting Subnasale -> Lips -> Pogonion */}
+                <Path 
+                  d={`M ${subnasale.x} ${subnasale.y} Q ${labraleSuperius.x} ${labraleSuperius.y} ${labraleInferius.x} ${labraleInferius.y} T ${pogonion.x} ${pogonion.y}`}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth={1}
+                />
+              </>
+            );
+          })()}
+
+          {/* Dental Occlusion Views */}
+          {isIntraoral && !isArch && (() => {
+            const upperMidline = getPoint('upperMidline');
+            const lowerMidline = getPoint('lowerMidline');
+            const isBuccal = activeSlot.includes('buccal');
+            if (isBuccal) {
+              return (
+                <>
+                  <Line x1={0} y1={upperMidline.y} x2={100} y2={upperMidline.y} stroke="#3B82F6" strokeWidth={1} />
+                  <Line x1={0} y1={lowerMidline.y} x2={100} y2={lowerMidline.y} stroke="#EF4444" strokeWidth={1} />
+                </>
+              );
+            }
+            return (
+              <>
+                {/* Dental Midline alignment */}
+                <Line x1={upperMidline.x} y1={0} x2={upperMidline.x} y2={100} stroke="#3B82F6" strokeWidth={1} />
+                <Line x1={lowerMidline.x} y1={0} x2={lowerMidline.x} y2={100} stroke="#EF4444" strokeWidth={1} />
+              </>
+            );
+          })()}
+
+          {/* Arch Views */}
+          {isArch && (() => {
+            const archApex = getPoint('archApex');
+            const rightMolar = getPoint('rightMolar');
+            const leftMolar = getPoint('leftMolar');
+            return (
+              <Path 
+                d={`M ${rightMolar.x} ${rightMolar.y} Q ${archApex.x} ${archApex.y} ${leftMolar.x} ${leftMolar.y}`} 
+                fill="none" 
+                stroke="#3B82F6" 
+                strokeWidth={1.5} 
+                strokeDasharray="2,2" 
+              />
+            );
+          })()}
+
+          {/* Render markers as small colored circles */}
+          {keys.map((key) => {
+            const pt = getPoint(key);
+            const isSelected = selectedMarkerKey === key;
+            const markerColor = key.toLowerCase().includes('midline') || key.toLowerCase().includes('pronasale') || key.toLowerCase().includes('lower') 
+              ? '#EF4444' // Red
+              : key.toLowerCase().includes('pupil') || key.toLowerCase().includes('upper') || key.toLowerCase().includes('arch') || key.toLowerCase().includes('molar')
+                ? '#3B82F6' // Blue
+                : '#10B981'; // Green
+            return (
+              <React.Fragment key={key}>
+                {isSelected && (
+                  <Circle cx={pt.x} cy={pt.y} r={4.5} fill="none" stroke="#22D3EE" strokeWidth={1.2} />
+                )}
+                <Circle cx={pt.x} cy={pt.y} r={2.2} fill={markerColor} stroke="#FFFFFF" strokeWidth={0.6} />
+              </React.Fragment>
+            );
+          })}
+        </Svg>
       </View>
     );
   };
@@ -410,7 +642,14 @@ export default function ClinicPhotoWorkstation({
                   tw`w-full h-full items-center justify-center`,
                   { transform: [{ scale: zoomScale }, { translateX: panOffset.x }, { translateY: panOffset.y }] }
                 ]}>
-                  <View style={tw`w-full h-full relative`}>
+                  <Pressable 
+                    onPress={(e) => handleImagePress(e)}
+                    onLayout={(e) => {
+                      const { width, height } = e.nativeEvent.layout;
+                      setViewportLayout({ width, height });
+                    }}
+                    style={tw`w-full h-full relative`}
+                  >
                     <Image 
                       source={{ uri: photos[activeSlot] === 'MOCK_IMAGE' ? 'https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=300&auto=format&fit=crop' : photos[activeSlot] }} 
                       style={[
@@ -420,7 +659,7 @@ export default function ClinicPhotoWorkstation({
                       resizeMode="contain"
                     />
                     {showOverlay && renderActiveOverlay()}
-                  </View>
+                  </Pressable>
                 </View>
               ) : (
                 <View style={tw`items-center justify-center p-6 space-y-3`}>
@@ -478,6 +717,40 @@ export default function ClinicPhotoWorkstation({
                 </Pressable>
               )}
             </View>
+          </View>
+        )}
+
+        {/* Landmark Points Selector */}
+        {photos[activeSlot] && showOverlay && (
+          <View style={tw`bg-[#111827] border border-white/10 rounded-xl p-4 mb-4`}>
+            <Text style={tw`text-slate-300 font-bold text-xs mb-1`}>
+              Align Landmark: <Text style={tw`text-cyan-400 font-black`}>{LANDMARK_LABELS[activeSlot]?.[selectedMarkerKey] || selectedMarkerKey}</Text>
+            </Text>
+            <Text style={tw`text-slate-400 text-[10px] mb-3`}>
+              Select a landmark below, then tap/click on the photo to position it perfectly.
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tw`flex-row gap-2 pb-1`}>
+              {Object.keys(DEFAULT_LANDMARKS[activeSlot] || {}).map((key) => {
+                const isActive = selectedMarkerKey === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => setSelectedMarkerKey(key)}
+                    style={[
+                      tw`px-3 py-1.5 rounded-lg border`,
+                      isActive ? tw`bg-cyan-500/20 border-cyan-400` : tw`bg-slate-800 border-white/5`
+                    ]}
+                  >
+                    <Text style={[
+                      tw`text-[10px] font-bold`,
+                      isActive ? tw`text-cyan-300` : tw`text-slate-400`
+                    ]}>
+                      {LANDMARK_LABELS[activeSlot]?.[key] || key}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         )}
 

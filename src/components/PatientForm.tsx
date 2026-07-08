@@ -50,8 +50,21 @@ export default function PatientForm({
   const [cvmStage, setCvmStage] = useState<PatientDetails['cvmStage']>(initialDetails?.cvmStage || 'CS6');
   const [growthStatus, setGrowthStatus] = useState<PatientDetails['growthStatus']>(initialDetails?.growthStatus || 'Growth Complete');
 
-  const [photos, setPhotos] = useState<Record<string, string>>(initialDetails?.clinicalPhotos || {});
+  const [photos, setPhotos] = useState<Record<string, string>>(() => {
+    const defaultData: Record<string, string> = {};
+    const slotsKeys = [
+      'frontal_rest', 'frontal_smile', 'right_profile', 'left_profile', 'profile_45',
+      'frontal_occlusion', 'right_buccal', 'left_buccal', 'maxillary_occlusal', 'mandibular_occlusal'
+    ];
+    slotsKeys.forEach(k => {
+      defaultData[k] = initialDetails?.clinicalPhotos?.[k] || 'MOCK_IMAGE';
+    });
+    return defaultData;
+  });
   const [photoFindings, setPhotoFindings] = useState<string[]>(initialDetails?.clinicalPhotoFindings || []);
+  const [landmarks, setLandmarks] = useState<Record<string, Record<string, { x: number; y: number }>>>(
+    initialDetails?.clinicalPhotosLandmarks || {}
+  );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -102,6 +115,7 @@ export default function PatientForm({
       analysisMode: mode,
       clinicalPhotos: photos,
       clinicalPhotoFindings: photoFindings,
+      clinicalPhotosLandmarks: landmarks,
       ...fieldOverrides
     };
   };
@@ -741,9 +755,20 @@ export default function PatientForm({
                 <View style={tw`p-5`}>
                   <ClinicPhotoWorkstation
                     patientDetails={getLatestDetailsObject()}
-                    onComplete={(p, f) => {
+                    photos={photos}
+                    setPhotos={(p: Record<string, string>) => {
+                      setPhotos(p);
+                      triggerUpdate({ clinicalPhotos: p });
+                    }}
+                    landmarks={landmarks}
+                    setLandmarks={(l: Record<string, Record<string, { x: number; y: number }>>) => {
+                      setLandmarks(l);
+                      triggerUpdate({ clinicalPhotosLandmarks: l });
+                    }}
+                    onComplete={(p: Record<string, string>, f: string[]) => {
                       setPhotos(p);
                       setPhotoFindings(f);
+                      triggerUpdate({ clinicalPhotos: p, clinicalPhotoFindings: f });
                     }}
                     isEmbedded
                   />

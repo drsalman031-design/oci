@@ -29,6 +29,7 @@ export interface PatientDetails {
   analysisMode?: 'clinic' | 'ceph' | 'turbo';
   clinicalPhotos?: Record<string, string>;
   clinicalPhotoFindings?: string[];
+  clinicalPhotosLandmarks?: Record<string, Record<string, { x: number; y: number }>>;
 }
 
 export interface CephalometricInput {
