@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
-import { User, Clipboard, FileText, ArrowRight, X, Heart, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Info, Activity, Flame } from 'lucide-react-native';
+import { User, Clipboard, FileText, ArrowRight, X, Heart, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Info, Activity, Flame, Camera } from 'lucide-react-native';
 import tw from 'twrnc';
 import { PatientDetails } from '../types';
+import ClinicPhotoWorkstation from './ClinicPhotoWorkstation';
 
 interface PatientFormProps {
   initialDetails?: PatientDetails;
@@ -49,6 +50,9 @@ export default function PatientForm({
   const [cvmStage, setCvmStage] = useState<PatientDetails['cvmStage']>(initialDetails?.cvmStage || 'CS6');
   const [growthStatus, setGrowthStatus] = useState<PatientDetails['growthStatus']>(initialDetails?.growthStatus || 'Growth Complete');
 
+  const [photos, setPhotos] = useState<Record<string, string>>(initialDetails?.clinicalPhotos || {});
+  const [photoFindings, setPhotoFindings] = useState<string[]>(initialDetails?.clinicalPhotoFindings || []);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [expandedSections, setExpandedSections] = useState({
@@ -58,6 +62,7 @@ export default function PatientForm({
     intraoral: true,
     functional: true,
     smile: true,
+    photos: true,
     notes: true
   });
 
@@ -95,6 +100,8 @@ export default function PatientForm({
       cvmStage,
       growthStatus,
       analysisMode: mode,
+      clinicalPhotos: photos,
+      clinicalPhotoFindings: photoFindings,
       ...fieldOverrides
     };
   };
@@ -706,6 +713,40 @@ export default function PatientForm({
                       })}
                     </View>
                   </View>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Section 5B: Clinical Photograph Upload (Foldable Card) */}
+          {mode === 'clinic' && (
+            <View style={tw`bg-[#0B1020]/80 border border-white/5 rounded-3xl overflow-hidden shadow-2xl`}>
+              <Pressable 
+                onPress={() => toggleSection('photos')}
+                style={tw`flex-row justify-between items-center p-5 bg-black/20 border-b border-white/5`}
+              >
+                <View style={tw`flex-row items-center space-x-3`}>
+                  <View style={tw`p-2 bg-teal-500/10 rounded-xl`}>
+                    <Camera size={16} color="#14B8A6" />
+                  </View>
+                  <View>
+                    <Text style={tw`text-sm font-extrabold text-white`}>📸 Clinical Photograph Upload</Text>
+                    <Text style={tw`text-[10px] text-slate-400 font-medium`}>Standardized extraoral and intraoral views</Text>
+                  </View>
+                </View>
+                {expandedSections.photos ? <ChevronUp size={16} color="#94A3B8" /> : <ChevronDown size={16} color="#94A3B8" />}
+              </Pressable>
+
+              {expandedSections.photos && (
+                <View style={tw`p-5`}>
+                  <ClinicPhotoWorkstation
+                    patientDetails={getLatestDetailsObject()}
+                    onComplete={(p, f) => {
+                      setPhotos(p);
+                      setPhotoFindings(f);
+                    }}
+                    isEmbedded
+                  />
                 </View>
               )}
             </View>

@@ -540,7 +540,7 @@ export default function App() {
       setActiveResult(result);
       
       await saveActiveWorkspace(details, emptyCeph, result, "Synthesizing orthodontic report...");
-      setScreen('clinic-photo-upload');
+      setScreen('results');
     } else {
       await saveActiveWorkspace(details, null, null);
       setScreen('ceph-input');
