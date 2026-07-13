@@ -1,24 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   Sparkles, 
   CheckCircle,
   FileText,
-  Award,
-  Zap,
-  Info,
   ChevronLeft,
   ArrowRight,
-  ShieldCheck,
-  Activity,
-  Layers,
-  Heart
+  ShieldCheck
 } from 'lucide-react-native';
 import tw from 'twrnc';
-import { OciResult, CephalometricInput, PatientDetails, Assessment } from '../types';
-import { getReportData } from './PdfReport';
-import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
+import { OciResult, CephalometricInput, PatientDetails } from '../types';
+import Svg, { Circle } from 'react-native-svg';
 
 interface ResultsDashboardProps {
   patientDetails: PatientDetails;
@@ -38,11 +30,9 @@ export default function ResultsDashboard({
   onOpenPdf,
   onBack,
 }: ResultsDashboardProps) {
-  const [loading, setLoading] = useState(false);
-
   const getScoreColor = (score: number) => {
     if (score <= 20) return '#10B981'; // Green
-    if (score <= 50) return '#0D9488'; // Teal
+    if (score <= 50) return '#10B7A8'; // Teal
     if (score <= 75) return '#F59E0B'; // Orange/Yellow
     return '#EF4444'; // Red
   };
@@ -62,7 +52,7 @@ export default function ResultsDashboard({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-slate-50`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
@@ -72,15 +62,15 @@ export default function ResultsDashboard({
         <View style={tw`flex-row justify-between items-center`}>
           <Pressable 
             onPress={onBack}
-            style={tw`flex-row items-center bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm`}
+            style={tw`flex-row items-center bg-[#0E234D] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 rounded-xl shadow-sm`}
           >
-            <ChevronLeft size={14} color="#64748B" style={tw`mr-1`} />
-            <Text style={tw`text-slate-600 font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
+            <ChevronLeft size={14} color="#FFF" style={tw`mr-1`} />
+            <Text style={tw`text-white font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
           </Pressable>
 
           <Pressable 
             onPress={() => onOpenPdf(summaryReportText)}
-            style={tw`flex-row items-center bg-teal-600 px-4 py-2 rounded-xl shadow-sm`}
+            style={tw`flex-row items-center bg-[#10B7A8] px-4 py-2 rounded-xl shadow-sm`}
           >
             <FileText size={14} color="#FFF" style={tw`mr-1.5`} />
             <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
@@ -88,8 +78,8 @@ export default function ResultsDashboard({
         </View>
 
         {/* HERO OCI RING */}
-        <View style={tw`bg-white rounded-[24px] border border-slate-100 p-8 shadow-sm items-center space-y-6`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+        <View style={tw`bg-[#102B5C] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-8 shadow-sm items-center space-y-6`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             Orthodontic Compensation Index
           </Text>
 
@@ -100,7 +90,7 @@ export default function ResultsDashboard({
                 cx="50"
                 cy="50"
                 r="42"
-                stroke="#E2E8F0"
+                stroke="#0E234D"
                 strokeWidth="8"
                 fill="none"
               />
@@ -120,52 +110,52 @@ export default function ResultsDashboard({
               <Text style={[tw`text-4xl font-black font-mono`, { color: scoreColor }]}>
                 {ociResult.totalScore}
               </Text>
-              <Text style={tw`text-[10px] text-slate-400 font-black uppercase mt-0.5`}>OCI Score</Text>
+              <Text style={tw`text-[10px] text-[#C7D2E6] font-black uppercase mt-0.5`}>OCI Score</Text>
             </View>
           </View>
 
           {/* Details Row */}
-          <View style={tw`flex-row justify-between w-full border-t border-slate-100 pt-6`}>
+          <View style={tw`flex-row justify-between w-full border-t border-[rgba(255,255,255,0.08)] pt-6`}>
             <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>Complexity</Text>
+              <Text style={tw`text-[10px] font-bold text-[#C7D2E6] uppercase`}>Complexity</Text>
               <Text style={[tw`text-sm font-black mt-1`, { color: scoreColor }]}>{complexity}</Text>
             </View>
-            <View style={tw`w-px bg-slate-100 h-8`} />
+            <View style={tw`w-px bg-[rgba(255,255,255,0.08)] h-8`} />
             <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>AI Confidence</Text>
-              <Text style={tw`text-sm font-black text-slate-800 mt-1`}>94%</Text>
+              <Text style={tw`text-[10px] font-bold text-[#C7D2E6] uppercase`}>AI Confidence</Text>
+              <Text style={tw`text-sm font-black text-white mt-1`}>94%</Text>
             </View>
-            <View style={tw`w-px bg-slate-100 h-8`} />
+            <View style={tw`w-px bg-[rgba(255,255,255,0.08)] h-8`} />
             <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>Scan Quality</Text>
-              <Text style={tw`text-sm font-black text-teal-600 mt-1`}>Optimal</Text>
+              <Text style={tw`text-[10px] font-bold text-[#C7D2E6] uppercase`}>Scan Quality</Text>
+              <Text style={tw`text-sm font-black text-[#10B7A8] mt-1`}>Optimal</Text>
             </View>
           </View>
         </View>
 
         {/* OCI SUMMARY CARDS */}
         <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             OCI Clinical Breakdown
           </Text>
 
           <View style={tw`space-y-3`}>
             {[
               { title: 'Facial Pattern', icon: '👤', desc: 'Convex retrognathic mandible profile with average facial height proportion.', color: scoreColor },
-              { title: 'Growth Pattern', icon: '📈', desc: 'Hypodivergent vertical growth direction indicating good counter-clockwise rotation.', color: '#0D9488' },
-              { title: 'Dental Pattern', icon: '🦷', desc: 'Class II molar relationship with moderate anterior crowding & reduced overbite.', color: '#0D9488' },
+              { title: 'Growth Pattern', icon: '📈', desc: 'Hypodivergent vertical growth direction indicating good counter-clockwise rotation.', color: '#10B7A8' },
+              { title: 'Dental Pattern', icon: '🦷', desc: 'Class II molar relationship with moderate anterior crowding & reduced overbite.', color: '#10B7A8' },
               { title: 'Skeletal Pattern', icon: '📐', desc: 'ANB angle indicates moderate Class II discrepancy with retrusive mandibular posture.', color: scoreColor },
               { title: 'Compensation Severity', icon: '⚖️', desc: 'High lower incisor proclination to compensate for skeletal Class II base.', color: scoreColor },
               { title: 'Occlusal Findings', icon: '👄', desc: 'Overjet measured at 6.2mm with moderate maxillary segment protrusion.', color: scoreColor },
-              { title: 'Soft Tissue Findings', icon: '✨', desc: 'Upper lip positioned anteriorly to E-line. Lip seal requires moderate effort.', color: '#0D9488' }
+              { title: 'Soft Tissue Findings', icon: '✨', desc: 'Upper lip positioned anteriorly to E-line. Lip seal requires moderate effort.', color: '#10B7A8' }
             ].map((item, idx) => (
-              <View key={idx} style={tw`bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex-row items-start space-x-3.5`}>
-                <View style={tw`text-lg w-8 h-8 rounded-full bg-slate-50 items-center justify-center`}>
+              <View key={idx} style={tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 shadow-sm flex-row items-start space-x-3.5`}>
+                <View style={tw`text-lg w-8 h-8 rounded-full bg-[#0E234D] items-center justify-center`}>
                   <Text>{item.icon}</Text>
                 </View>
                 <View style={tw`flex-1`}>
-                  <Text style={tw`text-xs font-black text-slate-800`}>{item.title}</Text>
-                  <Text style={tw`text-[10px] text-slate-500 mt-0.5 leading-normal`}>{item.desc}</Text>
+                  <Text style={tw`text-xs font-black text-white`}>{item.title}</Text>
+                  <Text style={tw`text-[10px] text-[#C7D2E6] mt-0.5 leading-normal`}>{item.desc}</Text>
                 </View>
                 <View style={[tw`w-2 h-2 rounded-full self-center`, { backgroundColor: item.color }]} />
               </View>
@@ -175,11 +165,11 @@ export default function ResultsDashboard({
 
         {/* AUTOMATIC CEPHALOMETRIC VALUES */}
         <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             Automatic Cephalometrics
           </Text>
 
-          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm`}>
+          <View style={tw`bg-[#102B5C] rounded-3xl border border-[rgba(255,255,255,0.08)] p-6 shadow-sm`}>
             <View style={tw`flex-row flex-wrap gap-4`}>
               {[
                 { label: 'SNA', val: '81.4°', norm: '82°' },
@@ -195,10 +185,10 @@ export default function ResultsDashboard({
                 { label: 'Beta Angle', val: '26.2°', norm: '30°' },
                 { label: 'Jarabak', val: '64.5%', norm: '65%' }
               ].map((item, idx) => (
-                <View key={idx} style={tw`w-[30%] bg-slate-50 rounded-xl p-3 items-center border border-slate-100`}>
-                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase`}>{item.label}</Text>
-                  <Text style={tw`text-xs font-black text-slate-800 mt-1`}>{item.val}</Text>
-                  <Text style={tw`text-[8px] text-slate-400 mt-0.5`}>Norm: {item.norm}</Text>
+                <View key={idx} style={tw`w-[30%] bg-[#0E234D] rounded-xl p-3 items-center border border-[rgba(255,255,255,0.08)]`}>
+                  <Text style={tw`text-[9px] font-black text-[#C7D2E6] uppercase`}>{item.label}</Text>
+                  <Text style={tw`text-xs font-black text-white mt-1`}>{item.val}</Text>
+                  <Text style={tw`text-[8px] text-[#C7D2E6] mt-0.5`}>Norm: {item.norm}</Text>
                 </View>
               ))}
             </View>
@@ -207,11 +197,11 @@ export default function ResultsDashboard({
 
         {/* OCI INTERPRETATION */}
         <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             OCI Clinical Interpretation
           </Text>
 
-          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-2`}>
+          <View style={tw`bg-[#102B5C] rounded-3xl border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-2`}>
             {[
               'Skeletal Class II sagittal discrepancy detected with moderate retrusive mandible.',
               'Favorable normodivergent vertical growth direction reduces surgical indication.',
@@ -219,8 +209,8 @@ export default function ResultsDashboard({
               'Convex soft tissue profile with mild lip incompetence secondary to overjet.'
             ].map((bullet, idx) => (
               <View key={idx} style={tw`flex-row items-start space-x-2 py-0.5`}>
-                <Text style={tw`text-teal-600 text-xs`}>•</Text>
-                <Text style={tw`text-[11px] text-slate-600 leading-normal flex-1`}>{bullet}</Text>
+                <Text style={tw`text-[#10B7A8] text-xs`}>•</Text>
+                <Text style={tw`text-[11px] text-[#C7D2E6] leading-normal flex-1`}>{bullet}</Text>
               </View>
             ))}
           </View>
@@ -228,11 +218,11 @@ export default function ResultsDashboard({
 
         {/* AI DIAGNOSIS */}
         <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             AI Diagnostic Profiler
           </Text>
 
-          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4`}>
+          <View style={tw`bg-[#102B5C] rounded-3xl border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-4`}>
             {[
               { label: 'Primary Diagnosis', val: 'Skeletal Class II Sagittal Discrepancy' },
               { label: 'Secondary Diagnosis', val: 'Class II Division 1 Malocclusion' },
@@ -242,9 +232,9 @@ export default function ResultsDashboard({
               { label: 'Soft Tissue Pattern', val: 'Convex profile with acute nasolabial angle' },
               { label: 'Compensation Status', val: 'Dentoalveolar camouflage active (IMPA 97.2°)' }
             ].map((item, idx) => (
-              <View key={idx} style={tw`flex-row justify-between items-center py-1 border-b border-slate-100`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>{item.label}</Text>
-                <Text style={tw`text-[11px] font-black text-slate-800 text-right flex-1 ml-4`}>{item.val}</Text>
+              <View key={idx} style={tw`flex-row justify-between items-center py-1 border-b border-[rgba(255,255,255,0.08)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#C7D2E6] uppercase`}>{item.label}</Text>
+                <Text style={tw`text-[11px] font-black text-white text-right flex-1 ml-4`}>{item.val}</Text>
               </View>
             ))}
           </View>
@@ -252,11 +242,11 @@ export default function ResultsDashboard({
 
         {/* AI TREATMENT PLAN */}
         <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+          <Text style={tw`text-xs font-black text-[#C7D2E6] uppercase tracking-widest`}>
             AI Treatment Objectives & Mechanics
           </Text>
 
-          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-3`}>
+          <View style={tw`bg-[#102B5C] rounded-3xl border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-3`}>
             {[
               { title: 'Treatment Objectives', desc: 'Establish class I canine occlusion. Reduce overjet to 2mm. Improve facial profile outline.' },
               { title: 'Extraction Scheme', desc: 'Extract upper first premolars to retract anterior segment. Lower arch non-extraction.' },
@@ -267,8 +257,8 @@ export default function ResultsDashboard({
               { title: 'Retention Protocol', desc: 'Upper vacuum-formed retainer + lower fixed 3-3 lingual bonded wire.' }
             ].map((item, idx) => (
               <View key={idx} style={tw`space-y-1 py-1`}>
-                <Text style={tw`text-[10px] font-black text-teal-600 uppercase tracking-wider`}>• {item.title}</Text>
-                <Text style={tw`text-xs text-slate-600 leading-normal pl-3`}>{item.desc}</Text>
+                <Text style={tw`text-[10px] font-black text-[#10B7A8] uppercase tracking-wider`}>• {item.title}</Text>
+                <Text style={tw`text-xs text-[#C7D2E6] leading-normal pl-3`}>{item.desc}</Text>
               </View>
             ))}
           </View>
@@ -278,11 +268,11 @@ export default function ResultsDashboard({
         <Pressable
           onPress={onBack}
           style={({ pressed }) => [
-            tw`bg-slate-200 py-4 rounded-2xl items-center justify-center shadow-sm`,
+            tw`bg-[#0E234D] border border-[rgba(255,255,255,0.08)] py-4 rounded-2xl items-center justify-center shadow-sm`,
             pressed ? tw`opacity-80` : null
           ]}
         >
-          <Text style={tw`text-slate-700 font-black text-xs uppercase tracking-wider`}>
+          <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>
             Finish OCI Analysis
           </Text>
         </Pressable>

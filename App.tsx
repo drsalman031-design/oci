@@ -821,11 +821,11 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-[#050814] justify-center items-center`}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={tw`flex-1 bg-[#071B49] justify-center items-center`}>
+      <StatusBar barStyle="light-content" backgroundColor="#071B49" />
 
       {/* Main mobile viewport container */}
-      <View style={[tw`w-full max-w-[480px] bg-[#0B1020] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
+      <View style={[tw`w-full max-w-[480px] bg-[#071B49] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
         
         {/* 1. Splash Screen Overlay */}
         {screen === 'splash' && (
@@ -834,7 +834,7 @@ export default function App() {
 
         {/* 2. Top Navigation Bar (Hidden during Splash or if Not Authenticated) */}
         {screen !== 'splash' && userEmail && (
-          <View style={tw`bg-[#111827]/80 border-b border-white/10 px-4 py-3 flex-row items-center justify-between`}>
+          <View style={tw`bg-[#071B49] border-b border-[rgba(255,255,255,0.08)] px-4 py-3 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center space-x-2`}>
               <View>
                 <Text style={tw`font-extrabold text-xs text-white tracking-wide`}>
