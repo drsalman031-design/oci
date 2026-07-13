@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert, Image, Platform } from 'react-native';
 import { 
   PatientDetails, 
   CephalometricInput, 
@@ -28,6 +28,7 @@ import {
   dbGetProfile,
   dbSeedAdmin,
   dbSetActiveUser,
+  dbSetActiveSessionKey,
   dbGetActiveUser,
   sanitizeAssessment
 } from './src/lib/db';
@@ -186,17 +187,10 @@ export default function App() {
         // Pre-seed default OCI Administrator and Developer credentials
         await dbSeedAdmin();
 
-        // Restore user session if present
-        const savedEmail = await AsyncStorage.getItem('oci_user_email');
-        const savedIsGoogle = await AsyncStorage.getItem('oci_is_google');
-        if (savedEmail) {
-          dbSetActiveUser(savedEmail);
-          setUserEmail(savedEmail);
-          setIsGoogleUser(savedIsGoogle === 'true');
-          await fetchUserRole(savedEmail);
-        } else {
-          dbSetActiveUser(null);
-        }
+        // Reset active user and session key on startup to force fresh login credentials check
+        dbSetActiveUser(null);
+        dbSetActiveSessionKey(null);
+        setUserEmail(null);
 
         let assessments = await dbGetAssessments();
         const activeEmail = dbGetActiveUser();
@@ -319,6 +313,7 @@ export default function App() {
 
   const handleLogout = async () => {
     dbSetActiveUser(null);
+    dbSetActiveSessionKey(null);
     setUserEmail(null);
     setIsGoogleUser(false);
     setUserRole(null);
@@ -329,6 +324,44 @@ export default function App() {
     setSavedAssessments(guestData);
     setScreen('home'); // Reset screen stack
   };
+
+  // Session inactivity auto-logout (15 minutes of inactivity triggers logout)
+  useEffect(() => {
+    if (!userEmail) return;
+
+    let timeoutId: any;
+    const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        handleLogout();
+        try {
+          Alert.alert('Session Expired', 'You have been automatically logged out due to inactivity.');
+        } catch (e) {
+          console.log('Session Expired alert triggered.');
+        }
+      }, INACTIVITY_TIME);
+    };
+
+    if (Platform.OS === 'web') {
+      const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
+      events.forEach(ev => window.addEventListener(ev, resetTimer));
+      
+      resetTimer();
+      
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        events.forEach(ev => window.removeEventListener(ev, resetTimer));
+      };
+    } else {
+      resetTimer();
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+  }, [userEmail]);
+
 
   const toggleDarkMode = async () => {
     const nextDark = !darkMode;

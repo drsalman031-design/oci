@@ -253,14 +253,35 @@ export default function ClinicPhotoWorkstation({
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
           const asset = result.assets[0];
-          if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
-            Alert.alert("Image Too Large", "The captured photograph exceeds the 15MB size limit.");
+          
+          // Secure File Size Check (10MB limit)
+          if (asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
+            Alert.alert("Image Too Large", "The captured photograph exceeds the 10MB size limit.");
             return;
           }
+          
           const uri = asset.uri;
           if (!uri) {
             throw new Error("Invalid image URI returned by camera.");
           }
+          
+          // Secure File Extension & MIME Type Check
+          const extension = uri.split('.').pop()?.toLowerCase() || '';
+          const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+          const isAllowed = allowedExtensions.includes(extension) || uri.startsWith('data:') || uri.startsWith('blob:') || uri === 'MOCK_IMAGE';
+          if (!isAllowed) {
+            Alert.alert("Unsupported File", "Only JPG, JPEG, PNG, and WEBP image files are allowed.");
+            return;
+          }
+          
+          if (asset.mimeType) {
+            const allowedMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedMime.includes(asset.mimeType.toLowerCase())) {
+              Alert.alert("Unsupported File", "Invalid clinical image file signature.");
+              return;
+            }
+          }
+          
           setPhotos({
             ...photos,
             [slotKey]: uri
@@ -293,14 +314,35 @@ export default function ClinicPhotoWorkstation({
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
           const asset = result.assets[0];
-          if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
-            Alert.alert("Image Too Large", "The selected photograph exceeds the 15MB size limit.");
+          
+          // Secure File Size Check (10MB limit)
+          if (asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
+            Alert.alert("Image Too Large", "The selected photograph exceeds the 10MB size limit.");
             return;
           }
+          
           const uri = asset.uri;
           if (!uri) {
             throw new Error("Invalid image URI returned by gallery.");
           }
+          
+          // Secure File Extension & MIME Type Check
+          const extension = uri.split('.').pop()?.toLowerCase() || '';
+          const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+          const isAllowed = allowedExtensions.includes(extension) || uri.startsWith('data:') || uri.startsWith('blob:') || uri === 'MOCK_IMAGE';
+          if (!isAllowed) {
+            Alert.alert("Unsupported File", "Only JPG, JPEG, PNG, and WEBP image files are allowed.");
+            return;
+          }
+          
+          if (asset.mimeType) {
+            const allowedMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedMime.includes(asset.mimeType.toLowerCase())) {
+              Alert.alert("Unsupported File", "Invalid clinical image file signature.");
+              return;
+            }
+          }
+          
           setPhotos({
             ...photos,
             [slotKey]: uri

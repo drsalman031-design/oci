@@ -12,7 +12,7 @@ import {
   CephWorkspaceData, 
   TurboWorkspaceData 
 } from '../types';
-import { sha256 } from './crypto';
+import { sha256, pbkdf2, hashPassword, AES256 } from './crypto';
 
 export interface OciSettings {
   weights?: OciWeights;
@@ -30,6 +30,20 @@ export function dbSetActiveUser(email: string | null): void {
 
 export function dbGetActiveUser(): string | null {
   return activeUserEmail;
+}
+
+let activeSessionKey: string | null = null;
+
+export function dbSetActiveSessionKey(key: string | null): void {
+  activeSessionKey = key;
+}
+
+export function dbGetActiveSessionKey(): string | null {
+  return activeSessionKey;
+}
+
+function getCipherKey(): string {
+  return activeSessionKey || 'oci_default_system_key_salt_2026';
 }
 
 // Helper to get active-user specific storage keys
@@ -141,13 +155,15 @@ export async function dbSeedAdmin(): Promise<void> {
     const adminChanged = await AsyncStorage.getItem('oci_admin_password_changed');
     
     if (!users[adminEmail]) {
+      const { hash, salt } = hashPassword('OCI@2026');
       const adminProfile: UserProfile = {
         id: adminEmail,
         firstName: 'System',
         lastName: 'Administrator',
         email: adminEmail,
         mobile: '+1 (555) 019-2026',
-        passwordHash: sha256('OCI@2026'),
+        passwordHash: hash,
+        salt: salt,
         role: 'Administrator',
         createdDate: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
@@ -159,8 +175,9 @@ export async function dbSeedAdmin(): Promise<void> {
       updated = true;
       console.log('Successfully pre-seeded default administrator account in OCI Database.');
     } else if (adminChanged !== 'true') {
-      // Force reset default credentials if password was never changed to resolve stale local storage hashes
-      users[adminEmail].passwordHash = sha256('OCI@2026');
+      const { hash, salt } = hashPassword('OCI@2026');
+      users[adminEmail].passwordHash = hash;
+      users[adminEmail].salt = salt;
       users[adminEmail].status = 'Active';
       users[adminEmail].role = 'Administrator';
       updated = true;
@@ -171,13 +188,15 @@ export async function dbSeedAdmin(): Promise<void> {
     const devChanged = await AsyncStorage.getItem('oci_developer_password_changed');
     
     if (!users[devEmail]) {
+      const { hash, salt } = hashPassword('OCI_DEV@2026');
       const devProfile: UserProfile = {
         id: devEmail,
         firstName: 'System',
         lastName: 'Developer',
         email: devEmail,
         mobile: '+1 (555) 019-2027',
-        passwordHash: sha256('OCI_DEV@2026'),
+        passwordHash: hash,
+        salt: salt,
         role: 'Developer',
         createdDate: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
@@ -189,8 +208,9 @@ export async function dbSeedAdmin(): Promise<void> {
       updated = true;
       console.log('Successfully pre-seeded default developer account in OCI Database.');
     } else if (devChanged !== 'true') {
-      // Force reset default credentials if password was never changed to resolve stale local storage hashes
-      users[devEmail].passwordHash = sha256('OCI_DEV@2026');
+      const { hash, salt } = hashPassword('OCI_DEV@2026');
+      users[devEmail].passwordHash = hash;
+      users[devEmail].salt = salt;
       users[devEmail].status = 'Active';
       users[devEmail].role = 'Developer';
       updated = true;
@@ -211,7 +231,7 @@ export async function initDB(): Promise<any> {
 }
 
 // Authenticate a user and update last login timestamp
-export async function dbAuthenticateUser(email: string, passwordHash: string): Promise<UserProfile | null> {
+export async function dbAuthenticateUser(email: string, passwordInput: string): Promise<UserProfile | null> {
   try {
     const cleanEmail = email.toLowerCase().trim();
     const usersStr = await AsyncStorage.getItem(USERS_TABLE_KEY);
@@ -220,18 +240,26 @@ export async function dbAuthenticateUser(email: string, passwordHash: string): P
     const users = JSON.parse(usersStr);
     const user = users[cleanEmail] as UserProfile;
     
-    if (user && user.passwordHash === passwordHash) {
-      if (user.status === 'Disabled') {
-        throw new Error('Account Disabled');
+    if (user) {
+      let calculatedHash = passwordInput;
+      if (user.salt) {
+        calculatedHash = pbkdf2(passwordInput, user.salt, 1000);
       }
-      // Update last login
-      user.lastLogin = new Date().toISOString();
-      users[cleanEmail] = user;
-      await AsyncStorage.setItem(USERS_TABLE_KEY, JSON.stringify(users));
       
-      // Set active user context
-      dbSetActiveUser(cleanEmail);
-      return user;
+      if (user.passwordHash === calculatedHash) {
+        if (user.status === 'Disabled') {
+          throw new Error('Account Disabled');
+        }
+        // Update last login
+        user.lastLogin = new Date().toISOString();
+        users[cleanEmail] = user;
+        await AsyncStorage.setItem(USERS_TABLE_KEY, JSON.stringify(users));
+        
+        // Set active user context and session key
+        dbSetActiveUser(cleanEmail);
+        dbSetActiveSessionKey(calculatedHash);
+        return user;
+      }
     }
     return null;
   } catch (err: any) {
@@ -254,10 +282,14 @@ export async function dbRegisterUser(profile: Omit<UserProfile, 'createdDate' | 
       return false; // Duplicate Email Prevention
     }
     
+    const { hash, salt } = hashPassword(profile.passwordHash);
+    
     const fullProfile: UserProfile = {
       ...profile,
       id: cleanEmail,
       email: cleanEmail,
+      passwordHash: hash,
+      salt: salt,
       createdDate: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
       status: 'Active',
@@ -461,7 +493,8 @@ export async function dbSaveAssessment(assessment: Assessment): Promise<void> {
     } else {
       assessments.push(sanitized);
     }
-    await AsyncStorage.setItem(key, JSON.stringify(assessments));
+    const encrypted = AES256.encrypt(JSON.stringify(assessments), getCipherKey());
+    await AsyncStorage.setItem(key, encrypted);
   } catch (error) {
     console.error('Error saving assessment to AsyncStorage:', error);
     throw error;
@@ -473,7 +506,18 @@ export async function dbGetAssessments(): Promise<Assessment[]> {
     const key = getAssessmentsKey();
     const data = await AsyncStorage.getItem(key);
     if (!data) return [];
-    const assessments = JSON.parse(data) as any[];
+    
+    let decrypted = data;
+    if (data.startsWith('ey') || !data.startsWith('[')) {
+      try {
+        decrypted = AES256.decrypt(data, getCipherKey());
+      } catch (err) {
+        console.error('Crypto decryption failed on assessments, attempting fallback check.', err);
+        return [];
+      }
+    }
+    
+    const assessments = JSON.parse(decrypted) as any[];
     // Sort assessments by createdAt descending
     assessments.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
     return assessments.map(sanitizeAssessment);

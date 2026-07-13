@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, Modal, ActivityIndicator 
 import { User, Clipboard, FileText, ArrowRight, X, Heart, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Info, Activity, Flame, Camera } from 'lucide-react-native';
 import tw from 'twrnc';
 import { PatientDetails } from '../types';
+import { sanitizeInput } from '../lib/crypto';
 import ClinicPhotoWorkstation from './ClinicPhotoWorkstation';
 import { runMultimodalVisionAI } from '../lib/gemini';
 
@@ -90,18 +91,18 @@ export default function PatientForm({
 
   const getLatestDetailsObject = (fieldOverrides: Partial<PatientDetails> = {}): PatientDetails => {
     return {
-      name,
+      name: sanitizeInput(name),
       age: age !== '' ? Number(age) : '',
       gender,
-      caseNumber,
+      caseNumber: sanitizeInput(caseNumber),
       diagnosis,
       date,
-      clinicalNotes,
+      clinicalNotes: sanitizeInput(clinicalNotes),
       facialProfile,
       smileAnalysis,
       crowdingSpacing,
       dentitionPhase,
-      chiefComplaint,
+      chiefComplaint: sanitizeInput(chiefComplaint),
       facialAsymmetry,
       lips,
       molarRelationRight,

@@ -33,7 +33,7 @@ import {
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import Svg, { Circle, Line, Path, G, Rect, Text as SvgText, Defs, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
-import { sha256 } from '../lib/crypto';
+import { sha256, hashPassword } from '../lib/crypto';
 import { dbAuthenticateUser, dbRegisterUser, dbGetProfile } from '../lib/db';
 import { UserRole, UserProfile } from '../types';
 
@@ -139,17 +139,40 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       return;
     }
 
+    const lockoutKey = `oci_login_lockout_${cleanEmail}`;
+    const attemptsKey = `oci_login_attempts_${cleanEmail}`;
+    
+    try {
+      const lockoutTimeStr = await AsyncStorage.getItem(lockoutKey);
+      if (lockoutTimeStr) {
+        const lockoutTime = new Date(lockoutTimeStr).getTime();
+        const now = Date.now();
+        const diffMin = (lockoutTime - now) / 60000;
+        if (diffMin > 0) {
+          setErrorMessage(`Security Lockout: Too many failed login attempts. Try again in ${Math.ceil(diffMin)} minutes.`);
+          return;
+        } else {
+          await AsyncStorage.removeItem(lockoutKey);
+          await AsyncStorage.removeItem(attemptsKey);
+        }
+      }
+    } catch (e) {
+      console.log('Failed to check lockout state', e);
+    }
+
     setIsLoading(true);
 
     try {
       // Simulate network latency
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const pwdHash = sha256(cleanPassword);
-      const user = await dbAuthenticateUser(cleanEmail, pwdHash);
+      const user = await dbAuthenticateUser(cleanEmail, cleanPassword);
 
       if (user) {
-        // Check if using default password for seeded accounts
+        // Clear attempts and lockouts upon success
+        await AsyncStorage.removeItem(lockoutKey);
+        await AsyncStorage.removeItem(attemptsKey);
+
         const isDefaultAdmin = cleanEmail.toLowerCase().trim() === 'admin@ociclinic.ai' && cleanPassword === 'OCI@2026';
         const isDefaultDev = cleanEmail.toLowerCase().trim() === 'developer@ociclinic.ai' && cleanPassword === 'OCI_DEV@2026';
 
@@ -170,8 +193,18 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         setIsLoading(false);
         onLoginSuccess(user.email, false);
       } else {
+        const attemptsStr = await AsyncStorage.getItem(attemptsKey) || '0';
+        const attempts = parseInt(attemptsStr, 10) + 1;
+        if (attempts >= 5) {
+          const lockoutExpiry = new Date(Date.now() + 15 * 60000).toISOString();
+          await AsyncStorage.setItem(lockoutKey, lockoutExpiry);
+          await AsyncStorage.setItem(attemptsKey, attempts.toString());
+          setErrorMessage('Security Lockout: Too many failed login attempts. Access blocked for 15 minutes.');
+        } else {
+          await AsyncStorage.setItem(attemptsKey, attempts.toString());
+          setErrorMessage(`Incorrect clinical email or password. Attempt ${attempts}/5 before lockout.`);
+        }
         setIsLoading(false);
-        setErrorMessage('Incorrect clinical email or password. Please try again.');
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -215,14 +248,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const pwdHash = sha256(newPwd);
+      const { hash, salt } = hashPassword(newPwd);
       
       const usersStr = await AsyncStorage.getItem('oci_users_table');
       if (usersStr) {
         const users = JSON.parse(usersStr);
         const user = users[pendingChangePasswordEmail.toLowerCase().trim()];
         if (user) {
-          user.passwordHash = pwdHash;
+          user.passwordHash = hash;
+          user.salt = salt;
           users[pendingChangePasswordEmail.toLowerCase().trim()] = user;
           await AsyncStorage.setItem('oci_users_table', JSON.stringify(users));
           
@@ -393,11 +427,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const pwdHash = sha256(newPassword);
+      const { hash, salt } = hashPassword(newPassword);
       // Update DB
       const updated = await dbGetProfile(forgotEmail.trim());
       if (updated) {
-        updated.passwordHash = pwdHash;
+        updated.passwordHash = hash;
+        updated.salt = salt;
         // If they are admin, reset default password change tracking
         if (forgotEmail.toLowerCase().trim() === 'admin@ociclinic.ai') {
           await AsyncStorage.setItem('oci_admin_password_changed', 'true');

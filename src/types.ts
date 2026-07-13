@@ -223,6 +223,7 @@ export interface UserProfile {
   email: string;
   mobile?: string;
   passwordHash: string;
+  salt?: string;
   role: UserRole;
   createdDate: string;
   lastLogin: string;
