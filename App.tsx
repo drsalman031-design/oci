@@ -825,7 +825,7 @@ export default function App() {
       <StatusBar barStyle="light-content" backgroundColor="#071B49" />
 
       {/* Main mobile viewport container */}
-      <View style={[tw`w-full max-w-[480px] bg-[#071B49] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
+      <View style={[tw`w-full max-w-[480px] bg-[#F4F7FB] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
         
         {/* 1. Splash Screen Overlay */}
         {screen === 'splash' && (

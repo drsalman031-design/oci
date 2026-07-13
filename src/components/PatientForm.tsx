@@ -75,41 +75,44 @@ export default function PatientForm({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#F4F7FB]`} 
       style={tw`flex-1`}
       keyboardShouldPersistTaps="handled"
     >
       <View style={tw`space-y-6 mt-6 max-w-xl mx-auto w-full`}>
         {/* Header */}
         <View style={tw`space-y-1.5`}>
-          <View style={tw`flex-row items-center bg-[#0E234D] border border-[rgba(255,255,255,0.08)] px-3 py-1 rounded-full self-start`}>
+          <View style={tw`flex-row items-center bg-teal-50 border border-teal-100 px-3 py-1 rounded-full self-start`}>
             <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
             <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
               Step 1 of 3: Patient Intake
             </Text>
           </View>
-          <Text style={tw`text-2xl font-black text-white tracking-tight`}>
+          <Text style={tw`text-2xl font-black text-[#071B49] tracking-tight`}>
             New Patient Details
           </Text>
-          <Text style={tw`text-xs text-[#C7D2E6]`}>
+          <Text style={tw`text-xs text-[#64748B]`}>
             Please fill out the basic patient information below to register them for OCI Analysis.
           </Text>
         </View>
 
         {/* Form Card */}
-        <View style={tw`bg-[#102B5C] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-5`}>
+        <View style={[
+          tw`bg-white rounded-[24px] border border-[#E5E7EB] p-6 shadow-sm space-y-5`,
+          { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.03, shadowRadius: 6 }
+        ]}>
           
           {/* Patient Name */}
           <View style={tw`space-y-1.5`}>
-            <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Patient Name *</Text>
-            <View style={tw`flex-row items-center w-full h-12 bg-[#0E234D] rounded-xl border ${errors.name ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
-              <User size={16} color="#A8B3C7" style={tw`mr-2`} />
+            <Text style={tw`text-xs font-bold text-[#071B49]`}>Patient Name *</Text>
+            <View style={tw`flex-row items-center w-full h-12 bg-[#F4F7FB] rounded-xl border ${errors.name ? 'border-red-500' : 'border-[#E5E7EB]'} px-4`}>
+              <User size={16} color="#64748B" style={tw`mr-2`} />
               <TextInput
                 value={name}
                 onChangeText={setName}
                 placeholder="e.g. John Doe"
-                placeholderTextColor="#A8B3C7"
-                style={tw`flex-1 text-white text-xs h-full p-0 font-bold`}
+                placeholderTextColor="#64748B"
+                style={tw`flex-1 text-[#071B49] text-xs h-full p-0 font-bold`}
               />
             </View>
             {errors.name && <Text style={tw`text-[10px] text-red-500 font-bold`}>{errors.name}</Text>}
@@ -117,15 +120,15 @@ export default function PatientForm({
 
           {/* Patient ID */}
           <View style={tw`space-y-1.5`}>
-            <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Patient ID / Case Number *</Text>
-            <View style={tw`flex-row items-center w-full h-12 bg-[#0E234D] rounded-xl border ${errors.caseNumber ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
-              <FileText size={16} color="#A8B3C7" style={tw`mr-2`} />
+            <Text style={tw`text-xs font-bold text-[#071B49]`}>Patient ID / Case Number *</Text>
+            <View style={tw`flex-row items-center w-full h-12 bg-[#F4F7FB] rounded-xl border ${errors.caseNumber ? 'border-red-500' : 'border-[#E5E7EB]'} px-4`}>
+              <FileText size={16} color="#64748B" style={tw`mr-2`} />
               <TextInput
                 value={caseNumber}
                 onChangeText={setCaseNumber}
                 placeholder="e.g. OCI-9842"
-                placeholderTextColor="#A8B3C7"
-                style={tw`flex-1 text-white text-xs h-full p-0 font-bold`}
+                placeholderTextColor="#64748B"
+                style={tw`flex-1 text-[#071B49] text-xs h-full p-0 font-bold`}
               />
             </View>
             {errors.caseNumber && <Text style={tw`text-[10px] text-red-500 font-bold`}>{errors.caseNumber}</Text>}
@@ -135,22 +138,22 @@ export default function PatientForm({
           <View style={tw`flex-row space-x-4`}>
             {/* Age */}
             <View style={tw`flex-1 space-y-1.5`}>
-              <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Age *</Text>
+              <Text style={tw`text-xs font-bold text-[#071B49]`}>Age *</Text>
               <TextInput
                 value={age}
                 onChangeText={setAge}
                 keyboardType="numeric"
                 placeholder="e.g. 24"
-                placeholderTextColor="#A8B3C7"
-                style={tw`w-full h-12 px-4 bg-[#0E234D] rounded-xl border ${errors.age ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} text-white text-xs font-bold`}
+                placeholderTextColor="#64748B"
+                style={tw`w-full h-12 px-4 bg-[#F4F7FB] rounded-xl border ${errors.age ? 'border-red-500' : 'border-[#E5E7EB]'} text-[#071B49] text-xs font-bold`}
               />
               {errors.age && <Text style={tw`text-[10px] text-red-500 font-bold`}>{errors.age}</Text>}
             </View>
 
             {/* Gender */}
             <View style={tw`flex-1 space-y-1.5`}>
-              <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Gender</Text>
-              <View style={tw`flex-row bg-[#0E234D] p-1 rounded-xl h-12 items-center`}>
+              <Text style={tw`text-xs font-bold text-[#071B49]`}>Gender</Text>
+              <View style={tw`flex-row bg-[#F4F7FB] p-1 rounded-xl h-12 items-center`}>
                 {['Male', 'Female'].map((g) => {
                   const isSelected = gender === g;
                   return (
@@ -159,7 +162,7 @@ export default function PatientForm({
                       onPress={() => setGender(g as any)}
                       style={tw`flex-1 h-10 rounded-lg items-center justify-center ${isSelected ? 'bg-[#10B7A8]' : 'bg-transparent'}`}
                     >
-                      <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-[#C7D2E6]'}`}>
+                      <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-[#64748B]'}`}>
                         {g}
                       </Text>
                     </Pressable>
@@ -171,27 +174,27 @@ export default function PatientForm({
 
           {/* Chief Complaint */}
           <View style={tw`space-y-1.5`}>
-            <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Chief Complaint (optional)</Text>
+            <Text style={tw`text-xs font-bold text-[#071B49]`}>Chief Complaint (optional)</Text>
             <TextInput
               value={chiefComplaint}
               onChangeText={setChiefComplaint}
               placeholder="e.g. Crowded lower anterior teeth, difficulty chewing"
-              placeholderTextColor="#A8B3C7"
-              style={tw`w-full h-12 px-4 bg-[#0E234D] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              placeholderTextColor="#64748B"
+              style={tw`w-full h-12 px-4 bg-[#F4F7FB] rounded-xl border border-[#E5E7EB] text-[#071B49] text-xs font-bold`}
             />
           </View>
 
           {/* Doctor Notes */}
           <View style={tw`space-y-1.5`}>
-            <Text style={tw`text-xs font-bold text-[#C7D2E6]`}>Doctor Notes (optional)</Text>
+            <Text style={tw`text-xs font-bold text-[#071B49]`}>Doctor Notes (optional)</Text>
             <TextInput
               value={clinicalNotes}
               onChangeText={setClinicalNotes}
               placeholder="Additional findings or history notes..."
-              placeholderTextColor="#A8B3C7"
+              placeholderTextColor="#64748B"
               multiline
               numberOfLines={3}
-              style={tw`w-full min-h-[80px] p-4 bg-[#0E234D] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              style={tw`w-full min-h-[80px] p-4 bg-[#F4F7FB] rounded-xl border border-[#E5E7EB] text-[#071B49] text-xs font-bold`}
             />
           </View>
 
@@ -202,11 +205,11 @@ export default function PatientForm({
           <Pressable
             onPress={onCancel}
             style={({ pressed }) => [
-              tw`flex-1 py-4 bg-[#0E234D] rounded-xl border border-[rgba(255,255,255,0.08)] items-center justify-center`,
+              tw`flex-1 py-4 bg-[#E5E7EB] rounded-xl items-center justify-center`,
               pressed ? tw`opacity-80` : null
             ]}
           >
-            <Text style={tw`text-white font-bold text-xs uppercase tracking-wider`}>Cancel</Text>
+            <Text style={tw`text-[#071B49] font-bold text-xs uppercase tracking-wider`}>Cancel</Text>
           </Pressable>
           <Pressable
             onPress={handleSubmit}
