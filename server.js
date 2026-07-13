@@ -1,6 +1,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const urlModule = require('url');
 
 const PORT = 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
@@ -19,6 +21,27 @@ function log(msg) {
   } catch (e) {}
 }
 
+// Load .env variables manually to avoid external dotenv dependency
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const parts = line.split('=');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim().replace(/^["']|["']$/g, '');
+        if (key) {
+          process.env[key] = value;
+        }
+      }
+    });
+    log('Loaded environment variables from local .env file.');
+  }
+} catch (e) {
+  log(`Failed to read .env file: ${e.message}`);
+}
+
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
@@ -33,6 +56,74 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  // Handle POST proxy routes securely
+  if (req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const isAnalysisRoute = req.url.startsWith('/api/analysis/');
+        
+        if (isAnalysisRoute) {
+          const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+          
+          if (!apiKey) {
+            log(`[500] API Key is missing on the server env: ${req.url}`);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Server configuration error: Gemini API Key is not set on the secure server backend.' }));
+            return;
+          }
+          
+          const model = 'gemini-2.5-flash';
+          const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const parsedUrl = urlModule.parse(targetUrl);
+          
+          const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.path,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          };
+          
+          log(`[PROXY REQUEST] ${req.url} -> generativelanguage.googleapis.com`);
+          
+          const proxyReq = https.request(options, (proxyRes) => {
+            let resData = '';
+            proxyRes.on('data', d => {
+              resData += d.toString();
+            });
+            proxyRes.on('end', () => {
+              log(`[PROXY RESPONSE] Status ${proxyRes.statusCode}`);
+              res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+              res.end(resData);
+            });
+          });
+          
+          proxyReq.on('error', e => {
+            log(`[PROXY ERROR] ${e.message}`);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Backend API forwarding failed: ${e.message}` }));
+          });
+          
+          proxyReq.write(JSON.stringify(payload));
+          proxyReq.end();
+          return;
+        }
+      } catch (err) {
+        log(`[400] Bad Request payload: ${err.message}`);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Invalid request payload: ${err.message}` }));
+        return;
+      }
+    });
+    return;
+  }
+
   // Normalize path to prevent directory traversal
   let safePath = path.normalize(req.url.split('?')[0]);
   if (safePath === '/' || safePath === '\\') {

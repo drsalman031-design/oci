@@ -16,25 +16,23 @@ export function setDynamicApiKey(key: string) {
 }
 
 export function getGeminiApiKey(): string {
-  try {
-    if (dynamicApiKey) return dynamicApiKey;
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-    }
-  } catch (e) {
-    // Fail-safe for environments where process is undefined or throws
-  }
-  return '';
+  // Key is managed entirely on the secure backend server.
+  // Return a static indicator to allow frontend execution.
+  return 'secure-server-side-managed-key';
 }
 
-// Lightweight HTTP Client for Gemini API to replace Node-dependent @google/genai SDK
+// Secure proxy client helper to communicate with backend server-side AI endpoints
 async function callGeminiAPI(
-  model: string,
-  payload: any,
-  apiKey: string
+  endpointName: string,
+  payload: any
 ): Promise<any> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  const response = await fetch(url, {
+  // Determine backend URL (relative URL for web client compatibility, fallback to localhost for others)
+  let backendUrl = `/api/analysis/${endpointName}`;
+  if (typeof window === 'undefined' || !window.location) {
+    backendUrl = `http://localhost:3000/api/analysis/${endpointName}`;
+  }
+  
+  const response = await fetch(backendUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -44,7 +42,7 @@ async function callGeminiAPI(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+    throw new Error(`Secure Server API error (${response.status}): ${errorText}`);
   }
 
   return response.json();
@@ -230,7 +228,7 @@ Do not write any intro or outro; start directly with '# Comprehensive Orthodonti
       ]
     };
 
-    const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+    const data = await callGeminiAPI('clinical-summary', payload);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (text) {
@@ -356,7 +354,7 @@ Answer professionally, scientifically, with zero fluff. Focus strictly on clinic
       }
     };
 
-    const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+    const data = await callGeminiAPI('clinic-only', payload);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     return text || 'No response from Co-pilot AI.';
   } catch (error: any) {
@@ -460,7 +458,7 @@ Please structure the report exactly as follows with no introduction or outro:
       ]
     };
 
-    const data = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+    const data = await callGeminiAPI('multimodal-vision', payload);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (text) {
@@ -599,7 +597,7 @@ Do NOT write any diagnosis, treatment plans, or recommendations in this stage. R
     }
   };
 
-  const responseJson = await callGeminiAPI('gemini-2.5-flash', payload, apiKey);
+  const responseJson = await callGeminiAPI('qa', payload);
   const text = responseJson.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     throw new Error("No response content returned by Gemini vision model.");

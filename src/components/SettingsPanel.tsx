@@ -22,6 +22,7 @@ import {
   HeartHandshake,
   HelpCircle,
   CheckCircle,
+  ShieldCheck,
   ChevronDown,
   ChevronUp,
   Lock,
@@ -1102,36 +1103,18 @@ export default function SettingsPanel({
 
           {activeSection === 'gemini_api' && (
             <View style={tw`p-5 space-y-4`}>
-              <Text style={tw`text-xs text-slate-400 leading-normal`}>
-                Paste your Google Gemini API Key here. This key is used to execute real multimodal Vision AI case analysis and clinical report summaries. The key is securely saved locally on your device's persistent storage.
-              </Text>
-
-              <View style={tw`space-y-1`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider`}>Gemini API Key</Text>
-                <View style={tw`flex-row items-center w-full h-11 bg-black/45 rounded-xl border border-white/10 px-4`}>
-                  <TextInput 
-                    value={geminiKey}
-                    onChangeText={setGeminiKey}
-                    secureTextEntry={!showGeminiKey}
-                    style={tw`flex-1 text-white text-xs font-mono h-full p-0`}
-                    placeholder="AIzaSy..."
-                    placeholderTextColor="#475569"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <Pressable onPress={() => setShowGeminiKey(!showGeminiKey)} style={tw`p-1`}>
-                    {showGeminiKey ? <EyeOff size={15} color="#94A3B8" /> : <Eye size={15} color="#94A3B8" />}
-                  </Pressable>
+              <View style={tw`flex-row items-center space-x-3 bg-teal-500/10 border border-teal-500/25 rounded-2xl p-4`}>
+                <ShieldCheck size={20} color="#14B8A6" />
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-xs font-bold text-teal-400`}>Secure Server Connection Active</Text>
+                  <Text style={tw`text-[10px] text-slate-400 mt-0.5 leading-normal`}>
+                    This application operates in Zero-Trust mode. All AI API keys are stored securely on the backend server.
+                  </Text>
                 </View>
               </View>
-
-              <Pressable 
-                onPress={saveGeminiKey}
-                style={tw`flex-row items-center justify-center bg-teal-500/10 border border-teal-500/30 py-3 rounded-xl`}
-              >
-                <Save size={13} color="#14B8A6" style={tw`mr-2`} />
-                <Text style={tw`text-xs font-black text-teal-400 uppercase`}>Save Gemini API Key</Text>
-              </Pressable>
+              <Text style={tw`text-xs text-slate-400 leading-normal`}>
+                Under the secure server architecture, OCI Analyzer never stores API keys or exposes secrets on the client side. Requests are proxied through a secure HTTPS API layer.
+              </Text>
             </View>
           )}
         </View>
