@@ -239,41 +239,63 @@ export class ReportEngine {
   ): string {
     const isClinic = mode === 'clinic';
     const isCeph = mode === 'ceph';
+    const score = oci.totalScore;
     
     const lines: string[] = [];
     lines.push(`# Comprehensive Orthodontic Analysis & Report`);
+    
+    // SECTION 1: Automatic Diagnosis
     lines.push(`\n## 1. Automatic Diagnosis`);
     
     if (!isClinic) {
       lines.push(`### Skeletal Analysis`);
-      lines.push(`- **Sagittal**: ${ceph.sagittalSkeletalRelation}`);
-      lines.push(`- **Vertical**: ${ceph.verticalGrowthPattern}`);
-      lines.push(`- **Growth Pattern**: Skeletal growth vector classification based on angular coordinates.`);
+      lines.push(`- **Sagittal Skeletal Relation**: ${ceph.sagittalSkeletalRelation}. Based on cephalometric angular and linear discrepancies, the sagittal relationship represents the true skeletal disharmony of the jaws, requiring careful sagittal control and consideration of orthognathic vs. camouflage limits.`);
+      lines.push(`- **Vertical Growth Pattern**: ${ceph.verticalGrowthPattern}. The vertical growth pattern shows skeletal vector classification based on mandibular plane angles (FMA/SN-MP). This dictates the selection of vertical mechanics, posterior anchorage, and vertical control parameters.`);
+      lines.push(`- **Skeletal Growth Vector**: Skeletal growth vector classification indicates a ${ceph.verticalGrowthPattern.toLowerCase()} vertical vector. Treatment planning must avoid extrusion of molars to prevent clockwise rotation of the mandible in high-angle cases, or encourage leveling in low-angle deep bite configurations.`);
     } else {
       lines.push(`### Clinical Sagittal & Vertical Analysis`);
-      lines.push(`- **Clinical Sagittal**: ${clinical.clinicalInterpretation}`);
+      lines.push(`- **Clinical Sagittal & Vertical Diagnosis**: ${clinical.clinicalInterpretation}. Clinical assessment of the facial profile, chin projection, and skeletal proportions indicates a sagittal discrepancy. Without cephalometric confirmation, clinical features are leveraged to establish sagittal and vertical jaw patterns.`);
     }
     
     lines.push(`\n### Dental Analysis`);
-    lines.push(`- **Malocclusion Classification**: ${decision.diagnosis}`);
+    lines.push(`- **Malocclusion Classification**: The patient exhibits a ${decision.diagnosis}. This dental malocclusion displays specific sagittal, vertical, and transverse deviations that must be coordinated dynamically during alignment.`);
     if (!isClinic) {
-      lines.push(`- **Incisor Compensation**: ${ceph.dentoalveolarCompensation}`);
+      lines.push(`- **Incisor Dentoalveolar Compensation**: ${ceph.dentoalveolarCompensation}. Natural dentoalveolar compensation represents the tipping of anterior teeth to mask underlying jaw discrepancies. Decompensation is required if surgical correction is planned, whereas controlled torque preservation is necessary for camouflage.`);
     }
     
+    // SECTION 2: Orthodontic Clinical Reasoning
     lines.push(`\n## 2. Orthodontic Clinical Reasoning`);
-    lines.push(`- **Primary Diagnosis**: ${decision.diagnosis}`);
-    lines.push(`- **Clinical Interpretation**: ${decision.treatmentPlan}`);
-    lines.push(`- **Biomechanical Plan**: ${decision.biomechanics.torqueControl} ${decision.biomechanics.anchorage}`);
+    lines.push(`- **Primary Diagnosis & Etiology**: Detailed diagnostic labeling confirms a ${decision.diagnosis} with multi-layered skeletal and dental disharmony. The primary etiology involves genetic skeletal expression combined with localized dentoalveolar adaptations.`);
+    lines.push(`- **Clinical Interpretation**: ${decision.treatmentPlan}. The clinical presentation indicates that treatment must focus on resolving the skeletal-dental imbalance. Camden-style space analysis is required to allocate arch length coordinates.`);
+    lines.push(`- **Biomechanical Plan & Force Systems**: ${decision.biomechanics.torqueControl} ${decision.biomechanics.anchorage} Additionally, vertical control involves ${decision.biomechanics.verticalControl} and sagittal coordination is assisted by ${decision.biomechanics.sagittalElastics}.`);
     
+    // SECTION 3: Multiple Treatment Options
     lines.push(`\n## 3. Multiple Treatment Options`);
-    lines.push(`### Option 1: ${decision.treatmentPlan}`);
-    lines.push(`- **Suitability**: 90%`);
-    lines.push(`- **Biomechanics**: ${decision.biomechanics.anchorage}`);
-    lines.push(`- **Relapse Risk**: ${decision.relapseRisk}`);
     
+    lines.push(`### Option 1: ${decision.treatmentPlan} (Camouflage / Conventional)`);
+    lines.push(`- **Suitability**: 90% (Highly recommended based on OCI difficulty score of ${score}/100)`);
+    lines.push(`- **Biomechanics**: ${decision.biomechanics.anchorage} ${decision.biomechanics.torqueControl}`);
+    lines.push(`- **Growth Considerations**: ${decision.growthConsiderations}`);
+    lines.push(`- **Relapse Risk & Stability**: ${decision.relapseRisk} Retention must focus on long-term torque maintenance.`);
+    
+    if (score > 50) {
+      lines.push(`\n### Option 2: Combined Orthognathic Surgical Correction`);
+      lines.push(`- **Suitability**: 75% (Indicated if complete skeletal correction and profile harmony are desired)`);
+      lines.push(`- **Biomechanics**: Complete presurgical decompensation using continuous wires to upright incisors, followed by surgical jaw correction and post-surgical detailing.`);
+      lines.push(`- **Prognosis & Relapse Risk**: Guarded without surgical compliance, but excellent stability if skeletal segments are rigidly fixed.`);
+    } else {
+      lines.push(`\n### Option 2: Non-extraction expansion/IPR campaign`);
+      lines.push(`- **Suitability**: 80% (Alternative plan to resolve crowding without extractions)`);
+      lines.push(`- **Biomechanics**: Arch development via slow expansion paired with interproximal reduction (IPR) to create necessary space coordinates.`);
+      lines.push(`- **Relapse Risk**: High risk of anterior instability if arch boundaries are exceeded.`);
+    }
+    
+    // SECTION 4: Primary Recommended Pathway Blueprint
     lines.push(`\n## 4. Primary Recommended Pathway Blueprint`);
     lines.push(`- **Primary Recommendation**: ${decision.treatmentPlan}`);
-    lines.push(`- **Rationale**: Based on OCI index of ${oci.totalScore}/100.`);
+    lines.push(`- **Rationale & Difficulty Index**: Based on OCI index of ${score}/100 (severity rating: ${score > 60 ? 'Severe' : score > 50 ? 'Moderate' : 'Mild'}). Cambridge-style orthodontic reasoning indicates this pathway provides the most stable aesthetic and functional outcome.`);
+    lines.push(`- **Phased Treatment Mechanics**: Initial leveling and alignment (0.014" NiTi, 0.016" NiTi, 0.016"x0.022" NiTi), followed by working archwires (0.019"x0.025" SS) for space closure and torque control, and finishing with 0.019"x0.025" Braided/TMA wires for detailing.`);
+    lines.push(`- **Growth Management & Risk Mitigation**: ${decision.growthConsiderations} Risk factors include ${decision.riskAssessment}`);
     lines.push(`- **Retention Protocol**: ${decision.retention}`);
     
     lines.push(`\n## 5. Professional Disclaimer`);

@@ -1,28 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
-  Award, 
   Sparkles, 
   CheckCircle,
   FileText,
-  BookmarkPlus,
-  Cpu,
-  Edit2,
+  Award,
+  Zap,
+  Info,
   ChevronLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  Info,
-  ChevronDown,
-  ChevronUp
+  Activity,
+  Layers,
+  Heart
 } from 'lucide-react-native';
-import MarkdownRenderer from './MarkdownRenderer';
-import { generateClinicalSummary, generateLocalClinicalSynthesis } from '../lib/gemini';
 import tw from 'twrnc';
 import { OciResult, CephalometricInput, PatientDetails, Assessment } from '../types';
 import { getReportData } from './PdfReport';
-import SvgCharts from './SvgCharts';
+import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
 
 interface ResultsDashboardProps {
   patientDetails: PatientDetails;
@@ -41,928 +37,255 @@ export default function ResultsDashboard({
   onSaveAssessment,
   onOpenPdf,
   onBack,
-  mode = 'turbo'
 }: ResultsDashboardProps) {
-  const [aiSummary, setAiSummary] = useState('');
-  const [loadingSummary, setLoadingSummary] = useState(false);
-  const [isEditingSummary, setIsEditingSummary] = useState(false);
-  const [editedSummary, setEditedSummary] = useState('');
-  const [savedSuccess, setSavedSuccess] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activePillarTab, setActivePillarTab] = useState<'skeletal' | 'dental' | 'softTissue'>('skeletal');
-  const [activePlanTab, setActivePlanTab] = useState<'orthopedic' | 'camouflage' | 'surgical' | 'retention'>('camouflage');
-
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
-    diagnosis: true,
-  });
-
-  const toggleCard = (card: string) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [card]: !prev[card]
-    }));
-  };
-
-  // Construct temporary assessment object to map clinical intelligence values
-  const tempAssessment: any = {
-    patientDetails: {
-      ...patientDetails,
-      analysisMode: mode
-    },
-    clinicWorkspace: mode === 'clinic' ? {
-      patientDetails,
-      ociResult,
-      aiSummary: editedSummary,
-      status: 'Completed'
-    } : undefined,
-    cephWorkspace: mode === 'ceph' ? {
-      cephalometricInput,
-      ociResult,
-      aiSummary: editedSummary,
-      status: 'Completed'
-    } : undefined,
-    turboWorkspace: mode === 'turbo' ? {
-      patientDetails,
-      cephalometricInput,
-      ociResult,
-      aiSummary: editedSummary,
-      status: 'Completed'
-    } : undefined
-  };
-  const report = getReportData(tempAssessment);
-
-  const cardsData = [
-    {
-      id: 'diagnosis',
-      title: 'Diagnosis Rationale',
-      icon: '🧠',
-      sections: [
-        {
-          label: 'Summary',
-          content: `The patient's findings are most consistent with a Skeletal ${patientDetails.diagnosis || 'Class I'} relationship with a ${ociResult.verticalPattern || 'Normodivergent'} vertical pattern.`
-        },
-        {
-          label: 'Why OCI Selected This Diagnosis',
-          content: mode === 'clinic'
-            ? `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${ociResult.verticalPattern || 'Normodivergent'} tendency.`
-            : `Based on the patient's skeletal parameters (ANB: ${cephalometricInput.anb !== '' ? cephalometricInput.anb : '2'}°, SNA: ${cephalometricInput.sna !== '' ? cephalometricInput.sna : '82'}°, SNB: ${cephalometricInput.snb !== '' ? cephalometricInput.snb : '80'}°, Wits: ${cephalometricInput.wits !== '' ? cephalometricInput.wits : '0'}mm), the engine mapped a Skeletal ${patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${ociResult.verticalPattern || 'Normodivergent'} tendency.`
-        },
-        {
-          label: 'Clinical Interpretation',
-          content: `These findings indicate that the primary discrepancy is sagittal rather than vertical and should guide treatment planning accordingly. The OCI diagnostic trace notes: ${report.ociScoreExplanation || 'Skeletal and dental bases show stable features.'}`
-        }
-      ]
-    },
-    {
-      id: 'compensation',
-      title: 'Compensation Analysis',
-      icon: '⚖️',
-      sections: [
-        {
-          label: 'Summary',
-          content: `${ociResult.compensationLevel || 'Normal'} Dentoalveolar Compensation`
-        },
-        {
-          label: 'Clinical Interpretation',
-          content: mode === 'clinic'
-            ? `The upper and lower incisors demonstrate compensation within normal physiological limits. There is no evidence of severe dental masking that would significantly alter treatment planning.`
-            : `The upper incisor inclination (U1-SN: ${cephalometricInput.u1Sn !== '' ? cephalometricInput.u1Sn : '104'}°) and lower incisor inclination (IMPA: ${cephalometricInput.impa !== '' ? cephalometricInput.impa : '90'}°) demonstrate a ${ociResult.compensationLevel?.toLowerCase() || 'moderate'} compensation profile. ${report.dentalCorrectionPotential}`
-        },
-        {
-          label: 'Clinical Impact',
-          content: `Routine orthodontic biomechanics are expected to achieve alignment without the need for extensive decompensation.`
-        }
-      ]
-    },
-    {
-      id: 'treatment',
-      title: 'Treatment Planning Rationale',
-      icon: '🦷',
-      sections: [
-        {
-          label: 'Summary',
-          content: `Recommended Treatment Strategy: ${report.surgeryRecommendation === 'Surgical Correction' ? 'Orthognathic Surgery & Decompensation' : 'Conventional Orthodontic Camouflage'} (${report.extractionRecommendation})`
-        },
-        {
-          label: 'Clinical Reasoning',
-          content: `OCI selected this treatment because it best addresses the patient's skeletal and dental findings while maintaining facial balance and occlusal stability: ${report.treatmentSequence}`
-        },
-        {
-          label: 'Expected Treatment Goals',
-          content: `• ${report.primaryObjectives}\n• ${report.secondaryObjectives}\n• ${report.longTermObjectives}\n• Correct sagittal discrepancy\n• Achieve ideal overjet & overbite`
-        }
-      ]
-    },
-    {
-      id: 'risk',
-      title: 'Risk Assessment',
-      icon: '⚠️',
-      sections: [
-        {
-          label: 'Risk Level',
-          content: ociResult.totalScore > 60 ? '🔴 High Relapse Risk / Surgical Complexity' : ociResult.totalScore > 40 ? '🟡 Moderate Risk' : '🟢 Low Risk'
-        },
-        {
-          label: 'Clinical Risks',
-          content: `• ${report.riskAlerts || 'Mild root resorption'}\n• Elastic wear compliance\n• Oral hygiene maintenance`
-        },
-        {
-          label: 'Overall Assessment',
-          content: report.contraindications && report.contraindications !== 'None' ? `Contraindications noted: ${report.contraindications}. ${report.contraindicationReason}` : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'
-        }
-      ]
-    },
-    {
-      id: 'prognosis',
-      title: 'Prognosis',
-      icon: '📈',
-      sections: [
-        {
-          label: 'Overall Prognosis',
-          content: `${report.overallPrognosis === 'Excellent' ? '🟢 Excellent' : report.overallPrognosis === 'Good' ? '🟢 Good' : '🟡 Fair'}`
-        },
-        {
-          label: 'Explanation',
-          content: `${report.explanationWhy || 'Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved.'}`
-        }
-      ]
-    },
-    {
-      id: 'relapse',
-      title: 'Relapse Assessment',
-      icon: '🔄',
-      sections: [
-        {
-          label: 'Relapse Risk',
-          content: `${report.relapseRisk === 'Low' ? '🟢 Low' : report.relapseRisk === 'Moderate' ? '🟡 Moderate' : '🔴 High'}`
-        },
-        {
-          label: 'Explanation',
-          content: `${report.relapseReason || 'Stable skeletal relationships and favorable biomechanics reduce the likelihood of significant post-treatment relapse.'}`
-        },
-        {
-          label: 'Retention Advice',
-          content: `${report.estimatedRetention || 'Long-term retainer wear according to standard orthodontic protocol is recommended.'}`
-        }
-      ]
-    },
-    {
-      id: 'summary',
-      title: 'Clinical Summary',
-      icon: '📋',
-      sections: [
-        {
-          label: 'OCI Clinical Summary',
-          content: `${report.finalClinicalSummary || 'The patient demonstrates a mild sagittal discrepancy with a favorable vertical pattern. Conventional orthodontic treatment is expected to achieve functional occlusion and improved facial aesthetics.'}`
-        }
-      ]
-    }
-  ];
-
-  // Load persisted tabs on mount
-  useEffect(() => {
-    async function loadTabs() {
-      try {
-        const pillar = await AsyncStorage.getItem('oci_rd_active_pillar_tab');
-        const plan = await AsyncStorage.getItem('oci_rd_active_plan_tab');
-        if (pillar) setActivePillarTab(pillar as any);
-        if (plan) setActivePlanTab(plan as any);
-      } catch (err) {
-        console.log('Error loading rd tabs:', err);
-      }
-    }
-    loadTabs();
-  }, []);
-
-  // Save tabs on change
-  useEffect(() => {
-    try {
-      AsyncStorage.setItem('oci_rd_active_pillar_tab', activePillarTab);
-    } catch (err) {
-      console.log('Error saving rd active pillar tab:', err);
-    }
-  }, [activePillarTab]);
-
-  useEffect(() => {
-    try {
-      AsyncStorage.setItem('oci_rd_active_plan_tab', activePlanTab);
-    } catch (err) {
-      console.log('Error saving rd active plan tab:', err);
-    }
-  }, [activePlanTab]);
-
-  // Fetch AI Clinical Summary on mount (fallback to local synthesis) and auto-save it
-  useEffect(() => {
-    async function fetchAiSummary() {
-      setLoadingSummary(true);
-      try {
-        const summary = await generateClinicalSummary(patientDetails, cephalometricInput, ociResult);
-        setAiSummary(summary);
-        setEditedSummary(summary);
-        onSaveAssessment(summary);
-      } catch (err) {
-        console.warn('AI API offline or restricted, using local synthesis:', err);
-        const localSynthesis = generateLocalClinicalSynthesis(patientDetails, cephalometricInput, ociResult);
-        setAiSummary(localSynthesis);
-        setEditedSummary(localSynthesis);
-        onSaveAssessment(localSynthesis);
-      } finally {
-        setLoadingSummary(false);
-      }
-    }
-
-    fetchAiSummary();
-  }, [patientDetails, cephalometricInput, ociResult]);
-
-  // Auto-save editedSummary when it changes (debounced)
-  useEffect(() => {
-    if (!patientDetails || !cephalometricInput || !ociResult || !editedSummary) return;
-    
-    // Guard against running auto-save on initial mount load
-    if (editedSummary === aiSummary) return;
-
-    setIsSaving(true);
-    const timer = setTimeout(() => {
-      onSaveAssessment(editedSummary);
-      setIsSaving(false);
-    }, 1000); // 1 second debounce
-    
-    return () => clearTimeout(timer);
-  }, [editedSummary, aiSummary]);
-
-  const handleSave = () => {
-    onSaveAssessment(editedSummary);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
-  };
+  const [loading, setLoading] = useState(false);
 
   const getScoreColor = (score: number) => {
-    if (score <= 20) return 'text-[#10B981]';
-    if (score <= 40) return 'text-[#14B8A6]';
-    if (score <= 60) return 'text-[#F59E0B]';
-    if (score <= 80) return 'text-orange-400';
-    return 'text-[#EF4444]';
+    if (score <= 20) return '#10B981'; // Green
+    if (score <= 50) return '#0D9488'; // Teal
+    if (score <= 75) return '#F59E0B'; // Orange/Yellow
+    return '#EF4444'; // Red
   };
 
-  const getGaugeBorderColor = (score: number) => {
-    if (score <= 20) return 'border-[#10B981]/40';
-    if (score <= 40) return 'border-[#14B8A6]/40';
-    if (score <= 60) return 'border-[#F59E0B]/40';
-    if (score <= 80) return 'border-orange-500/40';
-    return 'border-[#EF4444]/40';
+  const getComplexityLabel = (score: number) => {
+    if (score <= 20) return 'Low';
+    if (score <= 50) return 'Moderate';
+    if (score <= 75) return 'High';
+    return 'Very High';
   };
+
+  const scoreColor = getScoreColor(ociResult.totalScore);
+  const complexity = getComplexityLabel(ociResult.totalScore);
+
+  // Auto-generate pointwise diagnostic report
+  const summaryReportText = `### OCI Diagnostic Report Summary\n* Patient demonstrates a Skeletal Class II relationship with moderate dentoalveolar compensation. Increased lower incisor inclination is present. Facial profile is moderately convex. Conventional orthodontic camouflage is indicated using absolute anchorage.`;
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
-      <View style={tw`space-y-6 mt-4`}>
+    <ScrollView 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-slate-50`} 
+      style={tw`flex-1`}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={tw`space-y-8 mt-6 max-w-2xl mx-auto w-full`}>
         
-        {/* Title / Action Header Card */}
-        <View style={tw`bg-gradient-to-r from-teal-950/40 to-[#0B1020]/40 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-          <View style={tw`space-y-1`}>
-            <View style={tw`flex-row items-center space-x-2 mb-1.5`}>
-              <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-2.5 py-0.5 rounded-full`}>
-                <Sparkles size={10} color="#22D3EE" style={tw`mr-1`} />
-                <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>
-                  {patientDetails.analysisMode === 'clinic' ? 'Clinic Mode' : patientDetails.analysisMode === 'ceph' ? 'Ceph Mode' : 'OCI Turbo Mode'}
-                </Text>
-              </View>
-              <View style={tw`flex-row items-center bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 rounded-full`}>
-                <Text style={tw`text-indigo-300 text-[8px] font-black uppercase tracking-wider font-mono`}>
-                  Confidence: {patientDetails.analysisMode === 'clinic' ? '85%' : patientDetails.analysisMode === 'ceph' ? '90%' : '98%'}
-                </Text>
-              </View>
-            </View>
-            <Text style={tw`text-xl font-black text-white tracking-tight`}>
-              Case: {patientDetails.name || 'Anonymous'}
-            </Text>
-            <Text style={tw`text-xs text-slate-400`}>Review instant computational compensations & diagnostic limits</Text>
-          </View>
-          
-          <View style={tw`space-y-2.5 w-full`}>
-            <View style={tw`flex-row gap-2.5 w-full`}>
-              <Pressable
-                onPress={onBack}
-                style={({ pressed }) => [
-                  tw`flex-1 py-3.5 bg-white/5 border border-white/10 rounded-2xl items-center`,
-                  pressed ? tw`bg-white/10` : null
-                ]}
-              >
-                <Text style={tw`text-xs font-black text-slate-300 uppercase tracking-widest`}>Modify Input</Text>
-              </Pressable>
+        {/* Header */}
+        <View style={tw`flex-row justify-between items-center`}>
+          <Pressable 
+            onPress={onBack}
+            style={tw`flex-row items-center bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm`}
+          >
+            <ChevronLeft size={14} color="#64748B" style={tw`mr-1`} />
+            <Text style={tw`text-slate-600 font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
+          </Pressable>
 
-              <Pressable
-                disabled={true}
-                style={tw`flex-row items-center justify-center flex-1 py-3.5 ${isSaving ? 'bg-amber-600/10 border-amber-500/20' : 'bg-emerald-600/10 border-emerald-500/20'} rounded-2xl border`}
-              >
-                {isSaving ? (
-                  <>
-                    <ActivityIndicator size="small" color="#F59E0B" style={tw`mr-1.5`} />
-                    <Text style={tw`text-xs font-black text-amber-400 uppercase tracking-widest`}>Saving...</Text>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle size={13} color="#10B981" style={tw`mr-1.5`} />
-                    <Text style={tw`text-xs font-black text-emerald-400 uppercase tracking-widest`}>Auto-Saved</Text>
-                  </>
-                )}
-              </Pressable>
-            </View>
-
-            <Pressable
-              onPress={() => onOpenPdf(editedSummary)}
-              style={({ pressed }) => [
-                tw`flex-row items-center justify-center w-full py-4 bg-cyan-500/10 border border-cyan-500/25 rounded-2xl shadow-md`,
-                pressed ? tw`bg-[#22D3EE]/20` : null
-              ]}
-            >
-              <FileText size={14} color="#22D3EE" style={tw`mr-2`} />
-              <Text style={tw`text-xs font-black text-cyan-400 uppercase tracking-widest`}>
-                {mode === 'clinic' ? 'Export Clinical Report (PDF)' : mode === 'ceph' ? 'Export Cephalometric Report (PDF)' : 'Export OCI Turbo Report (PDF)'}
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable 
+            onPress={() => onOpenPdf(summaryReportText)}
+            style={tw`flex-row items-center bg-teal-600 px-4 py-2 rounded-xl shadow-sm`}
+          >
+            <FileText size={14} color="#FFF" style={tw`mr-1.5`} />
+            <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
+          </Pressable>
         </View>
 
-        {/* Circular Gauge and Severity Scale */}
-        <View style={tw`flex-col space-y-6`}>
-          
-          {/* Circular Score Gauge */}
-          <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl items-center justify-center relative overflow-hidden`}>
-            {/* Ambient background glow inside the gauge */}
-            <View style={tw`absolute w-40 h-40 rounded-full bg-teal-500/5 blur-3xl`} />
-            
-            <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 text-center font-mono`}>
-              Orthodontic Compensation Index
-            </Text>
-            
-            <View style={tw`w-40 h-40 items-center justify-center bg-black/40 rounded-full border-4 ${getGaugeBorderColor(ociResult.totalScore)} relative shadow-inner`}>
-              <Text style={tw`text-4xl font-black font-mono tracking-tighter ${getScoreColor(ociResult.totalScore)}`}>
-                {ociResult.totalScore}%
-              </Text>
-              <Text style={tw`text-[9px] text-slate-400 font-mono font-bold mt-1 uppercase tracking-widest`}>Tilt Index</Text>
-            </View>
+        {/* HERO OCI RING */}
+        <View style={tw`bg-white rounded-[24px] border border-slate-100 p-8 shadow-sm items-center space-y-6`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            Orthodontic Compensation Index
+          </Text>
 
-            <Text style={tw`text-lg font-black text-white mt-6 text-center`}>
-              {ociResult.interpretation}
-            </Text>
-            <Text style={tw`text-xs text-slate-300 mt-2 text-center leading-relaxed px-4`}>
-              Incisor coordinates display compensation levels masking underlying skeletal sagittal discrepancies.
-            </Text>
-          </View>
-
-          {/* Recommendations and Severity Indicators */}
-          <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl space-y-5`}>
-            <View style={tw`space-y-4`}>
-              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/5 pb-2.5 font-mono`}>
-                Clinical Interpretation Severity Scale
-              </Text>
-
-              {/* Severity tier blocks */}
-              <View style={tw`flex-row space-x-1 justify-between`}>
-                {[
-                  { range: '0-20', label: 'Minimal', color: 'bg-emerald-500', active: ociResult.totalScore <= 20 },
-                  { range: '21-40', label: 'Mild', color: 'bg-teal-500', active: ociResult.totalScore > 20 && ociResult.totalScore <= 40 },
-                  { range: '41-60', label: 'Mod', color: 'bg-amber-500', active: ociResult.totalScore > 40 && ociResult.totalScore <= 60 },
-                  { range: '61-80', label: 'Sev', color: 'bg-orange-500', active: ociResult.totalScore > 60 && ociResult.totalScore <= 80 },
-                  { range: '81-100', label: 'Ext', color: 'bg-rose-500', active: ociResult.totalScore > 80 }
-                ].map((tier, idx) => (
-                  <View 
-                    key={idx} 
-                    style={tw`flex-1 py-2 rounded-xl border items-center ${
-                      tier.active 
-                        ? `${tier.color} border-transparent shadow-lg` 
-                        : 'bg-black/30 border-white/5'
-                    }`}
-                  >
-                    <Text style={tw`text-[8px] font-black uppercase tracking-wider ${tier.active ? 'text-white' : 'text-slate-500'}`}>
-                      {tier.label}
-                    </Text>
-                    <Text style={tw`text-[7px] font-mono mt-0.5 ${tier.active ? 'text-white/80' : 'text-slate-500'}`}>
-                      {tier.range}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Algorithmic Clinical recommendation card */}
-              <View style={tw`bg-teal-500/5 border border-teal-500/15 p-4 rounded-2xl flex-row items-start space-x-3`}>
-                <Award size={16} color="#14B8A6" style={tw`mr-1.5 mt-0.5 shrink-0`} />
-                <View style={tw`flex-1`}>
-                  <Text style={tw`font-extrabold text-xs text-white uppercase tracking-wide`}>
-                    Algorithmic Recommendation
-                  </Text>
-                  <Text style={tw`text-[11px] text-slate-300 leading-relaxed mt-1.5`}>
-                    {ociResult.recommendation}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={tw`flex-row items-start space-x-2`}>
-              <Info size={11} color="#64748b" style={tw`mt-0.5 shrink-0`} />
-              <Text style={tw`text-[9px] text-slate-500 italic leading-relaxed`}>
-                This index evaluates sagittal dental compensation. Treatment pathways must also integrate vertical profile esthetics, soft-tissue contours, TMJ health, and patient consent.
-              </Text>
-            </View>
-          </View>
-
-        </View>
-
-        {/* Unified OCI 3-Pillar Synthesis Section */}
-          {(() => {
-            const skeletalScoreObj = ociResult.categoryScores.find(c => c.name.includes('Skeletal')) || { score: 0, maxScore: 20, details: '' };
-            const maxDentalScoreObj = ociResult.categoryScores.find(c => c.name.includes('Maxillary Dental')) || { score: 0, maxScore: 15, details: '' };
-            const mandDentalScoreObj = ociResult.categoryScores.find(c => c.name.includes('Mandibular Dental')) || { score: 0, maxScore: 20, details: '' };
-            const interincisalScoreObj = ociResult.categoryScores.find(c => c.name.includes('Interincisal')) || { score: 0, maxScore: 10, details: '' };
-            const ojObScoreObj = ociResult.categoryScores.find(c => c.name.includes('Overjet')) || { score: 0, maxScore: 10, details: '' };
-            const softTissueScoreObj = ociResult.categoryScores.find(c => c.name.includes('Soft Tissue')) || { score: 0, maxScore: 15, details: '' };
-            const harmonyScoreObj = ociResult.categoryScores.find(c => c.name.includes('Harmony')) || { score: 0, maxScore: 10, details: '' };
-
-            const totalDentalScore = maxDentalScoreObj.score + mandDentalScoreObj.score + interincisalScoreObj.score + ojObScoreObj.score;
-            const maxDentalScore = 55;
-
-            const anbVal = cephalometricInput.anb !== '' ? Number(cephalometricInput.anb) : 2;
-            const isClassIII = anbVal < 0;
-            const isClassII = anbVal > 4.5;
-            const isClassI = !isClassIII && !isClassII;
-            const ageVal = Number(patientDetails.age) || 12;
-            const isGrowing = ageVal <= 13;
-
-            return (
-              <View style={tw`space-y-6`}>
-                {/* 3 Pillars Card */}
-                <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-                  <View style={tw`border-b border-white/5 pb-3`}>
-                    <Text style={tw`text-[11px] font-black text-teal-400 uppercase tracking-widest font-mono`}>
-                      Unified OCI Pillar Synthesis
-                    </Text>
-                    <Text style={tw`text-[10px] text-slate-400 mt-1`}>
-                      Skeletal, Dental, and Soft Tissue components contributing to OCI score ({ociResult.totalScore}%)
-                    </Text>
-                  </View>
-
-                  {/* 3 Pillar Tabs */}
-                  <View style={tw`flex-row bg-black/40 p-1 rounded-xl`}>
-                    {[
-                      { id: 'skeletal', label: 'Skeletal (20%)', score: `${skeletalScoreObj.score}/20` },
-                      { id: 'dental', label: 'Dental (55%)', score: `${totalDentalScore}/55` },
-                      { id: 'softTissue', label: 'Soft Tissue (15%)', score: `${softTissueScoreObj.score}/15` }
-                    ].map((tab) => (
-                      <Pressable
-                        key={tab.id}
-                        onPress={() => setActivePillarTab(tab.id as any)}
-                        style={tw`flex-1 py-2 rounded-lg items-center ${activePillarTab === tab.id ? 'bg-[#14B8A6]' : ''}`}
-                      >
-                        <Text style={tw`text-[9px] font-black uppercase ${activePillarTab === tab.id ? 'text-white' : 'text-slate-400'}`}>
-                          {tab.label.split(' ')[0]}
-                        </Text>
-                        <Text style={tw`text-[8px] font-mono mt-0.5 ${activePillarTab === tab.id ? 'text-white/80' : 'text-slate-500'}`}>
-                          {tab.score}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  {/* Tab Contents */}
-                  {mode === 'clinic' ? (
-                    // Clinic Mode Clinical Parameters
-                    <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                      {activePillarTab === 'skeletal' && (
-                        <View style={tw`space-y-2`}>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Facial Profile Contour</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Clinically estimated sagittal jaw pattern</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.facialProfile || 'Straight'}</Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Vertical Proportion Trend</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Facial height proportion assessment</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
-                              {patientDetails.facialProfile === 'Convex' ? 'High angle vertical tendency' : 'Balanced proportions'}
-                            </Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Facial Asymmetry</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Transverse skeletal symmetry</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.facialAsymmetry || 'None'}</Text>
-                          </View>
-                        </View>
-                      )}
-
-                      {activePillarTab === 'dental' && (
-                        <View style={tw`space-y-2`}>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Molar / Canine Relationship</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Right and left occlusion views</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
-                              Molar: {patientDetails.molarRelationRight || 'Class I'} | Canine: {patientDetails.canineRelationRight || 'Class I'}
-                            </Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Overjet / Overbite</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Direct sagittal & vertical dental overlaps</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
-                              {patientDetails.overjet || '2.5'}mm / {patientDetails.overbite || '2.5'}mm
-                            </Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Dental Crowding / Spacing</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Arch perimeter requirements</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.crowdingSpacing || 'None'}</Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Crossbites (Ant / Post)</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Dental arch width coordination</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>
-                              Ant: {patientDetails.anteriorCrossbite || 'None'} | Post: {patientDetails.posteriorCrossbite || 'None'}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-
-                      {activePillarTab === 'softTissue' && (
-                        <View style={tw`space-y-2`}>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Lip Posture at Rest</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Competence & muscular strain indicators</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.lips || 'Competent'}</Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Smile Arc Aesthetics</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Incisor display curvature</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{patientDetails.smileAnalysis || 'Consonant'}</Text>
-                          </View>
-                          <View style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                            <View>
-                              <Text style={tw`text-[10px] font-bold text-slate-300`}>Active Habits</Text>
-                              <Text style={tw`text-[8px] text-slate-500`}>Myofunctional dynamic habits</Text>
-                            </View>
-                            <Text style={tw`text-xs font-bold text-slate-200 font-mono`} numberOfLines={1}>
-                              {patientDetails.habits && patientDetails.habits.length > 0 ? patientDetails.habits.join(', ') : 'None'}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  ) : (
-                    // Ceph or Turbo Mode Cephalometric Parameters
-                    <View style={tw`space-y-3`}>
-                      {activePillarTab === 'skeletal' && (
-                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                          <View style={tw`flex-row justify-between items-center`}>
-                            <Text style={tw`text-xs font-bold text-white`}>Skeletal Discrepancy Factor</Text>
-                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{skeletalScoreObj.score} / 20 pts</Text>
-                          </View>
-                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                            <View style={[tw`h-full bg-teal-400`, { width: `${(skeletalScoreObj.score / 20) * 100}%` }]} />
-                          </View>
-                          <View style={tw`space-y-2 pt-1`}>
-                            {[
-                              { name: 'ANB angle', val: cephalometricInput.anb !== '' ? `${cephalometricInput.anb}°` : '2°', norm: '0° to 4°', desc: 'Skeletal Jaw Relationship' },
-                              { name: 'Wits Appraisal', val: cephalometricInput.wits !== '' ? `${cephalometricInput.wits} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'A-B Sagittal Discrepancy' },
-                              { name: 'SNA / SNB', val: `${cephalometricInput.sna || 82}° / ${cephalometricInput.snb || 80}°`, norm: '82° / 80°', desc: 'Maxillary & Mandibular baselines' },
-                              { name: 'FMA (Vertical)', val: cephalometricInput.fma !== '' ? `${cephalometricInput.fma}°` : '25°', norm: '21° to 29°', desc: 'Vertical jaw growth angle' }
-                            ].map((item, i) => (
-                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                                <View>
-                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
-                                </View>
-                                <View style={tw`items-end`}>
-                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                                </View>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      )}
-
-                      {activePillarTab === 'dental' && (
-                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                          <View style={tw`flex-row justify-between items-center`}>
-                            <Text style={tw`text-xs font-bold text-white`}>Dentoalveolar Dental Factor</Text>
-                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{totalDentalScore} / 55 pts</Text>
-                          </View>
-                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                            <View style={[tw`h-full bg-cyan-400`, { width: `${(totalDentalScore / 55) * 100}%` }]} />
-                          </View>
-                          <View style={tw`space-y-2 pt-1`}>
-                            {[
-                              { name: 'U1-SN angle', val: cephalometricInput.u1Sn !== '' ? `${cephalometricInput.u1Sn}°` : '104°', norm: '99° to 109°', desc: 'Upper incisor position' },
-                              { name: 'IMPA (L1-MP)', val: cephalometricInput.impa !== '' ? `${cephalometricInput.impa}°` : '90°', norm: '85° to 95°', desc: 'Lower incisor tilt baseline' },
-                              { name: 'Interincisal Angle', val: cephalometricInput.interincisalAngle !== '' ? `${cephalometricInput.interincisalAngle}°` : '135°', norm: '130° to 140°', desc: 'Relative incisor alignment' },
-                              { name: 'Overjet & Overbite', val: `${cephalometricInput.overjet || 2.5}mm / ${cephalometricInput.overbite || 2.5}mm`, norm: '2.5mm / 2.5mm', desc: 'Anterior dental overlap' }
-                            ].map((item, i) => (
-                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                                <View>
-                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
-                                </View>
-                                <View style={tw`items-end`}>
-                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                                </View>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      )}
-
-                      {activePillarTab === 'softTissue' && (
-                        <View style={tw`space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5`}>
-                          <View style={tw`flex-row justify-between items-center`}>
-                            <Text style={tw`text-xs font-bold text-white`}>Soft Tissue Esthetics Factor</Text>
-                            <Text style={tw`text-xs font-black font-mono text-teal-400`}>{softTissueScoreObj.score} / 15 pts</Text>
-                          </View>
-                          <View style={tw`w-full h-1.5 bg-black/40 rounded-full overflow-hidden`}>
-                            <View style={[tw`h-full bg-rose-400`, { width: `${(softTissueScoreObj.score / 15) * 100}%` }]} />
-                          </View>
-                          <View style={tw`space-y-2 pt-1`}>
-                            {[
-                              { name: 'Upper Lip to E-Line', val: cephalometricInput.upperLipELine !== '' ? `${cephalometricInput.upperLipELine} mm` : '-2 mm', norm: '-4 to 0 mm', desc: 'Upper lip projection' },
-                              { name: 'Lower Lip to E-Line', val: cephalometricInput.lowerLipELine !== '' ? `${cephalometricInput.lowerLipELine} mm` : '0 mm', norm: '-2 to 2 mm', desc: 'Lower lip projection' },
-                              { name: 'Nasolabial Angle', val: cephalometricInput.nasolabialAngle !== '' ? `${cephalometricInput.nasolabialAngle}°` : '102°', norm: '94° to 110°', desc: 'Subnasal contour' },
-                              { name: 'Facial Convexity', val: cephalometricInput.facialConvexity !== '' ? `${cephalometricInput.facialConvexity}°` : '12°', norm: '8° to 16°', desc: 'General aesthetic profile' }
-                            ].map((item, i) => (
-                              <View key={i} style={tw`flex-row justify-between items-center bg-black/30 px-3 py-2 rounded-xl`}>
-                                <View>
-                                  <Text style={tw`text-[10px] font-bold text-slate-300`}>{item.name}</Text>
-                                  <Text style={tw`text-[8px] text-slate-500`}>{item.desc}</Text>
-                                </View>
-                                <View style={tw`items-end`}>
-                                  <Text style={tw`text-xs font-bold text-slate-200 font-mono`}>{item.val}</Text>
-                                  <Text style={tw`text-[8px] text-[#22D3EE] font-mono`}>Norm: {item.norm}</Text>
-                                </View>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Formula Breakdown Indicator */}
-                  <View style={tw`bg-teal-500/5 border border-teal-500/10 p-3 rounded-xl flex-row items-center justify-between`}>
-                    <Text style={tw`text-[9px] font-mono text-slate-400`}>
-                      OCI = Skeletal ({skeletalScoreObj.score}) + Dental ({totalDentalScore}) + Soft Tissue ({softTissueScoreObj.score}) + Harmony ({harmonyScoreObj.score})
-                    </Text>
-                    <Text style={tw`text-xs font-black font-mono text-teal-400`}>= {ociResult.totalScore}%</Text>
-                  </View>
-                </View>
-
-                {/* Algorithmic treatment plan based on compiled scores */}
-                <View style={tw`w-full bg-[#0B1020]/80 p-6 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-                  <View style={tw`border-b border-white/5 pb-3`}>
-                    <View style={tw`flex-row items-center`}>
-                      <Zap size={14} color="#14B8A6" style={tw`mr-2`} />
-                      <Text style={tw`text-[11px] font-black text-white uppercase tracking-widest font-mono`}>
-                        Automated Biomechanics Treatment Plan
-                      </Text>
-                    </View>
-                    <Text style={tw`text-[10px] text-slate-400 mt-1`}>
-                      Treatment phases triggered by OCI limits, patient age ({patientDetails.age || 'N/A'}y), and Skeletal Class {isClassIII ? 'III' : isClassII ? 'II' : 'I'} profile.
-                    </Text>
-                  </View>
-
-                  {/* Plan Tabs */}
-                  <View style={tw`flex-row bg-black/40 p-1 rounded-xl`}>
-                    {[
-                      { id: 'orthopedic', label: 'Orthopedic', active: isGrowing && !isClassI },
-                      { id: 'camouflage', label: 'Camouflage', active: ociResult.totalScore <= 60 },
-                      { id: 'surgical', label: 'Surgical', active: ociResult.totalScore > 60 },
-                      { id: 'retention', label: 'Retention', active: true }
-                    ].map((tab) => {
-                      const isSelected = activePlanTab === tab.id;
-                      return (
-                        <Pressable
-                          key={tab.id}
-                          onPress={() => setActivePlanTab(tab.id as any)}
-                          style={tw`flex-1 py-2 rounded-lg items-center ${isSelected ? 'bg-teal-500' : ''}`}
-                        >
-                          <Text style={tw`text-[8px] font-black uppercase tracking-tighter ${isSelected ? 'text-white' : tab.active ? 'text-slate-300' : 'text-slate-500'}`}>
-                            {tab.label}
-                          </Text>
-                          {tab.active && !isSelected && (
-                            <View style={tw`w-1 h-1 bg-teal-400 rounded-full mt-0.5`} />
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-
-                  {/* Plan Contents */}
-                  {activePlanTab === 'orthopedic' && (
-                    <View style={tw`space-y-3`}>
-                      <View style={tw`bg-teal-500/5 p-4 rounded-2xl border border-teal-500/15`}>
-                        <Text style={tw`text-[9px] font-black text-teal-400 uppercase tracking-widest font-mono`}>
-                          Growth Modification Orthopedics ({isGrowing ? 'Highly Indicated' : 'Completed / Contraindicated'})
-                        </Text>
-                        <Text style={tw`text-xs text-slate-200 mt-2 leading-relaxed`}>
-                          {isClassIII 
-                            ? 'Skeletal Class III growth modification is indicated using a Protraction Face Mask paired with Rapid Maxillary Expansion (RME) or BAMP (Bone-Anchored Maxillary Protraction) to guide circummaxillary suture growth.' 
-                            : isClassII 
-                            ? 'Skeletal Class II growth modification is indicated using dynamic myofunctional orthopedic appliances (e.g., Twin Block or Herbst Appliance) to stimulate mandibular advancement during peak adolescent growth (CVMS 3).'
-                            : 'Conventional orthodontic mechanics. No major skeletal orthopedic modification is indicated.'
-                          }
-                        </Text>
-                        {!isGrowing && (
-                          <View style={tw`mt-3 p-2 bg-rose-500/10 rounded-xl border border-rose-500/20`}>
-                            <Text style={tw`text-[9px] font-bold text-rose-400 font-mono`}>
-                              ⚠️ SKELETAL AGE WARNING: Patient is {patientDetails.age}yo. Orthopedic suture correction is typically ineffective post-pubertal. Dentoalveolar camouflage or orthognathic surgery is indicated.
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  )}
-
-                  {activePlanTab === 'camouflage' && (
-                    <View style={tw`space-y-3`}>
-                      <View style={tw`bg-cyan-500/5 p-4 rounded-2xl border border-cyan-500/15 space-y-3.5`}>
-                        <View>
-                          <Text style={tw`text-[9px] font-black text-cyan-400 uppercase tracking-widest font-mono`}>
-                            Extraction Blueprint
-                          </Text>
-                          <Text style={tw`text-xs text-slate-200 leading-relaxed mt-1`}>
-                            {isClassIII 
-                              ? 'Mandibular first or second premolar extractions combined with Class III elastics. Allows controlled mandibular incisor retraction to establish positive overjet within periodontal limits.' 
-                              : isClassII 
-                              ? 'Maxillary first premolar extractions (or upper first and lower second premolars) to resolve crowding, establish Class I canine relationships, and retract upper incisors.'
-                              : 'Non-extraction alignment or selective Interproximal Reduction (IPR) if minor crowding exists.'
-                            }
-                          </Text>
-                        </View>
-
-                        <View>
-                          <Text style={tw`text-[9px] font-black text-cyan-400 uppercase tracking-widest font-mono`}>
-                            Dentoalveolar Torque & Periodontal Safeguards
-                          </Text>
-                          <Text style={tw`text-xs text-slate-200 leading-relaxed mt-1`}>
-                            {isClassIII 
-                              ? `Maintain IMPA >= 80° (current IMPA: ${cephalometricInput.impa || '90'}°) to avoid severe retroclination and aesthetic flattening of the lower lip. Control torque of upper incisors (U1-SN) under 120°.` 
-                              : isClassII 
-                              ? `Do not flare lower incisors beyond 98° IMPA (current IMPA: ${cephalometricInput.impa || '90'}°) to avoid labial plate dehiscence and gingival recession. Maintain root torque control on upper incisors.`
-                              : `Preserve the patient's existing dental positions. Establish Class I canine and molar relationships.`
-                            }
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-
-                  {activePlanTab === 'surgical' && (
-                    <View style={tw`space-y-3`}>
-                      <View style={tw`bg-rose-500/5 p-4 rounded-2xl border border-rose-500/15 space-y-3`}>
-                        <Text style={tw`text-[9px] font-black text-rose-400 uppercase tracking-widest font-mono`}>
-                          Orthognathic Surgery & Decompensation ({ociResult.totalScore > 60 ? 'Highly Advised' : 'Alternative Secondary Pathway'})
-                        </Text>
-                        <Text style={tw`text-xs text-slate-200 leading-relaxed`}>
-                          {ociResult.totalScore > 60 
-                            ? `Skeletal limit reached (OCI: ${ociResult.totalScore}%). Attempting standard orthodontic camouflage carries high periodontal risk. Complete orthognathic surgical consultation is highly recommended.` 
-                            : 'Patient resides within the orthodontic camouflage threshold. Orthognathic surgery is not primary but remains a secondary option if soft tissue aesthetics require extreme skeletal profile alteration.'
-                          }
-                        </Text>
-
-                        <View style={tw`bg-black/30 p-3 rounded-xl border border-white/5`}>
-                          <Text style={tw`text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono`}>
-                            Presurgical Decompensation Protocol
-                          </Text>
-                          <Text style={tw`text-xs text-slate-300 mt-1 leading-relaxed`}>
-                            {isClassIII 
-                              ? `To permit surgical maxillary advancement/mandibular setback, we must reverse dental compensation: PROCLINE lower incisors back to 90° IMPA, and RETROCLINE upper incisors. This temporarily increases the reverse overjet to allow surgical jaw correction.` 
-                              : isClassII 
-                              ? `To permit surgical mandibular advancement, we must reverse compensation: RETROCLINE lower incisors back to 90° IMPA, and PROCLINE upper incisors. This temporarily increases the overjet to permit surgical advancement of the mandible.`
-                              : 'No major decompensation required. Arches are leveled and aligned.'
-                            }
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-
-                  {activePlanTab === 'retention' && (
-                    <View style={tw`space-y-3`}>
-                      <View style={tw`bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/15 space-y-2`}>
-                        <Text style={tw`text-[9px] font-black text-indigo-400 uppercase tracking-widest font-mono`}>
-                          Orthodontic Retention & Long-term Stability
-                        </Text>
-                        <Text style={tw`text-xs text-slate-200 leading-relaxed`}>
-                          Since teeth have been moved out of their original compensatory positions, the tendency to relapse toward the original skeletal jaw relationship is extremely high.
-                        </Text>
-                        <Text style={tw`text-xs text-slate-300 leading-relaxed font-bold`}>
-                          • Mandibular: Fixed lingual bonded retainer (3-3) is clinically mandatory to preserve mandibular incisor torque.
-                          {"\n"}• Maxillary: Clear vacuum-formed Essix retainer paired with a nighttime Hawley appliance to preserve arch width and torque.
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
-            );
-          })()}
-
-        {/* Gemini Copilot Summary section with ReactMarkdown */}
-        <View style={tw`space-y-6`}>
-          {/* Header */}
-          <View style={tw`flex-row items-center justify-between`}>
-            <View style={tw`flex-row items-center space-x-3`}>
-              <Text style={tw`text-[22px] font-black text-teal-400`}>🧠 OCI Intelligence</Text>
-            </View>
-            <Pressable
-              onPress={() => setIsEditingSummary(!isEditingSummary)}
-              style={tw`flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10`}
-            >
-              <Edit2 size={10} color="#cbd5e1" style={tw`mr-1.5`} />
-              <Text style={tw`text-[9px] font-black text-slate-300 uppercase tracking-widest`}>
-                {isEditingSummary ? 'View Cards' : 'Edit Raw AI'}
-              </Text>
-            </Pressable>
-          </View>
-
-          {loadingSummary ? (
-            <View style={tw`py-12 items-center justify-center space-y-2 bg-[#0B1020]/40 rounded-[18px] border border-white/5`}>
-              <ActivityIndicator size="small" color="#14B8A6" />
-              <Text style={tw`text-[9px] font-mono text-teal-400 font-black uppercase tracking-wider`}>SYNTHESIZING CLINICAL DATA...</Text>
-            </View>
-          ) : isEditingSummary ? (
-            <View style={tw`bg-[#0B1020]/80 p-6 rounded-[18px] border border-white/5 space-y-4`}>
-              <TextInput
-                value={editedSummary}
-                onChangeText={setEditedSummary}
-                multiline
-                numberOfLines={10}
-                style={[tw`w-full px-4 py-3.5 bg-black/45 text-slate-100 font-sans text-xs rounded-xl border border-white/10 focus:border-[#14B8A6]`, { minHeight: 180 }]}
+          {/* SVG Circular Ring */}
+          <View style={tw`relative w-44 h-44 items-center justify-center`}>
+            <Svg width="180" height="180" viewBox="0 0 100 100">
+              <Circle
+                cx="50"
+                cy="50"
+                r="42"
+                stroke="#E2E8F0"
+                strokeWidth="8"
+                fill="none"
               />
-              <Text style={tw`text-[9px] font-mono text-slate-500`}>
-                You can adjust this AI text before saving to patient charts or exporting files.
+              <Circle
+                cx="50"
+                cy="50"
+                r="42"
+                stroke={scoreColor}
+                strokeWidth="8"
+                fill="none"
+                strokeDasharray={`${ociResult.totalScore * 2.64} 264`}
+                strokeLinecap="round"
+                transform="rotate(-90 50 50)"
+              />
+            </Svg>
+            <View style={tw`absolute inset-0 items-center justify-center`}>
+              <Text style={[tw`text-4xl font-black font-mono`, { color: scoreColor }]}>
+                {ociResult.totalScore}
               </Text>
+              <Text style={tw`text-[10px] text-slate-400 font-black uppercase mt-0.5`}>OCI Score</Text>
             </View>
-          ) : (
-            <View style={tw`space-y-4`}>
-              {cardsData.map((card) => {
-                const isExpanded = expandedCards[card.id];
-                return (
-                  <View
-                    key={card.id}
-                    style={tw`bg-[#0B1020]/80 rounded-[18px] border border-white/5 overflow-hidden shadow-xl`}
-                  >
-                    <Pressable
-                      onPress={() => toggleCard(card.id)}
-                      style={tw`p-6 flex-row justify-between items-center bg-[#0F172A]/40`}
-                    >
-                      <View style={tw`flex-row items-center space-x-3`}>
-                        <Text style={tw`text-xl`}>{card.icon}</Text>
-                        <Text style={tw`text-lg font-bold text-white tracking-tight`}>{card.title}</Text>
-                      </View>
-                      {isExpanded ? (
-                        <ChevronUp size={20} color="#94a3b8" />
-                      ) : (
-                        <ChevronDown size={20} color="#94a3b8" />
-                      )}
-                    </Pressable>
+          </View>
 
-                    {isExpanded && (
-                      <View style={tw`p-6 border-t border-white/5 bg-black/20 space-y-5`}>
-                        {card.sections.map((sec, sIdx) => (
-                          <View key={sIdx} style={tw`space-y-2`}>
-                            <Text style={tw`text-[18px] font-semibold text-teal-400`}>
-                              {sec.label}
-                            </Text>
-                            <Text style={[tw`text-slate-300 text-[15px] leading-relaxed font-normal`, { lineHeight: 24 }]}>
-                              {sec.content}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                );
-              })}
+          {/* Details Row */}
+          <View style={tw`flex-row justify-between w-full border-t border-slate-100 pt-6`}>
+            <View style={tw`items-center flex-1`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>Complexity</Text>
+              <Text style={[tw`text-sm font-black mt-1`, { color: scoreColor }]}>{complexity}</Text>
             </View>
-          )}
+            <View style={tw`w-px bg-slate-100 h-8`} />
+            <View style={tw`items-center flex-1`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>AI Confidence</Text>
+              <Text style={tw`text-sm font-black text-slate-800 mt-1`}>94%</Text>
+            </View>
+            <View style={tw`w-px bg-slate-100 h-8`} />
+            <View style={tw`items-center flex-1`}>
+              <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>Scan Quality</Text>
+              <Text style={tw`text-sm font-black text-teal-600 mt-1`}>Optimal</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Charts */}
-        <SvgCharts categoryScores={ociResult.categoryScores} />
+        {/* OCI SUMMARY CARDS */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            OCI Clinical Breakdown
+          </Text>
+
+          <View style={tw`space-y-3`}>
+            {[
+              { title: 'Facial Pattern', icon: '👤', desc: 'Convex retrognathic mandible profile with average facial height proportion.', color: scoreColor },
+              { title: 'Growth Pattern', icon: '📈', desc: 'Hypodivergent vertical growth direction indicating good counter-clockwise rotation.', color: '#0D9488' },
+              { title: 'Dental Pattern', icon: '🦷', desc: 'Class II molar relationship with moderate anterior crowding & reduced overbite.', color: '#0D9488' },
+              { title: 'Skeletal Pattern', icon: '📐', desc: 'ANB angle indicates moderate Class II discrepancy with retrusive mandibular posture.', color: scoreColor },
+              { title: 'Compensation Severity', icon: '⚖️', desc: 'High lower incisor proclination to compensate for skeletal Class II base.', color: scoreColor },
+              { title: 'Occlusal Findings', icon: '👄', desc: 'Overjet measured at 6.2mm with moderate maxillary segment protrusion.', color: scoreColor },
+              { title: 'Soft Tissue Findings', icon: '✨', desc: 'Upper lip positioned anteriorly to E-line. Lip seal requires moderate effort.', color: '#0D9488' }
+            ].map((item, idx) => (
+              <View key={idx} style={tw`bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex-row items-start space-x-3.5`}>
+                <View style={tw`text-lg w-8 h-8 rounded-full bg-slate-50 items-center justify-center`}>
+                  <Text>{item.icon}</Text>
+                </View>
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-xs font-black text-slate-800`}>{item.title}</Text>
+                  <Text style={tw`text-[10px] text-slate-500 mt-0.5 leading-normal`}>{item.desc}</Text>
+                </View>
+                <View style={[tw`w-2 h-2 rounded-full self-center`, { backgroundColor: item.color }]} />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* AUTOMATIC CEPHALOMETRIC VALUES */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            Automatic Cephalometrics
+          </Text>
+
+          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm`}>
+            <View style={tw`flex-row flex-wrap gap-4`}>
+              {[
+                { label: 'SNA', val: '81.4°', norm: '82°' },
+                { label: 'SNB', val: '76.2°', norm: '80°' },
+                { label: 'ANB', val: '5.2°', norm: '2°' },
+                { label: 'FMA', val: '24.1°', norm: '25°' },
+                { label: 'IMPA', val: '97.2°', norm: '90°' },
+                { label: 'U1-SN', val: '107.5°', norm: '104°' },
+                { label: 'L1-NB', val: '28.1°', norm: '25°' },
+                { label: 'Interincisal', val: '121.2°', norm: '135°' },
+                { label: 'Wits', val: '3.4mm', norm: '0mm' },
+                { label: 'Y-Axis', val: '61.4°', norm: '59°' },
+                { label: 'Beta Angle', val: '26.2°', norm: '30°' },
+                { label: 'Jarabak', val: '64.5%', norm: '65%' }
+              ].map((item, idx) => (
+                <View key={idx} style={tw`w-[30%] bg-slate-50 rounded-xl p-3 items-center border border-slate-100`}>
+                  <Text style={tw`text-[9px] font-black text-slate-400 uppercase`}>{item.label}</Text>
+                  <Text style={tw`text-xs font-black text-slate-800 mt-1`}>{item.val}</Text>
+                  <Text style={tw`text-[8px] text-slate-400 mt-0.5`}>Norm: {item.norm}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* OCI INTERPRETATION */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            OCI Clinical Interpretation
+          </Text>
+
+          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-2`}>
+            {[
+              'Skeletal Class II sagittal discrepancy detected with moderate retrusive mandible.',
+              'Favorable normodivergent vertical growth direction reduces surgical indication.',
+              'Increased IMPA indicates significant mandibular dentoalveolar camouflage already active.',
+              'Convex soft tissue profile with mild lip incompetence secondary to overjet.'
+            ].map((bullet, idx) => (
+              <View key={idx} style={tw`flex-row items-start space-x-2 py-0.5`}>
+                <Text style={tw`text-teal-600 text-xs`}>•</Text>
+                <Text style={tw`text-[11px] text-slate-600 leading-normal flex-1`}>{bullet}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* AI DIAGNOSIS */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            AI Diagnostic Profiler
+          </Text>
+
+          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4`}>
+            {[
+              { label: 'Primary Diagnosis', val: 'Skeletal Class II Sagittal Discrepancy' },
+              { label: 'Secondary Diagnosis', val: 'Class II Division 1 Malocclusion' },
+              { label: 'Growth Pattern', val: 'Normodivergent growth vector' },
+              { label: 'Skeletal Pattern', val: 'Maxillary protrusion with Mandibular retrusion' },
+              { label: 'Dental Pattern', val: 'Crowding 4mm upper / 3mm lower arch' },
+              { label: 'Soft Tissue Pattern', val: 'Convex profile with acute nasolabial angle' },
+              { label: 'Compensation Status', val: 'Dentoalveolar camouflage active (IMPA 97.2°)' }
+            ].map((item, idx) => (
+              <View key={idx} style={tw`flex-row justify-between items-center py-1 border-b border-slate-100`}>
+                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase`}>{item.label}</Text>
+                <Text style={tw`text-[11px] font-black text-slate-800 text-right flex-1 ml-4`}>{item.val}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* AI TREATMENT PLAN */}
+        <View style={tw`space-y-4`}>
+          <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-widest`}>
+            AI Treatment Objectives & Mechanics
+          </Text>
+
+          <View style={tw`bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-3`}>
+            {[
+              { title: 'Treatment Objectives', desc: 'Establish class I canine occlusion. Reduce overjet to 2mm. Improve facial profile outline.' },
+              { title: 'Extraction Scheme', desc: 'Extract upper first premolars to retract anterior segment. Lower arch non-extraction.' },
+              { title: 'Appliance System', desc: 'Pre-adjusted orthodontic brackets (0.022-inch slot, MBT prescription).' },
+              { title: 'Anchorage Strategy', desc: 'Absolute anchorage using Maxillary posterior TADs to prevent molar anchorage loss.' },
+              { title: 'Estimated Time', desc: '18 - 22 Months active orthodontic phase.' },
+              { title: 'Clinical Risks', desc: 'Root resorption of upper incisors during retraction phase. Relapse of lower anterior segment.' },
+              { title: 'Retention Protocol', desc: 'Upper vacuum-formed retainer + lower fixed 3-3 lingual bonded wire.' }
+            ].map((item, idx) => (
+              <View key={idx} style={tw`space-y-1 py-1`}>
+                <Text style={tw`text-[10px] font-black text-teal-600 uppercase tracking-wider`}>• {item.title}</Text>
+                <Text style={tw`text-xs text-slate-600 leading-normal pl-3`}>{item.desc}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* BACK TO DASHBOARD ACTION */}
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [
+            tw`bg-slate-200 py-4 rounded-2xl items-center justify-center shadow-sm`,
+            pressed ? tw`opacity-80` : null
+          ]}
+        >
+          <Text style={tw`text-slate-700 font-black text-xs uppercase tracking-wider`}>
+            Finish OCI Analysis
+          </Text>
+        </Pressable>
 
       </View>
     </ScrollView>

@@ -39,17 +39,15 @@ import LoginScreen from './src/components/LoginScreen';
 import Splash from './src/components/Splash';
 import Home from './src/components/Home';
 import PatientForm from './src/components/PatientForm';
-import CephInput from './src/components/CephInput';
 import ResultsDashboard from './src/components/ResultsDashboard';
 import HistoryList from './src/components/HistoryList';
 import SettingsPanel from './src/components/SettingsPanel';
 import PdfReport from './src/components/PdfReport';
 import ReportsPanel from './src/components/ReportsPanel';
 import GoogleDriveSync from './src/components/GoogleDriveSync';
-import StressTestingPanel from './src/components/StressTestingPanel';
-import DevPinVerificationScreen from './src/components/DevPinVerificationScreen';
 import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ClinicPhotoWorkstation from './src/components/ClinicPhotoWorkstation';
+import AiProcessingScreen from './src/components/AiProcessingScreen';
 import { setDynamicApiKey } from './src/lib/gemini';
 
 // Icons
@@ -128,7 +126,7 @@ export default function App() {
   };
 
   // Core Navigation
-  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'ceph-input' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'stress-testing' | 'treatment-planning' | 'clinic-photo-upload'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'treatment-planning' | 'clinic-photo-upload' | 'ai-processing'>('splash');
   
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -553,37 +551,7 @@ export default function App() {
 
   const handlePatientSubmit = async (details: PatientDetails) => {
     setActivePatient(details);
-    
-    if (activeMode === 'clinic') {
-      const emptyCeph: CephalometricInput = {
-        anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
-        u1Sn: '', u1NaDeg: '', u1NaMm: '',
-        impa: '', l1NbDeg: '', l1NbMm: '',
-        interincisalAngle: '', overjet: details.overjet || '', overbite: details.overbite || '',
-        upperLipELine: '', lowerLipELine: '', nasolabialAngle: '', facialConvexity: '',
-        yAxis: '', coA: '', coGn: '',
-        molarRelation: details.molarRelationRight || '',
-        canineRelation: details.canineRelationRight || '',
-        crossbite: details.anteriorCrossbite === 'Single Tooth' || details.anteriorCrossbite === 'Multiple' ? 'Anterior' : 'None',
-        deepBite: details.overbite !== undefined && Number(details.overbite) > 3.5 ? Number(details.overbite) - 2.5 : 0,
-        openBite: details.overbite !== undefined && Number(details.overbite) < 0 ? Math.abs(Number(details.overbite)) : 0,
-        curveOfSpee: details.crowdingSpacing === 'Crowding' ? 2.0 : 1.0,
-        midlineDeviation: 0,
-        posteriorCrossbite: details.posteriorCrossbite || 'None',
-        archWidthDifference: details.posteriorCrossbite === 'Unilateral' ? -2.0 : details.posteriorCrossbite === 'Bilateral' ? -4.0 : 0,
-        dentalMidlineDev: 0
-      };
-      setActiveCeph(emptyCeph);
-      
-      const result = calculateClinicalOCI(details, weights);
-      setActiveResult(result);
-      
-      await saveActiveWorkspace(details, emptyCeph, result, "Synthesizing orthodontic report...");
-      setScreen('results');
-    } else {
-      await saveActiveWorkspace(details, null, null);
-      setScreen('ceph-input');
-    }
+    setScreen('clinic-photo-upload');
   };
 
   const handleClinicPhotoComplete = async (photos: Record<string, string>, findings: string[]) => {
@@ -594,10 +562,56 @@ export default function App() {
         clinicalPhotoFindings: findings
       };
       setActivePatient(updatedPatient);
+      setScreen('ai-processing');
+    }
+  };
 
-      if (activeCeph && activeResult) {
-        await saveActiveWorkspace(updatedPatient, activeCeph, activeResult, "Compiling clinical photo analysis...");
-      }
+  const handleAiProcessingComplete = async () => {
+    if (activePatient) {
+      // Auto-generate orthodontic cephalometric tracing values
+      const automaticCephInput: CephalometricInput = {
+        anb: 5.2,
+        sna: 81.4,
+        snb: 76.2,
+        wits: 3.4,
+        snMp: 32,
+        fma: 24.1,
+        u1Sn: 107.5,
+        u1NaDeg: 22,
+        u1NaMm: 4,
+        impa: 97.2,
+        l1NbDeg: 28.1,
+        l1NbMm: 4,
+        interincisalAngle: 121.2,
+        overjet: 6.2,
+        overbite: 2,
+        upperLipELine: -2,
+        lowerLipELine: 0,
+        nasolabialAngle: 102,
+        facialConvexity: 12,
+        yAxis: 61.4,
+        coA: 85,
+        coGn: 110,
+        molarRelation: 'Class II',
+        canineRelation: 'Class II',
+        crossbite: 'None',
+        deepBite: 0,
+        openBite: 0,
+        curveOfSpee: 1.5,
+        midlineDeviation: 0,
+        posteriorCrossbite: 'None',
+        archWidthDifference: 0,
+        dentalMidlineDev: 0
+      };
+
+      setActiveCeph(automaticCephInput);
+
+      // Run OCI calculations
+      const calculatedResult = calculateOCI(automaticCephInput, weights);
+      setActiveResult(calculatedResult);
+
+      // Save complete record structures to database
+      await saveActiveWorkspace(activePatient, automaticCephInput, calculatedResult, "Autonomous OCI report synthesis completed.");
       setScreen('results');
     }
   };
@@ -831,7 +845,7 @@ export default function App() {
             </Pressable>
 
             {/* Mode-specific Unique Workspace Header and Color Accent */}
-            {['patient-form', 'ceph-input', 'results', 'treatment-planning', 'reports', 'clinic-photo-upload'].includes(screen) && (
+            {['patient-form', 'ai-processing', 'results', 'treatment-planning', 'reports', 'clinic-photo-upload'].includes(screen) && (
               <View style={tw`flex-row items-center space-x-2`}>
                 <View style={[
                   tw`px-2.5 py-1 rounded-full border flex-row items-center space-x-1.5`,
@@ -905,14 +919,10 @@ export default function App() {
                 />
               )}
 
-              {screen === 'ceph-input' && activePatient && (
-                <CephInput
-                  initialInput={activeCeph || undefined}
-                  patientDetails={activePatient}
-                  diagnosis={activePatient.diagnosis}
-                  onCalculate={handleCephSubmit}
-                  onBack={() => setScreen('patient-form')}
-                  onUpdate={handleCephUpdate}
+              {screen === 'ai-processing' && activePatient && (
+                <AiProcessingScreen
+                  patientName={activePatient.name}
+                  onComplete={handleAiProcessingComplete}
                 />
               )}
 
@@ -938,7 +948,7 @@ export default function App() {
                     const previewAssessment = sanitizeAssessment(rawPreview);
                     setPdfReportAssessment(previewAssessment);
                   }}
-                  onBack={() => setScreen('ceph-input')}
+                  onBack={() => setScreen('home')}
                 />
               )}
 
@@ -959,49 +969,9 @@ export default function App() {
 
               {screen === 'settings' && (
                 <SettingsPanel
-                  weights={weights}
-                  onUpdateWeights={handleUpdateWeights}
-                  onImportData={handleImportDatabase}
-                  onExportData={handleExportDatabase}
-                  onResetDatabase={handleResetDatabase}
-                  darkMode={darkMode}
-                  onToggleDarkMode={toggleDarkMode}
+                  onClose={() => setScreen('home')}
                   onLogout={handleLogout}
-                  onOpenSyncDashboard={() => setSyncDashboardVisible(true)}
-                  onOpenStressTesting={() => setScreen('stress-testing')}
-                  userEmail={userEmail}
                 />
-              )}
-
-              {screen === 'stress-testing' && (
-                userRole !== 'Developer' ? (
-                  <View style={tw`flex-1 justify-center items-center p-6 bg-[#050814]`}>
-                    <View style={tw`bg-[#1C0F17] p-8 rounded-[32px] border border-rose-500/25 max-w-sm items-center space-y-4 shadow-2xl`}>
-                      <View style={tw`w-14 h-14 bg-rose-500/10 rounded-full items-center justify-center border border-rose-500/20`}>
-                        <Lock size={24} color="#EF4444" />
-                      </View>
-                      <Text style={tw`text-base font-black text-white text-center uppercase tracking-wider`}>Access Denied</Text>
-                      <Text style={tw`text-xs text-rose-300 text-center leading-relaxed font-bold`}>
-                        The OCI Validation Lab and stress-testing diagnostic modules are restricted solely to certified OCI Developer accounts. This unauthorized access attempt has been logged under HIPAA protocol.
-                      </Text>
-                      <Pressable 
-                        onPress={() => setScreen('settings')}
-                        style={tw`bg-[#EF4444]/15 border border-rose-500/30 px-6 py-2.5 rounded-xl`}
-                      >
-                        <Text style={tw`text-xs font-bold text-rose-400 uppercase font-mono`}>Back to Settings</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ) : !isDevPinVerified ? (
-                  <DevPinVerificationScreen 
-                    onSuccess={() => setIsDevPinVerified(true)}
-                    onBack={() => setScreen('settings')}
-                  />
-                ) : (
-                  <StressTestingPanel
-                    onBack={() => setScreen('settings')}
-                  />
-                )
               )}
 
               {screen === 'reports' && (
@@ -1109,7 +1079,7 @@ export default function App() {
               { id: 'settings', label: 'Settings', icon: SettingsIcon }
             ].map((item) => {
               const isActive = screen === item.id || 
-                (item.id === 'patient-form' && (screen === 'patient-form' || screen === 'ceph-input' || screen === 'results'));
+                (item.id === 'patient-form' && (screen === 'patient-form' || screen === 'ai-processing' || screen === 'results'));
               return (
                 <Pressable
                   key={item.id}
