@@ -406,127 +406,131 @@ export default function App() {
     summaryVal?: string,
     advVal?: AdvancedClinicalIntelligence
   ) => {
-    const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-    if (!editingAssessmentId) {
-      setEditingAssessmentId(uuid);
-      await AsyncStorage.setItem('oci_persistence_editing_id', uuid);
-    }
-
-    const existing = savedAssessments.find(a => a.id === uuid);
-    
-    const defaultSharedDetails: PatientDetails = {
-      name: patientVal?.name || existing?.patientDetails?.name || '',
-      age: patientVal?.age !== undefined ? patientVal.age : (existing?.patientDetails?.age || ''),
-      gender: patientVal?.gender || existing?.patientDetails?.gender || '',
-      caseNumber: patientVal?.caseNumber || existing?.patientDetails?.caseNumber || '',
-      date: patientVal?.date || existing?.patientDetails?.date || new Date().toISOString(),
-      diagnosis: patientVal?.diagnosis || existing?.patientDetails?.diagnosis || '',
-      clinicalNotes: patientVal?.clinicalNotes || existing?.patientDetails?.clinicalNotes || '',
-      analysisMode: activeMode
-    };
-
-    const emptyCeph: CephalometricInput = {
-      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
-      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
-      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
-      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
-      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
-      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
-    };
-
-    const emptyPatient: PatientDetails = {
-      name: defaultSharedDetails.name,
-      age: defaultSharedDetails.age,
-      gender: defaultSharedDetails.gender,
-      caseNumber: defaultSharedDetails.caseNumber,
-      date: defaultSharedDetails.date,
-      diagnosis: '',
-      clinicalNotes: '',
-      facialProfile: '',
-      smileAnalysis: '',
-      crowdingSpacing: '',
-      dentitionPhase: '',
-      chiefComplaint: '',
-      facialAsymmetry: '',
-      lips: '',
-      molarRelationRight: '',
-      molarRelationLeft: '',
-      canineRelationRight: '',
-      canineRelationLeft: '',
-      overjet: '',
-      overbite: '',
-      anteriorCrossbite: '',
-      posteriorCrossbite: '',
-      functionalAirway: '',
-      tmjStatus: '',
-      habits: [],
-      cvmStage: '',
-      growthStatus: '',
-      analysisMode: 'clinic'
-    };
-
-    const clinicWorkspace: ClinicWorkspaceData = existing?.clinicWorkspace ? { ...existing.clinicWorkspace } : {
-      patientDetails: emptyPatient, ociResult: null, aiSummary: '', status: 'Not Started'
-    };
-    const cephWorkspace: CephWorkspaceData = existing?.cephWorkspace ? { ...existing.cephWorkspace } : {
-      cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
-    };
-    const turboWorkspace: TurboWorkspaceData = existing?.turboWorkspace ? { ...existing.turboWorkspace } : {
-      patientDetails: emptyPatient, cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
-    };
-
-    if (activeMode === 'clinic') {
-      if (patientVal) {
-        clinicWorkspace.patientDetails = { ...clinicWorkspace.patientDetails, ...patientVal };
-        clinicWorkspace.status = resultVal ? 'Completed' : (patientVal.diagnosis ? 'In Progress' : 'Not Started');
+    try {
+      const uuid = editingAssessmentId || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      if (!editingAssessmentId) {
+        setEditingAssessmentId(uuid);
+        await AsyncStorage.setItem('oci_persistence_editing_id', uuid);
       }
-      if (resultVal) clinicWorkspace.ociResult = resultVal;
-      if (summaryVal !== undefined) clinicWorkspace.aiSummary = summaryVal;
-      if (advVal !== undefined) clinicWorkspace.advanced = advVal;
-    } else if (activeMode === 'ceph') {
-      if (cephVal) {
-        cephWorkspace.cephalometricInput = { ...cephWorkspace.cephalometricInput, ...cephVal };
-        cephWorkspace.status = resultVal ? 'Completed' : (cephVal.anb !== '' ? 'In Progress' : 'Not Started');
-      }
-      if (resultVal) cephWorkspace.ociResult = resultVal;
-      if (summaryVal !== undefined) cephWorkspace.aiSummary = summaryVal;
-      if (advVal !== undefined) cephWorkspace.advanced = advVal;
-    } else if (activeMode === 'turbo') {
-      if (patientVal) {
-        turboWorkspace.patientDetails = { ...turboWorkspace.patientDetails, ...patientVal };
-      }
-      if (cephVal) {
-        turboWorkspace.cephalometricInput = { ...turboWorkspace.cephalometricInput, ...cephVal };
-      }
-      const hasClinical = patientVal?.diagnosis || turboWorkspace.patientDetails.diagnosis;
-      const hasCeph = cephVal?.anb !== '' || turboWorkspace.cephalometricInput.anb !== '';
+
+      const existing = savedAssessments.find(a => a.id === uuid);
       
-      turboWorkspace.status = resultVal ? 'Completed' : ((hasClinical || hasCeph) ? 'In Progress' : 'Not Started');
-      if (resultVal) turboWorkspace.ociResult = resultVal;
-      if (summaryVal !== undefined) turboWorkspace.aiSummary = summaryVal;
-      if (advVal !== undefined) turboWorkspace.advanced = advVal;
+      const defaultSharedDetails: PatientDetails = {
+        name: patientVal?.name || existing?.patientDetails?.name || '',
+        age: patientVal?.age !== undefined ? patientVal.age : (existing?.patientDetails?.age || ''),
+        gender: patientVal?.gender || existing?.patientDetails?.gender || '',
+        caseNumber: patientVal?.caseNumber || existing?.patientDetails?.caseNumber || '',
+        date: patientVal?.date || existing?.patientDetails?.date || new Date().toISOString(),
+        diagnosis: patientVal?.diagnosis || existing?.patientDetails?.diagnosis || '',
+        clinicalNotes: patientVal?.clinicalNotes || existing?.patientDetails?.clinicalNotes || '',
+        analysisMode: activeMode
+      };
+
+      const emptyCeph: CephalometricInput = {
+        anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+        u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+        interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+        nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+        crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+        posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+      };
+
+      const emptyPatient: PatientDetails = {
+        name: defaultSharedDetails.name,
+        age: defaultSharedDetails.age,
+        gender: defaultSharedDetails.gender,
+        caseNumber: defaultSharedDetails.caseNumber,
+        date: defaultSharedDetails.date,
+        diagnosis: '',
+        clinicalNotes: '',
+        facialProfile: '',
+        smileAnalysis: '',
+        crowdingSpacing: '',
+        dentitionPhase: '',
+        chiefComplaint: '',
+        facialAsymmetry: '',
+        lips: '',
+        molarRelationRight: '',
+        molarRelationLeft: '',
+        canineRelationRight: '',
+        canineRelationLeft: '',
+        overjet: '',
+        overbite: '',
+        anteriorCrossbite: '',
+        posteriorCrossbite: '',
+        functionalAirway: '',
+        tmjStatus: '',
+        habits: [],
+        cvmStage: '',
+        growthStatus: '',
+        analysisMode: 'clinic'
+      };
+
+      const clinicWorkspace: ClinicWorkspaceData = existing?.clinicWorkspace ? { ...existing.clinicWorkspace } : {
+        patientDetails: emptyPatient, ociResult: null, aiSummary: '', status: 'Not Started'
+      };
+      const cephWorkspace: CephWorkspaceData = existing?.cephWorkspace ? { ...existing.cephWorkspace } : {
+        cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
+      };
+      const turboWorkspace: TurboWorkspaceData = existing?.turboWorkspace ? { ...existing.turboWorkspace } : {
+        patientDetails: emptyPatient, cephalometricInput: emptyCeph, ociResult: null, aiSummary: '', status: 'Not Started'
+      };
+
+      if (activeMode === 'clinic') {
+        if (patientVal) {
+          clinicWorkspace.patientDetails = { ...clinicWorkspace.patientDetails, ...patientVal };
+          clinicWorkspace.status = resultVal ? 'Completed' : (patientVal.diagnosis ? 'In Progress' : 'Not Started');
+        }
+        if (resultVal) clinicWorkspace.ociResult = resultVal;
+        if (summaryVal !== undefined) clinicWorkspace.aiSummary = summaryVal;
+        if (advVal !== undefined) clinicWorkspace.advanced = advVal;
+      } else if (activeMode === 'ceph') {
+        if (cephVal) {
+          cephWorkspace.cephalometricInput = { ...cephWorkspace.cephalometricInput, ...cephVal };
+          cephWorkspace.status = resultVal ? 'Completed' : (cephVal.anb !== '' ? 'In Progress' : 'Not Started');
+        }
+        if (resultVal) cephWorkspace.ociResult = resultVal;
+        if (summaryVal !== undefined) cephWorkspace.aiSummary = summaryVal;
+        if (advVal !== undefined) cephWorkspace.advanced = advVal;
+      } else if (activeMode === 'turbo') {
+        if (patientVal) {
+          turboWorkspace.patientDetails = { ...turboWorkspace.patientDetails, ...patientVal };
+        }
+        if (cephVal) {
+          turboWorkspace.cephalometricInput = { ...turboWorkspace.cephalometricInput, ...cephVal };
+        }
+        const hasClinical = patientVal?.diagnosis || turboWorkspace.patientDetails.diagnosis;
+        const hasCeph = cephVal?.anb !== '' || turboWorkspace.cephalometricInput.anb !== '';
+        
+        turboWorkspace.status = resultVal ? 'Completed' : ((hasClinical || hasCeph) ? 'In Progress' : 'Not Started');
+        if (resultVal) turboWorkspace.ociResult = resultVal;
+        if (summaryVal !== undefined) turboWorkspace.aiSummary = summaryVal;
+        if (advVal !== undefined) turboWorkspace.advanced = advVal;
+      }
+
+      const updatedAssessment: Assessment = {
+        id: uuid,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        patientDetails: defaultSharedDetails,
+        clinicWorkspace,
+        cephWorkspace,
+        turboWorkspace
+      };
+
+      const nextAssessments = savedAssessments.some(a => a.id === uuid)
+        ? savedAssessments.map(a => a.id === uuid ? updatedAssessment : a)
+        : [updatedAssessment, ...savedAssessments];
+
+      setSavedAssessments(nextAssessments);
+      await dbSaveAssessment(updatedAssessment);
+
+      // Save persistence states
+      await AsyncStorage.setItem('oci_persistence_active_patient', JSON.stringify(patientVal || activePatient));
+      await AsyncStorage.setItem('oci_persistence_active_ceph', JSON.stringify(cephVal || activeCeph));
+      await AsyncStorage.setItem('oci_persistence_active_result', JSON.stringify(resultVal || activeResult));
+    } catch (e) {
+      console.error("Gracefully caught failure inside saveActiveWorkspace:", e);
     }
-
-    const updatedAssessment: Assessment = {
-      id: uuid,
-      createdAt: existing?.createdAt || new Date().toISOString(),
-      patientDetails: defaultSharedDetails,
-      clinicWorkspace,
-      cephWorkspace,
-      turboWorkspace
-    };
-
-    const nextAssessments = savedAssessments.some(a => a.id === uuid)
-      ? savedAssessments.map(a => a.id === uuid ? updatedAssessment : a)
-      : [updatedAssessment, ...savedAssessments];
-
-    setSavedAssessments(nextAssessments);
-    await dbSaveAssessment(updatedAssessment);
-
-    // Save persistence states
-    await AsyncStorage.setItem('oci_persistence_active_patient', JSON.stringify(patientVal || activePatient));
-    await AsyncStorage.setItem('oci_persistence_active_ceph', JSON.stringify(cephVal || activeCeph));
-    await AsyncStorage.setItem('oci_persistence_active_result', JSON.stringify(resultVal || activeResult));
   };
 
   const handleDraftUpdate = async (details: PatientDetails) => {
@@ -567,51 +571,62 @@ export default function App() {
   };
 
   const handleAiProcessingComplete = async () => {
-    if (activePatient) {
-      // Auto-generate orthodontic cephalometric tracing values
-      const automaticCephInput: CephalometricInput = {
-        anb: 5.2,
-        sna: 81.4,
-        snb: 76.2,
-        wits: 3.4,
-        snMp: 32,
-        fma: 24.1,
-        u1Sn: 107.5,
-        u1NaDeg: 22,
-        u1NaMm: 4,
-        impa: 97.2,
-        l1NbDeg: 28.1,
-        l1NbMm: 4,
-        interincisalAngle: 121.2,
-        overjet: 6.2,
-        overbite: 2,
-        upperLipELine: -2,
-        lowerLipELine: 0,
-        nasolabialAngle: 102,
-        facialConvexity: 12,
-        yAxis: 61.4,
-        coA: 85,
-        coGn: 110,
-        molarRelation: 'Class II',
-        canineRelation: 'Class II',
-        crossbite: 'None',
-        deepBite: 0,
-        openBite: 0,
-        curveOfSpee: 1.5,
-        midlineDeviation: 0,
-        posteriorCrossbite: 'None',
-        archWidthDifference: 0,
-        dentalMidlineDev: 0
-      };
+    try {
+      if (activePatient) {
+        // Auto-generate orthodontic cephalometric tracing values
+        const automaticCephInput: CephalometricInput = {
+          anb: 5.2,
+          sna: 81.4,
+          snb: 76.2,
+          wits: 3.4,
+          snMp: 32,
+          fma: 24.1,
+          u1Sn: 107.5,
+          u1NaDeg: 22,
+          u1NaMm: 4,
+          impa: 97.2,
+          l1NbDeg: 28.1,
+          l1NbMm: 4,
+          interincisalAngle: 121.2,
+          overjet: 6.2,
+          overbite: 2,
+          upperLipELine: -2,
+          lowerLipELine: 0,
+          nasolabialAngle: 102,
+          facialConvexity: 12,
+          yAxis: 61.4,
+          coA: 85,
+          coGn: 110,
+          molarRelation: 'Class II',
+          canineRelation: 'Class II',
+          crossbite: 'None',
+          deepBite: 0,
+          openBite: 0,
+          curveOfSpee: 1.5,
+          midlineDeviation: 0,
+          posteriorCrossbite: 'None',
+          archWidthDifference: 0,
+          dentalMidlineDev: 0
+        };
 
-      setActiveCeph(automaticCephInput);
+        setActiveCeph(automaticCephInput);
 
-      // Run OCI calculations
-      const calculatedResult = calculateOCI(automaticCephInput, weights);
-      setActiveResult(calculatedResult);
+        // Run OCI calculations
+        const calculatedResult = calculateOCI(automaticCephInput, weights);
+        setActiveResult(calculatedResult);
 
-      // Save complete record structures to database
-      await saveActiveWorkspace(activePatient, automaticCephInput, calculatedResult, "Autonomous OCI report synthesis completed.");
+        // Save complete record structures to database with graceful fallback
+        try {
+          await saveActiveWorkspace(activePatient, automaticCephInput, calculatedResult, "Autonomous OCI report synthesis completed.");
+        } catch (dbErr) {
+          console.error("Database save failed in AI processing complete:", dbErr);
+        }
+
+        setScreen('results');
+      }
+    } catch (err) {
+      console.error("Critical error in AI processing completion:", err);
+      // Fallback transition to ensure user is not stuck on progress screen
       setScreen('results');
     }
   };
