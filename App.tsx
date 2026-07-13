@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert, Image, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, SafeAreaView, StatusBar, Alert, Image, Platform, LayoutAnimation } from 'react-native';
 import { 
   PatientDetails, 
   CephalometricInput, 
@@ -1067,10 +1067,20 @@ export default function App() {
           }}
           userEmail={userEmail}
         />
-
         {/* 5. Floating Bottom Navigation for Mobile Devices */}
         {screen !== 'splash' && userEmail && (
-          <View style={tw`bg-[#0B0F19]/95 border-t border-white/10 flex-row justify-around py-3 px-2 shadow-2xl items-center`}>
+          <View style={[
+            tw`absolute bottom-4 left-4 right-4 bg-[#071B49] rounded-3xl flex-row justify-around items-center px-2`,
+            { 
+              height: 76,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              elevation: 10,
+              zIndex: 9999
+            }
+          ]}>
             {[
               { id: 'home', label: 'Dashboard', icon: HomeIcon },
               { id: 'patient-form', label: 'Analysis', icon: Activity, action: handleStartNewAssessment },
@@ -1080,26 +1090,36 @@ export default function App() {
             ].map((item) => {
               const isActive = screen === item.id || 
                 (item.id === 'patient-form' && (screen === 'patient-form' || screen === 'ai-processing' || screen === 'results'));
+              
               return (
                 <Pressable
                   key={item.id}
-                  onPress={item.action ? () => item.action() : () => setScreen(item.id as any)}
-                  style={[
-                    isActive 
-                      ? tw`bg-teal-500/10 border border-teal-500/20 px-3.5 py-2 rounded-2xl flex-row items-center justify-center space-x-1.5 shadow-lg shadow-teal-500/5` 
-                      : tw`items-center justify-center py-1.5 px-2 rounded-xl border border-transparent`
-                  ]}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    if (item.action) {
+                      item.action();
+                    } else {
+                      setScreen(item.id as any);
+                    }
+                  }}
+                  style={tw`items-center justify-center py-2 px-3 rounded-2xl flex-1`}
                 >
-                  <item.icon size={15} color={isActive ? '#14B8A6' : '#64748B'} />
-                  {isActive ? (
-                    <Text style={tw`text-[9px] font-black tracking-wide text-teal-400 uppercase font-mono`}>
+                  <View style={tw`items-center justify-center`}>
+                    <item.icon 
+                      size={20} 
+                      color={isActive ? '#10B7A8' : '#A8B3C7'} 
+                      style={tw`mb-1`}
+                    />
+                    <Text style={[
+                      tw`text-[9px] uppercase tracking-wider font-mono`,
+                      isActive ? tw`text-[#10B7A8] font-extrabold` : tw`text-[#A8B3C7] font-bold`
+                    ]}>
                       {item.label}
                     </Text>
-                  ) : (
-                    <Text style={tw`text-[8px] font-bold mt-1 tracking-wide text-slate-500 uppercase font-mono`}>
-                      {item.label}
-                    </Text>
-                  )}
+                    {isActive && (
+                      <View style={tw`w-1.5 h-1.5 rounded-full bg-[#10B7A8] mt-1 shadow-md`} />
+                    )}
+                  </View>
                 </Pressable>
               );
             })}
