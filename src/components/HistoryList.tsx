@@ -128,8 +128,8 @@ export default function HistoryList({
   };
 
   return (
-    <View style={tw`flex-1 relative bg-[#050814]`}>
-      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
+    <View style={tw`flex-1 relative bg-[#071B49]`}>
+      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#071B49]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
         {/* Brand Card header */}
@@ -203,7 +203,7 @@ export default function HistoryList({
             </Pressable>
 
             {showFilterDropdown && (
-              <View style={tw`mt-2 bg-[#0B1020] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
+              <View style={tw`mt-2 bg-[#102B5C] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
                 {['all', 'Class I', 'Class II', 'Class III'].map((dx) => (
                   <Pressable
                     key={dx}
@@ -257,7 +257,7 @@ export default function HistoryList({
               return (
                 <View 
                   key={item.id} 
-                  style={tw`bg-[#0B1020]/90 rounded-[28px] border border-white/5 shadow-2xl p-5 relative overflow-hidden`}
+                  style={tw`bg-[#16366A]/95 rounded-[28px] border border-white/5 shadow-2xl p-5 relative overflow-hidden`}
                 >
                   {/* Glowing background hint based on severity */}
                   <View style={[tw`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10`, { backgroundColor: colors.glow }]} />
@@ -444,7 +444,7 @@ export default function HistoryList({
     {/* Custom Premium Delete Confirmation Modal */}
     {deleteTarget && (
       <View style={tw`absolute inset-0 bg-black/85 z-50 justify-center items-center p-6`}>
-        <View style={tw`bg-[#0B1020] border border-white/10 rounded-[28px] p-6 max-w-sm w-full shadow-2xl space-y-4`}>
+        <View style={tw`bg-[#102B5C] border border-white/10 rounded-[28px] p-6 max-w-sm w-full shadow-2xl space-y-4`}>
           <View style={tw`w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 items-center justify-center self-center mb-1`}>
             <Trash2 size={20} color="#F43F5E" />
           </View>

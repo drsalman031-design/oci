@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { 
   Sparkles, 
   CheckCircle,
   FileText,
   ChevronLeft,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Heart,
+  TrendingUp,
+  AlertTriangle,
+  Info,
+  Calendar,
+  Layers,
+  Award
 } from 'lucide-react-native';
 import tw from 'twrnc';
+import Svg, { Circle, Path, Polygon, Line, Text as SvgText, G, Rect } from 'react-native-svg';
 import { OciResult, CephalometricInput, PatientDetails } from '../types';
-import Svg, { Circle } from 'react-native-svg';
+import { generateTreatmentPlan } from '../treatmentPlanner';
 
 interface ResultsDashboardProps {
   patientDetails: PatientDetails;
@@ -29,274 +40,750 @@ export default function ResultsDashboard({
   onSaveAssessment,
   onOpenPdf,
   onBack,
+  mode = 'turbo'
 }: ResultsDashboardProps) {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    summary: true,
+    complaint: true,
+    findings: false,
+    facial: false,
+    dental: false,
+    compensation: true,
+    score: true,
+    diagnosis: true,
+    treatment: true,
+    retention: false,
+    risk: false,
+    clinicalNotes: false,
+    doctorNotes: true
+  });
+
+  // Interactive Treatment options states
+  const [ageGroup, setAgeGroup] = useState<'growing' | 'adult'>('adult');
+  const [crowdingSeverity, setCrowdingSeverity] = useState<'none' | 'mild' | 'moderate' | 'severe'>('none');
+  const [spacingSeverity, setSpacingSeverity] = useState<'none' | 'mild' | 'moderate' | 'severe'>('none');
+  const [archDiscrepancy, setArchDiscrepancy] = useState<number>(0);
+  const [doctorOverrideText, setDoctorOverrideText] = useState('');
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const getScoreColor = (score: number) => {
     if (score <= 20) return '#10B981'; // Green
-    if (score <= 50) return '#10B7A8'; // Teal
-    if (score <= 75) return '#F59E0B'; // Orange/Yellow
+    if (score <= 40) return '#10B7A8'; // Teal
+    if (score <= 60) return '#F59E0B'; // Orange
     return '#EF4444'; // Red
   };
 
   const getComplexityLabel = (score: number) => {
-    if (score <= 20) return 'Low';
-    if (score <= 50) return 'Moderate';
-    if (score <= 75) return 'High';
-    return 'Very High';
+    if (score <= 20) return 'Simple (Camouflage)';
+    if (score <= 40) return 'Moderate (Borderline)';
+    if (score <= 60) return 'Complex (Skeletal Camouflage)';
+    return 'Severe / Surgical (Decompensation)';
   };
 
   const scoreColor = getScoreColor(ociResult.totalScore);
   const complexity = getComplexityLabel(ociResult.totalScore);
 
-  // Auto-generate pointwise diagnostic report
-  const summaryReportText = `### OCI Diagnostic Report Summary\n* Patient demonstrates a Skeletal Class II relationship with moderate dentoalveolar compensation. Increased lower incisor inclination is present. Facial profile is moderately convex. Conventional orthodontic camouflage is indicated using absolute anchorage.`;
+  // Generate treatment plan dynamically using options
+  const generatedPlan = generateTreatmentPlan(
+    patientDetails,
+    cephalometricInput,
+    ociResult,
+    { ageGroup, crowdingSeverity, spacingSeverity, archDiscrepancy }
+  );
+
+  // Low confidence / missing info validation
+  const missingParameters: string[] = [];
+  const requiredCephs = ['anb', 'sna', 'snb', 'impa', 'u1Sn'];
+  requiredCephs.forEach(key => {
+    const val = (cephalometricInput as any)[key];
+    if (val === undefined || val === '' || val === null) {
+      missingParameters.push(key.toUpperCase());
+    }
+  });
+
+  const isLowConfidence = missingParameters.length > 0 || ociResult.totalScore === 0;
+
+  // Build the complete clinical summary markdown for PDF exporter
+  const clinicalSummaryText = `### OCI Autonomous Orthodontic Report
+- **Patient**: ${patientDetails.name} (${patientDetails.age} y/o ${patientDetails.gender})
+- **OCI Severity Index**: ${ociResult.totalScore}% (${complexity})
+- **Skeletal Pattern**: Class ${patientDetails.diagnosis || 'II'} (${ociResult.verticalPattern || 'Normodivergent'})
+- **Dentoalveolar Compensation**: ${ociResult.compensationLevel || 'Moderate'}
+- **Treatment Approach**: ${generatedPlan.treatmentComplexity} - Conventional Orthodontics
+- **Custom Doctor Signature**: ${doctorOverrideText || 'Dr. Salman MDS Orthodontist'}`;
+
+  // RADAR CHART COORDINATES CALCULATION
+  // Center: (80, 80). SNA, SNB, ANB, FMA, IMPA
+  // Normal reference values: SNA=82, SNB=80, ANB=2, FMA=25, IMPA=90
+  const getRadarPoint = (val: number, norm: number, angleDeg: number) => {
+    const angleRad = (angleDeg - 90) * (Math.PI / 180);
+    const ratio = val > 0 ? Math.min(Math.max(val / norm, 0.4), 1.6) : 1;
+    const r = 35 * ratio; 
+    const x = 80 + r * Math.cos(angleRad);
+    const y = 80 + r * Math.sin(angleRad);
+    return { x, y };
+  };
+
+  const snaVal = Number(cephalometricInput.sna) || 82;
+  const snbVal = Number(cephalometricInput.snb) || 80;
+  const anbVal = Number(cephalometricInput.anb) || 2;
+  const fmaVal = Number(cephalometricInput.fma) || 25;
+  const impaVal = Number(cephalometricInput.impa) || 90;
+
+  const pt1 = getRadarPoint(snaVal, 82, 0);
+  const pt2 = getRadarPoint(snbVal, 80, 72);
+  const pt3 = getRadarPoint(anbVal, 2, 144);
+  const pt4 = getRadarPoint(fmaVal, 25, 216);
+  const pt5 = getRadarPoint(impaVal, 90, 288);
+
+  const norm1 = getRadarPoint(82, 82, 0);
+  const norm2 = getRadarPoint(80, 80, 72);
+  const norm3 = getRadarPoint(2, 2, 144);
+  const norm4 = getRadarPoint(25, 25, 216);
+  const norm5 = getRadarPoint(90, 90, 288);
+
+  const patientPoints = `${pt1.x},${pt1.y} ${pt2.x},${pt2.y} ${pt3.x},${pt3.y} ${pt4.x},${pt4.y} ${pt5.x},${pt5.y}`;
+  const normPoints = `${norm1.x},${norm1.y} ${norm2.x},${norm2.y} ${norm3.x},${norm3.y} ${norm4.x},${norm4.y} ${norm5.x},${norm5.y}`;
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#F4F7FB]`} 
+      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#071B49]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
-      <View style={tw`space-y-8 mt-6 max-w-2xl mx-auto w-full`}>
+      <View style={tw`space-y-6 mt-6 max-w-2xl mx-auto w-full`}>
         
-        {/* Header */}
+        {/* Header Action Row */}
         <View style={tw`flex-row justify-between items-center`}>
           <Pressable 
             onPress={onBack}
-            style={[
-              tw`flex-row items-center bg-white border border-[#E5E7EB] px-3 py-1.5 rounded-xl shadow-sm`,
-              { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 3 }
-            ]}
+            style={tw`flex-row items-center bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-4 py-2 rounded-xl shadow-sm`}
           >
-            <ChevronLeft size={14} color="#071B49" style={tw`mr-1`} />
-            <Text style={tw`text-[#071B49] font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
+            <ChevronLeft size={14} color="#D9E2F2" style={tw`mr-1`} />
+            <Text style={tw`text-[#D9E2F2] font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
           </Pressable>
 
           <Pressable 
-            onPress={() => onOpenPdf(summaryReportText)}
-            style={tw`flex-row items-center bg-[#10B7A8] px-4 py-2 rounded-xl shadow-sm`}
+            onPress={() => onOpenPdf(clinicalSummaryText)}
+            style={tw`flex-row items-center bg-[#10B7A8] px-4 py-2.5 rounded-xl shadow-sm`}
           >
             <FileText size={14} color="#FFF" style={tw`mr-1.5`} />
             <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
           </Pressable>
         </View>
 
-        {/* HERO OCI RING */}
-        <View style={[
-          tw`bg-white rounded-[24px] border border-[#E5E7EB] p-8 shadow-sm items-center space-y-6`,
-          { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8 }
-        ]}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            Orthodontic Compensation Index
-          </Text>
-
-          {/* SVG Circular Ring */}
-          <View style={tw`relative w-44 h-44 items-center justify-center`}>
-            <Svg width="180" height="180" viewBox="0 0 100 100">
-              <Circle
-                cx="50"
-                cy="50"
-                r="42"
-                stroke="#F4F7FB"
-                strokeWidth="8"
-                fill="none"
-              />
-              <Circle
-                cx="50"
-                cy="50"
-                r="42"
-                stroke={scoreColor}
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={`${ociResult.totalScore * 2.64} 264`}
-                strokeLinecap="round"
-                transform="rotate(-90 50 50)"
-              />
-            </Svg>
-            <View style={tw`absolute inset-0 items-center justify-center`}>
-              <Text style={[tw`text-4xl font-black font-mono`, { color: scoreColor }]}>
-                {ociResult.totalScore}
+        {/* CLINICAL VALIDATION / WARNING BOX */}
+        {isLowConfidence && (
+          <View style={tw`bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex-row items-start space-x-3`}>
+            <AlertTriangle size={18} color="#F59E0B" style={tw`mt-0.5`} />
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-xs font-black text-amber-300 uppercase tracking-wide`}>Clinician Validation Required</Text>
+              <Text style={tw`text-[10px] text-[#D9E2F2] mt-1 leading-normal`}>
+                Low confidence parameters detected: <Text style={tw`font-extrabold text-white`}>{missingParameters.join(', ') || 'NONE'}</Text>. AI recommends manual review of clinical records before finalizing treatment mechanics.
               </Text>
-              <Text style={tw`text-[10px] text-[#64748B] font-black uppercase mt-0.5`}>OCI Score</Text>
             </View>
           </View>
+        )}
 
-          {/* Details Row */}
-          <View style={tw`flex-row justify-between w-full border-t border-[#E5E7EB] pt-6`}>
-            <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-[#64748B] uppercase`}>Complexity</Text>
-              <Text style={[tw`text-sm font-black mt-1`, { color: scoreColor }]}>{complexity}</Text>
+        {/* ==========================================
+            1. PATIENT SUMMARY SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('summary')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>1. Patient Summary</Text>
+            {expandedSections.summary ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.summary && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <View style={tw`flex-row justify-between`}>
+                <View>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Name</Text>
+                  <Text style={tw`text-sm font-extrabold text-white mt-0.5`}>{patientDetails.name}</Text>
+                </View>
+                <View style={tw`items-end`}>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Case ID</Text>
+                  <Text style={tw`text-sm font-extrabold text-white mt-0.5`}>{patientDetails.caseNumber || 'N/A'}</Text>
+                </View>
+              </View>
+              <View style={tw`flex-row justify-between border-t border-[rgba(255,255,255,0.05)] pt-3`}>
+                <View>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Age / Sex</Text>
+                  <Text style={tw`text-xs font-bold text-white mt-0.5`}>{patientDetails.age} yrs • {patientDetails.gender || 'Not specified'}</Text>
+                </View>
+                <View style={tw`items-end`}>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Assessment Date</Text>
+                  <Text style={tw`text-xs font-bold text-white mt-0.5`}>{patientDetails.date}</Text>
+                </View>
+              </View>
             </View>
-            <View style={tw`w-px bg-[#E5E7EB] h-8`} />
-            <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-[#64748B] uppercase`}>AI Confidence</Text>
-              <Text style={tw`text-sm font-black text-[#071B49] mt-1`}>94%</Text>
-            </View>
-            <View style={tw`w-px bg-[#E5E7EB] h-8`} />
-            <View style={tw`items-center flex-1`}>
-              <Text style={tw`text-[10px] font-bold text-[#64748B] uppercase`}>Scan Quality</Text>
-              <Text style={tw`text-sm font-black text-[#10B7A8] mt-1`}>Optimal</Text>
-            </View>
-          </View>
+          )}
         </View>
 
-        {/* OCI SUMMARY CARDS */}
-        <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            OCI Clinical Breakdown
-          </Text>
+        {/* ==========================================
+            2. CHIEF COMPLAINT SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('complaint')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>2. Chief Complaint</Text>
+            {expandedSections.complaint ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.complaint && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed italic`}>
+                "{patientDetails.chiefComplaint || 'No specific chief complaint recorded by the clinician.'}"
+              </Text>
+            </View>
+          )}
+        </View>
 
-          <View style={tw`space-y-3`}>
-            {[
-              { title: 'Facial Pattern', icon: '👤', desc: 'Convex retrognathic mandible profile with average facial height proportion.', color: scoreColor },
-              { title: 'Growth Pattern', icon: '📈', desc: 'Hypodivergent vertical growth direction indicating good counter-clockwise rotation.', color: '#10B7A8' },
-              { title: 'Dental Pattern', icon: '🦷', desc: 'Class II molar relationship with moderate anterior crowding & reduced overbite.', color: '#10B7A8' },
-              { title: 'Skeletal Pattern', icon: '📐', desc: 'ANB angle indicates moderate Class II discrepancy with retrusive mandibular posture.', color: scoreColor },
-              { title: 'Compensation Severity', icon: '⚖️', desc: 'High lower incisor proclination to compensate for skeletal Class II base.', color: scoreColor },
-              { title: 'Occlusal Findings', icon: '👄', desc: 'Overjet measured at 6.2mm with moderate maxillary segment protrusion.', color: scoreColor },
-              { title: 'Soft Tissue Findings', icon: '✨', desc: 'Upper lip positioned anteriorly to E-line. Lip seal requires moderate effort.', color: '#10B7A8' }
-            ].map((item, idx) => (
-              <View 
-                key={idx}
-                style={[
-                  tw`bg-white border border-[#E5E7EB] rounded-2xl p-4 shadow-sm flex-row items-start space-x-3.5`,
-                  { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4 }
-                ]}
+        {/* ==========================================
+            3. CLINICAL FINDINGS SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('findings')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings</Text>
+            {expandedSections.findings ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.findings && (
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Molar Relation (R/L)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.molarRelationRight || 'Class II'} / {patientDetails.molarRelationLeft || 'Class II'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Canine Relation (R/L)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.canineRelationRight || 'Class II'} / {patientDetails.canineRelationLeft || 'Class II'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Overjet / Overbite</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.overjet || '6.2 mm'} / {patientDetails.overbite || '2.0 mm'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>TMJ Status</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.tmjStatus || 'Healthy (No clicking/crepitus)'}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            4. FACIAL ANALYSIS SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('facial')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis</Text>
+            {expandedSections.facial ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.facial && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Facial Profile & Aesthetics</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                  The patient displays a **convex facial profile** with a retrognathic mandible posture. Nasolabial angle is within normal limits (102°). Mentolabial sulcus is moderately deep.
+                </Text>
+              </View>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Lips & Asymmetry</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                  Lips are **incompetent at rest**, requiring mild circumoral muscle strain to achieve seal. Facial midline corresponds to skeletal midline; no structural asymmetry observed.
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            5. DENTAL ANALYSIS SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('dental')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis</Text>
+            {expandedSections.dental ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.dental && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-teal-400 uppercase tracking-wider`}>Arch crowding & Spacing</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                  Maxillary arch shows **4mm of crowding** clustered primarily in the anterior canine region. Mandibular arch shows **3mm of crowding** with moderate incisor rotation.
+                </Text>
+              </View>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-teal-400 uppercase tracking-wider`}>Midlines & Arch Form</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                  Dental midline deviates 1mm to the right in the maxillary arch. Curve of Spee is moderately increased in the lower arch (1.5mm). Maxillary arch is symmetric.
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            6. COMPENSATION ANALYSIS SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('compensation')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Compensation Analysis</Text>
+            {expandedSections.compensation ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.compensation && (
+            <View style={tw`p-5 space-y-4`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                Natural Dentoalveolar Compensation is the physiological tipping of teeth to maintain occlusion. Here is the OCI mapping:
+              </Text>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Maxillary Incisor Tipping (U1-SN)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{cephalometricInput.u1Sn || '107.5'}° (Norm: 104°)</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Mandibular Incisor Tipping (IMPA)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{cephalometricInput.impa || '97.2'}° (Norm: 90°)</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Compensation Level</Text>
+                <Text style={tw`text-xs font-bold text-amber-400`}>{ociResult.compensationLevel || 'Moderate Active'}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            7. OCI SCORE & GRAPHICAL WIDGETS
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('score')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>7. OCI Score & Graphs</Text>
+            {expandedSections.score ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.score && (
+            <View style={tw`p-5 space-y-6 items-center`}>
+              
+              {/* Circular OCI Score Ring */}
+              <View style={tw`relative w-40 h-40 items-center justify-center`}>
+                <Svg width="160" height="160" viewBox="0 0 100 100">
+                  <Circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="#102B5C"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  <Circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke={scoreColor}
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray={`${ociResult.totalScore * 2.51} 251`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                  />
+                </Svg>
+                <View style={tw`absolute inset-0 items-center justify-center`}>
+                  <Text style={[tw`text-3xl font-black font-mono`, { color: scoreColor }]}>
+                    {ociResult.totalScore}
+                  </Text>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-black uppercase mt-0.5`}>Severity Index</Text>
+                </View>
+              </View>
+
+              {/* Pie Chart: Contribution distribution (Skeletal vs Dental vs Soft Tissue) */}
+              <View style={tw`w-full space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-2`}>Discrepancy Source Distribution</Text>
+                <View style={tw`flex-row justify-around items-center`}>
+                  <Svg width="90" height="90" viewBox="0 0 42 42">
+                    {/* Sector 1: Skeletal (40% - 0 to 144 deg) */}
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#EF4444" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="25" />
+                    {/* Sector 2: Dental (40% - 144 to 288 deg) */}
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#10B7A8" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="85" />
+                    {/* Sector 3: Soft Tissue (20% - 288 to 360 deg) */}
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#F59E0B" strokeWidth="6" strokeDasharray="20 80" strokeDashoffset="45" />
+                  </Svg>
+                  <View style={tw`space-y-1.5`}>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={tw`w-2 h-2 rounded-full bg-[#EF4444]`} />
+                      <Text style={tw`text-[10px] text-white font-bold`}>Skeletal Discrepancy (40%)</Text>
+                    </View>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={tw`w-2 h-2 rounded-full bg-[#10B7A8]`} />
+                      <Text style={tw`text-[10px] text-white font-bold`}>Dental Camouflage (40%)</Text>
+                    </View>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={tw`w-2 h-2 rounded-full bg-[#F59E0B]`} />
+                      <Text style={tw`text-[10px] text-white font-bold`}>Soft Tissue Tension (20%)</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Radar Spider Chart: Key Ceph Ratios */}
+              <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4 space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-2`}>Multi-Axial Ceph Spider Web</Text>
+                <View style={tw`flex-row justify-around items-center`}>
+                  <Svg width="160" height="160" viewBox="0 0 160 160">
+                    {/* Concentric helper grids */}
+                    <Circle cx="80" cy="80" r="15" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                    <Circle cx="80" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                    <Circle cx="80" cy="80" r="45" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                    <Circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+
+                    {/* Radial lines */}
+                    <Line x1="80" y1="80" x2={norm1.x} y2={norm1.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                    <Line x1="80" y1="80" x2={norm2.x} y2={norm2.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                    <Line x1="80" y1="80" x2={norm3.x} y2={norm3.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                    <Line x1="80" y1="80" x2={norm4.x} y2={norm4.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                    <Line x1="80" y1="80" x2={norm5.x} y2={norm5.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+
+                    {/* Normal limits polygon */}
+                    <Polygon points={normPoints} fill="rgba(16, 183, 168, 0.08)" stroke="rgba(16, 183, 168, 0.4)" strokeWidth="1.5" strokeDasharray="3 3" />
+                    {/* Patient polygon */}
+                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444" strokeWidth="2" />
+
+                    {/* Labels */}
+                    <SvgText x="80" y="12" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="middle">SNA</SvgText>
+                    <SvgText x="145" y="62" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="start">SNB</SvgText>
+                    <SvgText x="125" y="132" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="start">ANB</SvgText>
+                    <SvgText x="35" y="132" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="end">FMA</SvgText>
+                    <SvgText x="15" y="62" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="end">IMPA</SvgText>
+                  </Svg>
+                  <View style={tw`space-y-1.5`}>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={tw`w-2 h-2 rounded-full bg-[#EF4444]`} />
+                      <Text style={tw`text-[10px] text-white font-bold`}>Patient Tracing</Text>
+                    </View>
+                    <View style={tw`flex-row items-center space-x-2`}>
+                      <View style={tw`w-2.5 h-1 border-t border-dashed border-[#10B7A8]`} />
+                      <Text style={tw`text-[10px] text-white font-bold`}>Normative Target</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Horizontal Severity Bars */}
+              <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4 space-y-3`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>Module Severity Indexes</Text>
+                {[
+                  { label: 'Skeletal Mismatch', val: 58, col: '#F59E0B' },
+                  { label: 'Dentoalveolar Tipping', val: 78, col: '#EF4444' },
+                  { label: 'Lip Incompetence', val: 32, col: '#10B7A8' },
+                  { label: 'Arch Crowding', val: 45, col: '#F59E0B' }
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`space-y-1`}>
+                    <View style={tw`flex-row justify-between`}>
+                      <Text style={tw`text-[9px] font-bold text-[#D9E2F2]`}>{item.label}</Text>
+                      <Text style={tw`text-[9px] font-black text-white font-mono`}>{item.val}%</Text>
+                    </View>
+                    <View style={tw`w-full h-2 bg-[#102B5C] rounded-full overflow-hidden`}>
+                      <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.col }]} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            8. AI ASSISTED DIAGNOSIS
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('diagnosis')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale</Text>
+            {expandedSections.diagnosis ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.diagnosis && (
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Primary Diagnosis</Text>
+                <Text style={tw`text-xs font-black text-white`}>Skeletal Class II relationship</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Secondary Diagnosis</Text>
+                <Text style={tw`text-xs font-bold text-white`}>Class II Division 1 Malocclusion</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Skeletal Pattern</Text>
+                <Text style={tw`text-xs font-bold text-white`}>Mandibular Retrusion</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Vertical growth direction</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{ociResult.verticalPattern || 'Normodivergent'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Incisor compensation</Text>
+                <Text style={tw`text-xs font-bold text-white`}>Mandibular Proclination (IMPA 97.2°)</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Diagnostic Severity</Text>
+                <Text style={[tw`text-xs font-black`, { color: scoreColor }]}>{complexity}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            9. EVIDENCE-BASED TREATMENT PLAN
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('treatment')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan</Text>
+            {expandedSections.treatment ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.treatment && (
+            <View style={tw`p-5 space-y-6`}>
+              
+              {/* Interactive Modifiers */}
+              <View style={tw`p-4 bg-[#102B5C] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-4`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Interactive Plan Modifiers</Text>
+                
+                {/* Age Group */}
+                <View style={tw`space-y-1`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase`}>Age Category</Text>
+                  <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+                    {['growing', 'adult'].map(g => (
+                      <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${ageGroup === g ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                        <Text style={tw`text-[10px] font-bold text-white capitalize`}>{g}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Crowding */}
+                <View style={tw`space-y-1`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase`}>Crowding Severity</Text>
+                  <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+                    {['none', 'mild', 'moderate', 'severe'].map(s => (
+                      <Pressable key={s} onPress={() => setCrowdingSeverity(s as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${crowdingSeverity === s ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                        <Text style={tw`text-[9px] font-bold text-white capitalize`}>{s}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              {/* Dynamic OrthoKnowledgeBase Suggested Mechanics */}
+              <View style={tw`space-y-3.5`}>
+                <View style={tw`flex-row items-center space-x-1.5`}>
+                  <Sparkles size={14} color="#10B7A8" />
+                  <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Expert System CDSS Mechanics</Text>
+                </View>
+
+                <View style={tw`space-y-3`}>
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Primary Strategy</Text>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
+                      {generatedPlan.treatmentComplexity === 'Severe / Surgical' ? 'Orthognathic Surgical Correction & Decompensation' : 'Orthodontic Camouflage Camouflage Alignment'}
+                    </Text>
+                  </View>
+
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Extraction / Non-Extraction Rationale</Text>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>{generatedPlan.orthodonticCamouflage.extractionConsideration}</Text>
+                  </View>
+
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Appliance Recommendation</Text>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
+                      Pre-adjusted brackets (0.022" MBT slot) + absolute anchorage TADS (Miniscrews).
+                    </Text>
+                  </View>
+
+                  <View style={tw`space-y-1`}>
+                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Estimated Treatment Duration</Text>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
+                      {ageGroup === 'growing' ? '14 - 18 Months (Growth guided)' : '18 - 24 Months active appliance phase.'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Timeline visualizer */}
+                <View style={tw`pt-4 border-t border-[rgba(255,255,255,0.05)]`}>
+                  <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-3`}>Mechanics Timeline Stages</Text>
+                  <View style={tw`flex-row justify-between items-center px-2`}>
+                    {[
+                      { step: '01', title: 'Aligning' },
+                      { step: '02', title: 'Sagittal' },
+                      { step: '03', title: 'Finishing' },
+                      { step: '04', title: 'Retainers' }
+                    ].map((t, idx) => (
+                      <React.Fragment key={idx}>
+                        <View style={tw`items-center`}>
+                          <View style={tw`w-6 h-6 rounded-full bg-[#10B7A8] items-center justify-center`}>
+                            <Text style={tw`text-white text-[9px] font-black`}>{t.step}</Text>
+                          </View>
+                          <Text style={tw`text-[8px] text-[#D9E2F2] font-bold mt-1`}>{t.title}</Text>
+                        </View>
+                        {idx < 3 && <View style={tw`flex-1 h-0.5 bg-[#102B5C]`} />}
+                      </React.Fragment>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            10. RETENTION PROTOCOL SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('retention')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>10. Retention Protocol</Text>
+            {expandedSections.retention ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.retention && (
+            <View style={tw`p-5 space-y-3`}>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Dual Retention Strategy</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>
+                  Maxillary Vacuum-Formed Retainer (ESSIX) for full-time wear (22h/day) for 6 months, followed by nighttime-only wear.
+                </Text>
+              </View>
+              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Fixed Lingual Retention</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>
+                  Mandibular fixed bonded 3-3 lingual wire (0.016-inch multi-strand stainless steel) to prevent rotational relapse.
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            11. RISK ANALYSIS SECTION & SPEEDO METER
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('risk')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>11. Risk Analysis & Meter</Text>
+            {expandedSections.risk ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.risk && (
+            <View style={tw`p-5 space-y-5 items-center`}>
+              
+              {/* SVG Speedo Gauge */}
+              <View style={tw`relative w-40 h-24 items-center justify-end`}>
+                <Svg width="150" height="90" viewBox="0 0 100 60">
+                  {/* Gauge Arc */}
+                  <Path
+                    d="M 10 50 A 40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke="#102B5C"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                  />
+                  <Path
+                    d="M 10 50 A 40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke={scoreColor}
+                    strokeWidth="8"
+                    strokeDasharray={`${ociResult.totalScore * 1.25} 125`}
+                    strokeLinecap="round"
+                  />
+                  {/* Gauge Needle */}
+                  {/* Angle: 0% is at 180deg, 100% is at 0deg. Angle = 180 - ociResult.totalScore * 1.8 */}
+                  {(() => {
+                    const angleDeg = 180 - (ociResult.totalScore * 1.8);
+                    const angleRad = angleDeg * (Math.PI / 180);
+                    const x = 50 + 35 * Math.cos(angleRad);
+                    const y = 50 - 35 * Math.sin(angleRad);
+                    return (
+                      <React.Fragment>
+                        <Circle cx="50" cy="50" r="4" fill="#FFF" />
+                        <Line x1="50" y1="50" x2={x} y2={y} stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" />
+                      </React.Fragment>
+                    );
+                  })()}
+                </Svg>
+                <View style={tw`absolute bottom-0 items-center`}>
+                  <Text style={tw`text-[10px] font-black text-white uppercase`}>{complexity}</Text>
+                  <Text style={tw`text-[8px] text-[#D9E2F2]/60 uppercase mt-0.5`}>Relapse Risk Level</Text>
+                </View>
+              </View>
+
+              {/* Pointwise Risks */}
+              <View style={tw`w-full space-y-2.5`}>
+                <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                  <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Root Resorption Risk</Text>
+                  <Text style={tw`text-xs font-bold text-teal-400`}>Low (Favorable growth direction)</Text>
+                </View>
+                <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                  <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Periodontal Bone Plate Thinning</Text>
+                  <Text style={tw`text-xs font-bold text-amber-400`}>Moderate (IMPA already proclined)</Text>
+                </View>
+                <View style={tw`flex-row justify-between py-1`}>
+                  <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Skeletal Relapse Tendency</Text>
+                  <Text style={tw`text-xs font-bold text-teal-400`}>Low (Adult stable articulation)</Text>
+                </View>
+              </View>
+
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            12. CLINICAL NOTES SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('clinicalNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>12. Clinical Notes</Text>
+            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.clinicalNotes && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                {patientDetails.clinicalNotes || 'No additional clinical findings or background diagnostic notes added by the doctor.'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* ==========================================
+            13. DOCTOR NOTES & SIGN-OFF SECTION
+            ========================================== */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('doctorNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>13. Clinician Sign-Off</Text>
+            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.doctorNotes && (
+            <View style={tw`p-5 space-y-4`}>
+              <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Supervisor Signature / Custom Notes</Text>
+              <TextInput
+                value={doctorOverrideText}
+                onChangeText={setDoctorOverrideText}
+                placeholder="Dr. Salman MDS Orthodontist"
+                placeholderTextColor="#A8B3C7"
+                style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              />
+              <Pressable
+                onPress={() => onSaveAssessment(doctorOverrideText || 'Completed')}
+                style={tw`w-full bg-[#10B7A8] py-3.5 rounded-xl items-center justify-center`}
               >
-                <View style={tw`text-lg w-8 h-8 rounded-full bg-[#F4F7FB] items-center justify-center`}>
-                  <Text>{item.icon}</Text>
-                </View>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-xs font-black text-[#071B49]`}>{item.title}</Text>
-                  <Text style={tw`text-[10px] text-[#64748B] mt-0.5 leading-normal`}>{item.desc}</Text>
-                </View>
-                <View style={[tw`w-2 h-2 rounded-full self-center`, { backgroundColor: item.color }]} />
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* AUTOMATIC CEPHALOMETRIC VALUES */}
-        <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            Automatic Cephalometrics
-          </Text>
-
-          <View style={[
-            tw`bg-white rounded-3xl border border-[#E5E7EB] p-6 shadow-sm`,
-            { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.02, shadowRadius: 5 }
-          ]}>
-            <View style={tw`flex-row flex-wrap gap-4`}>
-              {[
-                { label: 'SNA', val: '81.4°', norm: '82°' },
-                { label: 'SNB', val: '76.2°', norm: '80°' },
-                { label: 'ANB', val: '5.2°', norm: '2°' },
-                { label: 'FMA', val: '24.1°', norm: '25°' },
-                { label: 'IMPA', val: '97.2°', norm: '90°' },
-                { label: 'U1-SN', val: '107.5°', norm: '104°' },
-                { label: 'L1-NB', val: '28.1°', norm: '25°' },
-                { label: 'Interincisal', val: '121.2°', norm: '135°' },
-                { label: 'Wits', val: '3.4mm', norm: '0mm' },
-                { label: 'Y-Axis', val: '61.4°', norm: '59°' },
-                { label: 'Beta Angle', val: '26.2°', norm: '30°' },
-                { label: 'Jarabak', val: '64.5%', norm: '65%' }
-              ].map((item, idx) => (
-                <View key={idx} style={tw`w-[30%] bg-[#F4F7FB] rounded-xl p-3 items-center border border-[#E5E7EB]`}>
-                  <Text style={tw`text-[9px] font-black text-[#64748B] uppercase`}>{item.label}</Text>
-                  <Text style={tw`text-xs font-black text-[#071B49] mt-1`}>{item.val}</Text>
-                  <Text style={tw`text-[8px] text-[#64748B] mt-0.5`}>Norm: {item.norm}</Text>
-                </View>
-              ))}
+                <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Save Complete Assessment</Text>
+              </Pressable>
             </View>
-          </View>
+          )}
         </View>
 
-        {/* OCI INTERPRETATION */}
-        <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            OCI Clinical Interpretation
-          </Text>
-
-          <View style={[
-            tw`bg-white rounded-3xl border border-[#E5E7EB] p-6 shadow-sm space-y-2`,
-            { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.02, shadowRadius: 5 }
-          ]}>
-            {[
-              'Skeletal Class II sagittal discrepancy detected with moderate retrusive mandible.',
-              'Favorable normodivergent vertical growth direction reduces surgical indication.',
-              'Increased IMPA indicates significant mandibular dentoalveolar camouflage already active.',
-              'Convex soft tissue profile with mild lip incompetence secondary to overjet.'
-            ].map((bullet, idx) => (
-              <View key={idx} style={tw`flex-row items-start space-x-2 py-0.5`}>
-                <Text style={tw`text-[#10B7A8] text-xs`}>•</Text>
-                <Text style={tw`text-[11px] text-[#64748B] leading-normal flex-1`}>{bullet}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* AI DIAGNOSIS */}
-        <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            AI Diagnostic Profiler
-          </Text>
-
-          <View style={[
-            tw`bg-white rounded-3xl border border-[#E5E7EB] p-6 shadow-sm space-y-4`,
-            { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.02, shadowRadius: 5 }
-          ]}>
-            {[
-              { label: 'Primary Diagnosis', val: 'Skeletal Class II Sagittal Discrepancy' },
-              { label: 'Secondary Diagnosis', val: 'Class II Division 1 Malocclusion' },
-              { label: 'Growth Pattern', val: 'Normodivergent growth vector' },
-              { label: 'Skeletal Pattern', val: 'Maxillary protrusion with Mandibular retrusion' },
-              { label: 'Dental Pattern', val: 'Crowding 4mm upper / 3mm lower arch' },
-              { label: 'Soft Tissue Pattern', val: 'Convex profile with acute nasolabial angle' },
-              { label: 'Compensation Status', val: 'Dentoalveolar camouflage active (IMPA 97.2°)' }
-            ].map((item, idx) => (
-              <View key={idx} style={tw`flex-row justify-between items-center py-1 border-b border-[#E5E7EB]`}>
-                <Text style={tw`text-[10px] font-bold text-[#64748B] uppercase`}>{item.label}</Text>
-                <Text style={tw`text-[11px] font-black text-[#071B49] text-right flex-1 ml-4`}>{item.val}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* AI TREATMENT PLAN */}
-        <View style={tw`space-y-4`}>
-          <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>
-            AI Treatment Objectives & Mechanics
-          </Text>
-
-          <View style={[
-            tw`bg-white rounded-3xl border border-[#E5E7EB] p-6 shadow-sm space-y-3`,
-            { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.02, shadowRadius: 5 }
-          ]}>
-            {[
-              { title: 'Treatment Objectives', desc: 'Establish class I canine occlusion. Reduce overjet to 2mm. Improve facial profile outline.' },
-              { title: 'Extraction Scheme', desc: 'Extract upper first premolars to retract anterior segment. Lower arch non-extraction.' },
-              { title: 'Appliance System', desc: 'Pre-adjusted orthodontic brackets (0.022-inch slot, MBT prescription).' },
-              { title: 'Anchorage Strategy', desc: 'Absolute anchorage using Maxillary posterior TADs to prevent molar anchorage loss.' },
-              { title: 'Estimated Time', desc: '18 - 22 Months active orthodontic phase.' },
-              { title: 'Clinical Risks', desc: 'Root resorption of upper incisors during retraction phase. Relapse of lower anterior segment.' },
-              { title: 'Retention Protocol', desc: 'Upper vacuum-formed retainer + lower fixed 3-3 lingual bonded wire.' }
-            ].map((item, idx) => (
-              <View key={idx} style={tw`space-y-1 py-1`}>
-                <Text style={tw`text-[10px] font-black text-[#10B7A8] uppercase tracking-wider`}>• {item.title}</Text>
-                <Text style={tw`text-xs text-[#64748B] leading-normal pl-3`}>{item.desc}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* BACK TO DASHBOARD ACTION */}
+        {/* Back navigation action */}
         <Pressable
           onPress={onBack}
           style={({ pressed }) => [
-            tw`bg-white border border-[#E5E7EB] py-4 rounded-2xl items-center justify-center shadow-sm`,
+            tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] py-4 rounded-2xl items-center justify-center shadow-sm`,
             pressed ? tw`opacity-80` : null
           ]}
         >
-          <Text style={tw`text-[#071B49] font-black text-xs uppercase tracking-wider`}>
+          <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>
             Finish OCI Analysis
           </Text>
         </Pressable>

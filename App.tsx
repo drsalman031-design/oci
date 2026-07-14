@@ -45,7 +45,6 @@ import SettingsPanel from './src/components/SettingsPanel';
 import PdfReport from './src/components/PdfReport';
 import ReportsPanel from './src/components/ReportsPanel';
 import GoogleDriveSync from './src/components/GoogleDriveSync';
-import TreatmentPlanning from './src/components/TreatmentPlanning';
 import ClinicPhotoWorkstation from './src/components/ClinicPhotoWorkstation';
 import AiProcessingScreen from './src/components/AiProcessingScreen';
 import { setDynamicApiKey } from './src/lib/gemini';
@@ -62,8 +61,7 @@ import {
   Users,
   Brain,
   Award,
-  Lock,
-  Bookmark
+  Lock
 } from 'lucide-react-native';
 import tw from 'twrnc';
 
@@ -126,7 +124,7 @@ export default function App() {
   };
 
   // Core Navigation
-  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'treatment-planning' | 'clinic-photo-upload' | 'ai-processing'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'clinic-photo-upload' | 'ai-processing'>('splash');
   
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -840,7 +838,7 @@ export default function App() {
       <StatusBar barStyle="light-content" backgroundColor="#071B49" />
 
       {/* Main mobile viewport container */}
-      <View style={[tw`w-full max-w-[480px] bg-[#F4F7FB] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
+      <View style={[tw`w-full max-w-[480px] bg-[#071B49] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
         
         {/* 1. Splash Screen Overlay */}
         {screen === 'splash' && (
@@ -860,7 +858,7 @@ export default function App() {
             </Pressable>
 
             {/* Mode-specific Unique Workspace Header and Color Accent */}
-            {['patient-form', 'ai-processing', 'results', 'treatment-planning', 'reports', 'clinic-photo-upload'].includes(screen) && (
+            {['patient-form', 'ai-processing', 'results', 'reports', 'clinic-photo-upload'].includes(screen) && (
               <View style={tw`flex-row items-center space-x-2`}>
                 <View style={[
                   tw`px-2.5 py-1 rounded-full border flex-row items-center space-x-1.5`,
@@ -910,7 +908,6 @@ export default function App() {
                   onViewHistory={() => setScreen('history')}
                   onViewSettings={() => setScreen('settings')}
                   onViewAbout={() => setScreen('about')}
-                  onViewTreatmentPlanning={() => setScreen('treatment-planning')}
                   onViewReports={() => setScreen('reports')}
                   savedAssessments={savedAssessments}
                 />
@@ -996,32 +993,20 @@ export default function App() {
                 />
               )}
 
-              {screen === 'treatment-planning' && (
-                <TreatmentPlanning
-                  savedAssessments={savedAssessments}
-                  onUpdateAssessment={async (updated) => {
-                    const nextAssessments = savedAssessments.map(a => a.id === updated.id ? updated : a);
-                    setSavedAssessments(nextAssessments);
-                    await dbSaveAssessment(updated);
-                  }}
-                  activeAssessmentId={editingAssessmentId || (savedAssessments.length > 0 ? savedAssessments[0].id : null)}
-                />
-              )}
-
               {screen === 'about' && (
                 <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
-                  <View style={tw`bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-sm space-y-4`}>
-                    <Text style={tw`text-lg font-black text-slate-900 dark:text-white`}>
+                  <View style={tw`bg-[#102B5C] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] shadow-sm space-y-4`}>
+                    <Text style={tw`text-lg font-black text-white`}>
                       Orthodontic Compensation Index (OCI) Guidelines
                     </Text>
                     
-                    <Text style={tw`text-xs text-slate-600 dark:text-slate-300 leading-normal`}>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
                       Dentoalveolar compensation is the physiological system's natural reaction to skeletal sagittal discrepancies. In individuals with Class II or Class III jaw mismatches, teeth tip and glide to establish stable occlusal contacts, masking the true severity of the skeletal pattern.
                     </Text>
                     
                     <View style={tw`p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10`}>
-                      <Text style={tw`font-bold text-amber-700 dark:text-amber-300 text-xs`}>Class II Compensatory Archetype</Text>
-                      <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                      <Text style={tw`font-bold text-amber-300 text-xs`}>Class II Compensatory Archetype</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2] mt-1 leading-normal`}>
                         • Retroclined maxillary incisors (U1-SN tipped backward)
                         {"\n"}• Proclined mandibular incisors (IMPA flared forward)
                         {"\n"}• Increased Curve of Spee in lower arch
@@ -1029,30 +1014,30 @@ export default function App() {
                     </View>
 
                     <View style={tw`p-4 bg-teal-500/5 rounded-2xl border border-teal-500/10`}>
-                      <Text style={tw`font-bold text-teal-700 dark:text-teal-300 text-xs`}>Class III Compensatory Archetype</Text>
-                      <Text style={tw`text-[11px] text-slate-500 mt-1 leading-normal`}>
+                      <Text style={tw`font-bold text-teal-300 text-xs`}>Class III Compensatory Archetype</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2] mt-1 leading-normal`}>
                         • Proclined maxillary incisors (U1-SN flared forward)
                         {"\n"}• Retroclined mandibular incisors (IMPA uprighted/backward)
                         {"\n"}• Flattened lower Curve of Spee
                       </Text>
                     </View>
 
-                    <Text style={tw`font-bold text-slate-800 dark:text-slate-100 text-sm mt-2`}>Clinical Index Severity Ranges</Text>
+                    <Text style={tw`font-bold text-white text-sm mt-2`}>Clinical Index Severity Ranges</Text>
                     <View style={tw`space-y-1.5`}>
-                      <Text style={tw`text-[11px] text-slate-500`}>• 0–20: Minimal Compensation. Teeth aligned naturally over skeletal base.</Text>
-                      <Text style={tw`text-[11px] text-slate-500`}>• 21–40: Mild Compensation. Camouflage orthodontic alignment is highly predictable.</Text>
-                      <Text style={tw`text-[11px] text-slate-500`}>• 41–60: Moderate Compensation. Dental limits are stretched. Careful examination of periodontal bone plate is required.</Text>
-                      <Text style={tw`text-[11px] text-slate-500`}>• 61–80: Severe Compensation. Camouflage carries substantial periodontal risks. Surgical options indicated.</Text>
-                      <Text style={tw`text-[11px] text-slate-500`}>• 81–100: Extreme Compensation. Surgical decompensation is highly recommended.</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2]`}>• 0–20: Minimal Compensation. Teeth aligned naturally over skeletal base.</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2]`}>• 21–40: Mild Compensation. Camouflage orthodontic alignment is highly predictable.</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2]`}>• 41–60: Moderate Compensation. Dental limits are stretched. Careful examination of periodontal bone plate is required.</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2]`}>• 61–80: Severe Compensation. Camouflage carries substantial periodontal risks. Surgical options indicated.</Text>
+                      <Text style={tw`text-[11px] text-[#D9E2F2]`}>• 81–100: Extreme Compensation. Surgical decompensation is highly recommended.</Text>
                     </View>
 
-                    <View style={tw`mt-4 pt-4 border-t border-slate-150 dark:border-slate-800 flex-row justify-between items-center`}>
+                    <View style={tw`mt-4 pt-4 border-t border-[rgba(255,255,255,0.08)] flex-row justify-between items-center`}>
                       <View>
-                        <Text style={tw`text-[8px] text-slate-400 font-mono uppercase`}>Clinical Supervisor</Text>
-                        <Text style={tw`text-xs font-extrabold text-slate-800 dark:text-slate-100`}>Dr. Salman MDS Orthodontist</Text>
+                        <Text style={tw`text-[8px] text-[#D9E2F2]/60 font-mono uppercase`}>Clinical Supervisor</Text>
+                        <Text style={tw`text-xs font-extrabold text-white`}>Dr. Salman MDS Orthodontist</Text>
                       </View>
                       <View style={tw`px-2.5 py-1.5 bg-teal-500/10 rounded-xl`}>
-                        <Text style={tw`text-[9px] font-black text-teal-600 uppercase`}>Research Edition</Text>
+                        <Text style={tw`text-[9px] font-black text-[#10B7A8] uppercase`}>Research Edition</Text>
                       </View>
                     </View>
                   </View>
@@ -1099,7 +1084,6 @@ export default function App() {
             {[
               { id: 'home', label: 'Dashboard', icon: HomeIcon },
               { id: 'patient-form', label: 'Analysis', icon: Activity, action: handleStartNewAssessment },
-              { id: 'treatment-planning', label: 'Treatment', icon: Bookmark },
               { id: 'reports', label: 'Reports', icon: FileText },
               { id: 'settings', label: 'Settings', icon: SettingsIcon }
             ].map((item) => {

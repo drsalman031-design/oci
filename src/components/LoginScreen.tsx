@@ -519,7 +519,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={tw`flex-1 bg-[#050814]`}
+      style={tw`flex-1 bg-[#071B49]`}
     >
       <ScrollView 
         contentContainerStyle={tw`flex-grow justify-center px-5 py-8`}
@@ -537,7 +537,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </Animated.View>
 
           {/* Core Panel Card */}
-          <View style={tw`bg-[#0B1020]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
+          <View style={tw`bg-[#102B5C]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
             
             {/* Action Header Title */}
             <View style={tw`border-b border-white/5 pb-2.5`}>
@@ -1076,7 +1076,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         onRequestClose={() => setShowGoogleModal(false)}
       >
         <View style={tw`flex-1 bg-black/85 justify-center items-center px-4`}>
-          <View style={tw`w-full max-w-[350px] bg-white rounded-[24px] p-5 shadow-2xl border border-slate-100`}>
+          <View style={tw`w-full max-w-[350px] bg-[#102B5C] rounded-[24px] p-5 shadow-2xl border border-[rgba(255,255,255,0.08)]`}>
             
             {/* Google Logo */}
             <View style={tw`items-center mb-5`}>
@@ -1088,14 +1088,14 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Text style={[tw`font-black text-lg`, { color: '#34A853' }]}>l</Text>
                 <Text style={[tw`font-black text-lg`, { color: '#EA4335' }]}>e</Text>
               </View>
-              <Text style={tw`text-xs text-slate-500 mt-1.5 font-bold text-center`}>
+              <Text style={tw`text-xs text-[#D9E2F2] mt-1.5 font-bold text-center`}>
                 Sign in to OCI Analyzer
               </Text>
             </View>
 
             {googleStep === 'choose' && (
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-1`}>
                   Choose Account
                 </Text>
 
@@ -1103,16 +1103,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Pressable
                   onPress={() => selectGoogleAccount('drsalman031@gmail.com', 'Dr. Salman MDS')}
                   style={({ pressed }) => [
-                    tw`flex-row items-center p-3 border border-slate-100 rounded-xl bg-slate-50`,
-                    pressed ? tw`bg-slate-100` : {}
+                    tw`flex-row items-center p-3 border border-[rgba(255,255,255,0.08)] rounded-xl bg-[#16366A]`,
+                    pressed ? tw`bg-[#16366A]/80` : {}
                   ]}
                 >
                   <View style={tw`w-8 h-8 rounded-full bg-teal-500 items-center justify-center mr-3 shadow-sm`}>
                     <Text style={tw`text-white font-extrabold text-xs`}>DS</Text>
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-[11px] font-black text-slate-800`}>Dr. Salman MDS (Orthodontist)</Text>
-                    <Text style={tw`text-[9px] text-slate-500 font-mono`}>drsalman031@gmail.com</Text>
+                    <Text style={tw`text-[11px] font-black text-white`}>Dr. Salman MDS (Orthodontist)</Text>
+                    <Text style={tw`text-[9px] text-[#D9E2F2] font-mono`}>drsalman031@gmail.com</Text>
                   </View>
                 </Pressable>
 
@@ -1120,16 +1120,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Pressable
                   onPress={() => selectGoogleAccount('clinician.guest@gmail.com', 'Guest Clinician')}
                   style={({ pressed }) => [
-                    tw`flex-row items-center p-3 border border-slate-150 rounded-xl`,
-                    pressed ? tw`bg-slate-50` : {}
+                    tw`flex-row items-center p-3 border border-[rgba(255,255,255,0.08)] rounded-xl`,
+                    pressed ? tw`bg-[#16366A]` : {}
                   ]}
                 >
-                  <View style={tw`w-8 h-8 rounded-full bg-slate-200 items-center justify-center mr-3`}>
-                    <User size={15} color="#64748B" />
+                  <View style={tw`w-8 h-8 rounded-full bg-[#071B49] items-center justify-center mr-3`}>
+                    <User size={15} color="#A8B3C7" />
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-[11px] font-black text-slate-800`}>Guest Clinician</Text>
-                    <Text style={tw`text-[9px] text-slate-500 font-mono`}>clinician.guest@gmail.com</Text>
+                    <Text style={tw`text-[11px] font-black text-white`}>Guest Clinician</Text>
+                    <Text style={tw`text-[9px] text-[#D9E2F2] font-mono`}>clinician.guest@gmail.com</Text>
                   </View>
                 </Pressable>
 
@@ -1137,7 +1137,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={() => setShowGoogleModal(false)}
                   style={tw`py-2 items-center`}
                 >
-                  <Text style={tw`text-xs font-bold text-slate-500`}>Cancel</Text>
+                  <Text style={tw`text-xs font-bold text-[#D9E2F2]`}>Cancel</Text>
                 </Pressable>
               </View>
             )}

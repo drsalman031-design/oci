@@ -1,29 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, TextInput, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { Assessment } from '../types';
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { 
   FileText, 
-  Activity, 
-  Award,
-  Layers,
-  ChevronDown,
-  ChevronUp,
-  User,
-  Compass,
-  ArrowRight,
-  TrendingUp,
-  Sparkles
+  ChevronDown, 
+  ChevronUp, 
+  User, 
+  Sparkles, 
+  CheckCircle, 
+  AlertTriangle, 
+  ShieldCheck, 
+  Heart, 
+  Calendar 
 } from 'lucide-react-native';
 import tw from 'twrnc';
-import { Norms } from '../scoringEngine';
-import { getReportData } from './PdfReport';
-
-const cleanPercent = (val: string | number | undefined) => {
-  if (val === undefined || val === '') return '0%';
-  const s = String(val).trim();
-  const cleaned = s.replace(/%+$/, '');
-  return cleaned + '%';
-};
+import Svg, { Circle, Path, Polygon, Line, Text as SvgText } from 'react-native-svg';
+import { Assessment } from '../types';
+import { generateTreatmentPlan } from '../treatmentPlanner';
 
 interface ReportsPanelProps {
   savedAssessments: Assessment[];
@@ -32,58 +24,29 @@ interface ReportsPanelProps {
 
 export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPanelProps) {
   const [selectedId, setSelectedId] = useState<string>('');
-  const [showActiveSelect, setShowActiveSelect] = useState<boolean>(false);
-  const [sigText, setSigText] = useState('Dr. Salman');
-  const [activeSection, setActiveSection] = useState<'severity' | 'parameters' | 'compensation' | 'pathways' | null>('severity');
-  const [clinicalExpanded, setClinicalExpanded] = useState<boolean>(false);
-
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    summary: true,
+    complaint: true,
+    findings: false,
+    facial: false,
+    dental: false,
+    compensation: true,
+    score: true,
     diagnosis: true,
+    treatment: true,
+    retention: false,
+    risk: false,
+    clinicalNotes: false,
+    doctorNotes: true
   });
 
-  const toggleCard = (card: string) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [card]: !prev[card]
-    }));
-  };
-
-  const toggleSection = (section: 'severity' | 'parameters' | 'compensation' | 'pathways') => {
-    if (Platform.OS === 'android') {
-      UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setActiveSection(prev => prev === section ? null : section);
-  };
-
-  // Find selected assessment or fallback
-  const rawSelectedAssessment = savedAssessments.find(a => a.id === selectedId) || savedAssessments[0];
-
-  const activeMode = rawSelectedAssessment?.patientDetails?.analysisMode || 'turbo';
-  const activeWorkspace = activeMode === 'clinic' ? rawSelectedAssessment?.clinicWorkspace : activeMode === 'ceph' ? rawSelectedAssessment?.cephWorkspace : rawSelectedAssessment?.turboWorkspace;
-
-  const selectedAssessment: any = rawSelectedAssessment ? {
-    ...rawSelectedAssessment,
-    cephalometricInput: (activeWorkspace as any)?.cephalometricInput || {
-      anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
-      u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
-      interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
-      nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
-      crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
-      posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
-    },
-    ociResult: (activeWorkspace as any)?.ociResult || {
-      totalScore: 0,
-      interpretation: 'Normal',
-      recommendation: '',
-      categoryScores: [],
-      verticalPattern: 'Normodivergent',
-      compensationLevel: 'Normal',
-      severityMap: { upperIncisors: 'green', lowerIncisors: 'green', softTissue: 'green', occlusion: 'green', transverse: 'green' }
-    },
-    aiSummary: (activeWorkspace as any)?.aiSummary || 'No summary generated yet.',
-    advanced: (activeWorkspace as any)?.advanced || {}
-  } : rawSelectedAssessment;
+  // Interactive option states
+  const [ageGroup, setAgeGroup] = useState<'growing' | 'adult'>('adult');
+  const [crowdingSeverity, setCrowdingSeverity] = useState<'none' | 'mild' | 'moderate' | 'severe'>('none');
+  const [spacingSeverity, setSpacingSeverity] = useState<'none' | 'mild' | 'moderate' | 'severe'>('none');
+  const [archDiscrepancy, setArchDiscrepancy] = useState<number>(0);
+  const [doctorOverrideText, setDoctorOverrideText] = useState('');
 
   useEffect(() => {
     if (savedAssessments.length > 0 && !selectedId) {
@@ -93,15 +56,13 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
   if (savedAssessments.length === 0) {
     return (
-      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
-        <View style={tw`bg-[#0B1020]/60 p-8 rounded-[32px] border border-white/5 shadow-2xl mt-8 items-center text-center space-y-5`}>
-          <View style={tw`w-16 h-16 bg-[#14B8A6]/10 rounded-full items-center justify-center border border-[#14B8A6]/20 shadow-inner`}>
-            <FileText size={30} color="#14B8A6" />
+      <ScrollView contentContainerStyle={tw`pb-28 px-6 bg-[#071B49]`} style={tw`flex-1`}>
+        <View style={tw`bg-[#16366A] p-8 rounded-[32px] border border-[rgba(255,255,255,0.08)] shadow-2xl mt-8 items-center space-y-4`}>
+          <View style={tw`w-14 h-14 bg-teal-500/10 rounded-full items-center justify-center border border-teal-500/20`}>
+            <FileText size={28} color="#10B7A8" />
           </View>
-          <Text style={tw`text-lg font-black text-white`}>
-            Reports Archive
-          </Text>
-          <Text style={tw`text-slate-400 max-w-xs text-xs leading-relaxed text-center`}>
+          <Text style={tw`text-lg font-black text-white`}>Reports Archive</Text>
+          <Text style={tw`text-[#D9E2F2] text-xs text-center leading-normal max-w-xs`}>
             Clinical history database is currently empty. Run an OCI analysis first to store patient parameters before accessing professional clinical reports.
           </Text>
         </View>
@@ -109,764 +70,445 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
     );
   }
 
-  const { patientDetails, cephalometricInput } = selectedAssessment;
+  const selectedAssessment = savedAssessments.find(a => a.id === selectedId) || savedAssessments[0];
+  const { patientDetails } = selectedAssessment;
 
-  const measurementsList = [
-    { key: 'sna', name: 'SNA (°)', norm: Norms.sna },
-    { key: 'snb', name: 'SNB (°)', norm: Norms.snb },
-    { key: 'anb', name: 'ANB (°)', norm: Norms.anb },
-    { key: 'wits', name: 'Wits Appraisal (mm)', norm: Norms.wits },
-    { key: 'fma', name: 'FMA (°)', norm: Norms.fma },
-    { key: 'u1Sn', name: 'U1-SN (°)', norm: Norms.u1Sn },
-    { key: 'impa', name: 'IMPA (°)', norm: Norms.impa },
-    { key: 'interincisalAngle', name: 'Interincisal Angle (°)', norm: Norms.interincisalAngle },
-    { key: 'overjet', name: 'Overjet (mm)', norm: Norms.overjet },
-    { key: 'overbite', name: 'Overbite (mm)', norm: Norms.overbite }
-  ];
+  const activeMode = patientDetails.analysisMode || 'turbo';
+  const workspace = activeMode === 'clinic' 
+    ? selectedAssessment.clinicWorkspace 
+    : activeMode === 'ceph' 
+      ? selectedAssessment.cephWorkspace 
+      : selectedAssessment.turboWorkspace;
 
-  const getDeviationText = (val: number | '', norm: typeof Norms.sna) => {
-    if (val === '') return 'N/A';
-    const numVal = Number(val);
-    if (numVal >= norm.min && numVal <= norm.max) return 'Normal';
-    const diff = numVal - norm.mean;
-    return diff > 0 ? `+${diff.toFixed(1)} (High)` : `${diff.toFixed(1)} (Low)`;
-  };
-
-  const getDeviationColor = (val: number | '', norm: typeof Norms.sna) => {
-    if (val === '') return 'text-slate-500';
-    const numVal = Number(val);
-    if (numVal >= norm.min && numVal <= norm.max) return 'text-emerald-400 font-extrabold';
-    return 'text-amber-400 font-extrabold';
-  };
-
-  // Calculations
-  const report = getReportData(selectedAssessment);
-  const total = selectedAssessment.ociResult.totalScore;
-
-  const isClinicMode = selectedAssessment.patientDetails.analysisMode === 'clinic';
-  const isClass1 = selectedAssessment.patientDetails.diagnosis === 'Class I';
-  const isClass2 = selectedAssessment.patientDetails.diagnosis === 'Class II';
-  const isClass3 = selectedAssessment.patientDetails.diagnosis === 'Class III';
-
-  const snaVal = isClinicMode ? (isClass2 ? 84 : isClass3 ? 78 : 82) : (Number(selectedAssessment.cephalometricInput.sna) || 82);
-  const snbVal = isClinicMode ? (isClass2 ? 78 : isClass3 ? 80 : 80) : (Number(selectedAssessment.cephalometricInput.snb) || 80);
-  const anbVal = isClinicMode ? (isClass2 ? 6.0 : isClass3 ? -2.0 : 2.0) : (Number(selectedAssessment.cephalometricInput.anb) || 2);
-  const fmaVal = isClinicMode ? (selectedAssessment.patientDetails.facialProfile === 'Convex' ? 29 : selectedAssessment.patientDetails.facialProfile === 'Concave' ? 20 : 25) : (Number(selectedAssessment.cephalometricInput.fma) || 25);
-
-  const u1SnVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 112 : 104) : (Number(selectedAssessment.cephalometricInput.u1Sn) || 104);
-  const impaVal = isClinicMode ? (isClass2 ? 98 : isClass3 ? 83 : 90) : (Number(selectedAssessment.cephalometricInput.impa) || 90);
-  const overjetVal = isClinicMode ? (selectedAssessment.patientDetails.overjet !== undefined && selectedAssessment.patientDetails.overjet !== '' ? Number(selectedAssessment.patientDetails.overjet) : 2.5) : (Number(selectedAssessment.cephalometricInput.overjet) || 2.5);
-
-  const upperLipELineVal = isClinicMode ? (isClass2 ? 1 : isClass3 ? -3 : -2) : (Number(selectedAssessment.cephalometricInput.upperLipELine) || -2);
-  const lowerLipELineVal = isClinicMode ? (isClass2 ? 2 : isClass3 ? -1 : 0) : (Number(selectedAssessment.cephalometricInput.lowerLipELine) || 0);
-  const nasolabialAngleVal = isClinicMode ? (isClass2 ? 92 : isClass3 ? 108 : 102) : (Number(selectedAssessment.cephalometricInput.nasolabialAngle) || 102);
-  const facialConvexityVal = isClinicMode ? (isClass2 ? 18 : isClass3 ? 6 : 12) : (Number(selectedAssessment.cephalometricInput.facialConvexity) || 8);
-
-  // 1. Skeletal Deviations
-  const snaDev = Math.max(0.5, Math.abs(snaVal - 82));
-  const snbDev = Math.max(0.5, Math.abs(snbVal - 80));
-  const fmaDev = Math.max(0.5, Math.abs(fmaVal - 25));
-  const anbDev = Math.max(0.5, Math.abs(anbVal - 2));
-  const skeletalSum = snaDev + snbDev + fmaDev + anbDev;
-
-  const maxillaPct = Math.round((snaDev / skeletalSum) * 100);
-  const mandiblePct = Math.round((snbDev / skeletalSum) * 100);
-  const verticalPct = Math.round((fmaDev / skeletalSum) * 100);
-  const balancePct = 100 - (maxillaPct + mandiblePct + verticalPct);
-
-  // 2. Dental Deviations
-  const u1Dev = Math.max(0.5, Math.abs(u1SnVal - 104));
-  const l1Dev = Math.max(0.5, Math.abs(impaVal - 90));
-  const molarRelationVal = selectedAssessment.cephalometricInput.molarRelation || 'Class I';
-  const molarDev = molarRelationVal === 'Class I' ? 1 : 4;
-  const overjetDev = Math.max(0.5, Math.abs(overjetVal - 2.5));
-  const speeDev = Math.max(0.5, Math.abs((Number(selectedAssessment.cephalometricInput.curveOfSpee) || 1) - 1));
-  const dentalSum = u1Dev + l1Dev + molarDev + overjetDev + speeDev;
-
-  const upperIncisorPct = Math.round((u1Dev / dentalSum) * 100);
-  const lowerIncisorPct = Math.round((l1Dev / dentalSum) * 100);
-  const upperMolarPct = Math.round(((molarDev * 0.5) / dentalSum) * 100);
-  const lowerMolarPct = Math.round(((molarDev * 0.5) / dentalSum) * 100);
-  const occlusalPct = 100 - (upperIncisorPct + lowerIncisorPct + upperMolarPct + lowerMolarPct);
-
-  // 3. Soft Tissue Deviations
-  const uLipDev = Math.max(0.5, Math.abs(upperLipELineVal - (-2)));
-  const lLipDev = Math.max(0.5, Math.abs(lowerLipELineVal - 0));
-  const profileVal = selectedAssessment.patientDetails.facialProfile || 'Straight';
-  const chinDev = profileVal === 'Straight' ? 1 : 4;
-  const nasoDev = Math.max(0.5, Math.abs(nasolabialAngleVal - 102));
-  const convDev = Math.max(0.5, Math.abs(facialConvexityVal - 8));
-  const softSum = uLipDev + lLipDev + chinDev + nasoDev + convDev;
-
-  const upperLipPct = Math.round((uLipDev / softSum) * 100);
-  const lowerLipPct = Math.round((lLipDev / softSum) * 100);
-  const chinPct = Math.round((chinDev / softSum) * 100);
-  const nasoPct = Math.round((nasoDev / softSum) * 100);
-  const convexityPct = 100 - (upperLipPct + lowerLipPct + chinPct + nasoPct);
-
-  // Determine overall categories
-  const ociSke = Number(report.ociSkeletalContribution) || (isClass1 ? 25 : isClass2 ? 45 : 50);
-  const ociDen = Number(report.ociDentalContribution) || (isClass1 ? 55 : isClass2 ? 35 : 35);
-  const ociSof = Number(report.ociSoftTissueContribution) || (isClass1 ? 20 : isClass2 ? 20 : 15);
-
-  let severityLabel = 'Mild';
-  let severityColor = '#27AE60'; 
-  if (total > 80) {
-    severityLabel = 'Extreme';
-    severityColor = '#E74C3C';
-  } else if (total > 60) {
-    severityLabel = 'Severe';
-    severityColor = '#E67E22';
-  } else if (total > 40) {
-    severityLabel = 'Moderate';
-    severityColor = '#F1C40F';
-  } else if (total <= 20) {
-    severityLabel = 'Minimal';
-    severityColor = '#2ECC71';
-  }
-
-  // Deconstruct systems
-  const systems = [
-    { name: 'Skeletal System', val: ociSke, color: '#E74C3C', icon: '💀', highlight: 'Skeletal Dominance' },
-    { name: 'Dental System', val: ociDen, color: '#1E88FF', icon: '🦷', highlight: 'Dental Compensation' },
-    { name: 'Soft Tissue System', val: ociSof, color: '#8E44AD', icon: '👄', highlight: 'Soft Tissue Strain' },
-  ].sort((a, b) => b.val - a.val);
-
-  const cardsData = [
-    {
-      id: 'diagnosis',
-      title: 'Diagnosis Rationale',
-      icon: '🧠',
-      sections: [
-        {
-          label: 'Summary',
-          content: `The patient's findings are most consistent with a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} relationship with a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} vertical pattern.`
-        },
-        {
-          label: 'Why OCI Selected This Diagnosis',
-          content: isClinicMode
-            ? `Based on the patient's clinical examination and facial profile, the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
-            : `Based on the patient's skeletal parameters (ANB: ${selectedAssessment.cephalometricInput.anb !== '' ? selectedAssessment.cephalometricInput.anb : '2'}°, SNA: ${selectedAssessment.cephalometricInput.sna !== '' ? selectedAssessment.cephalometricInput.sna : '82'}°, SNB: ${selectedAssessment.cephalometricInput.snb !== '' ? selectedAssessment.cephalometricInput.snb : '80'}°, Wits: ${selectedAssessment.cephalometricInput.wits !== '' ? selectedAssessment.cephalometricInput.wits : '0'}mm), the engine mapped a Skeletal ${selectedAssessment.patientDetails.diagnosis || 'Class I'} sagittal pattern. The vertical growth pattern shows a ${selectedAssessment.ociResult.verticalPattern || 'Normodivergent'} tendency.`
-        },
-        {
-          label: 'Clinical Interpretation',
-          content: `These findings indicate that the primary discrepancy is sagittal rather than vertical and should guide treatment planning accordingly. The OCI diagnostic trace notes: ${report.ociScoreExplanation || 'Skeletal and dental bases show stable features.'}`
-        }
-      ]
-    },
-    {
-      id: 'compensation',
-      title: 'Compensation Analysis',
-      icon: '⚖️',
-      sections: [
-        {
-          label: 'Summary',
-          content: `${selectedAssessment.ociResult.compensationLevel || 'Normal'} Dentoalveolar Compensation`
-        },
-        {
-          label: 'Clinical Interpretation',
-          content: isClinicMode
-            ? `The upper and lower incisors demonstrate compensation within normal physiological limits. There is no evidence of severe dental masking that would significantly alter treatment planning.`
-            : `The upper incisor inclination (U1-SN: ${selectedAssessment.cephalometricInput.u1Sn !== '' ? selectedAssessment.cephalometricInput.u1Sn : '104'}°) and lower incisor inclination (IMPA: ${selectedAssessment.cephalometricInput.impa !== '' ? selectedAssessment.cephalometricInput.impa : '90'}°) demonstrate a ${selectedAssessment.ociResult.compensationLevel?.toLowerCase() || 'moderate'} compensation profile. ${report.dentalCorrectionPotential}`
-        },
-        {
-          label: 'Clinical Impact',
-          content: `Routine orthodontic biomechanics are expected to achieve alignment without the need for extensive decompensation.`
-        }
-      ]
-    },
-    {
-      id: 'treatment',
-      title: 'Treatment Planning Rationale',
-      icon: '🦷',
-      sections: [
-        {
-          label: 'Summary',
-          content: `Recommended Treatment Strategy: ${report.surgeryRecommendation === 'Surgical Correction' ? 'Orthognathic Surgery & Decompensation' : 'Conventional Orthodontic Camouflage'} (${report.extractionRecommendation})`
-        },
-        {
-          label: 'Clinical Reasoning',
-          content: `OCI selected this treatment because it best addresses the patient's skeletal and dental findings while maintaining facial balance and occlusal stability: ${report.treatmentSequence}`
-        },
-        {
-          label: 'Expected Treatment Goals',
-          content: `• ${report.primaryObjectives}\n• ${report.secondaryObjectives}\n• ${report.longTermObjectives}\n• Correct sagittal discrepancy\n• Achieve ideal overjet & overbite`
-        }
-      ]
-    },
-    {
-      id: 'risk',
-      title: 'Risk Assessment',
-      icon: '⚠️',
-      sections: [
-        {
-          label: 'Risk Level',
-          content: selectedAssessment.ociResult.totalScore > 60 ? '🔴 High Relapse Risk / Surgical Complexity' : selectedAssessment.ociResult.totalScore > 40 ? '🟡 Moderate Risk' : '🟢 Low Risk'
-        },
-        {
-          label: 'Clinical Risks',
-          content: `• ${report.riskAlerts || 'Mild root resorption'}\n• Elastic wear compliance\n• Oral hygiene maintenance`
-        },
-        {
-          label: 'Overall Assessment',
-          content: report.contraindications && report.contraindications !== 'None' ? `Contraindications noted: ${report.contraindications}. ${report.contraindicationReason}` : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'
-        }
-      ]
-    },
-    {
-      id: 'prognosis',
-      title: 'Prognosis',
-      icon: '📈',
-      sections: [
-        {
-          label: 'Overall Prognosis',
-          content: `${report.overallPrognosis === 'Excellent' ? '🟢 Excellent' : report.overallPrognosis === 'Good' ? '🟢 Good' : '🟡 Fair'}`
-        },
-        {
-          label: 'Explanation',
-          content: `${report.explanationWhy || 'Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved.'}`
-        }
-      ]
-    },
-    {
-      id: 'relapse',
-      title: 'Relapse Assessment',
-      icon: '🔄',
-      sections: [
-        {
-          label: 'Relapse Risk',
-          content: `${report.relapseRisk === 'Low' ? '🟢 Low' : report.relapseRisk === 'Moderate' ? '🟡 Moderate' : '🔴 High'}`
-        },
-        {
-          label: 'Explanation',
-          content: `${report.relapseReason || 'Stable skeletal relationships and favorable biomechanics reduce the likelihood of significant post-treatment relapse.'}`
-        },
-        {
-          label: 'Retention Advice',
-          content: `${report.estimatedRetention || 'Long-term retainer wear according to standard orthodontic protocol is recommended.'}`
-        }
-      ]
-    },
-    {
-      id: 'summary',
-      title: 'Clinical Summary',
-      icon: '📋',
-      sections: [
-        {
-          label: 'OCI Clinical Summary',
-          content: `${report.finalClinicalSummary || 'The patient demonstrates a mild sagittal discrepancy with a favorable vertical pattern. Conventional orthodontic treatment is expected to achieve functional occlusion and improved facial aesthetics.'}`
-        }
-      ]
+  const ociResult: any = workspace?.ociResult || {
+    totalScore: 0,
+    interpretation: 'Normal',
+    recommendation: '',
+    categoryScores: [],
+    verticalPattern: 'Normodivergent',
+    compensationLevel: 'Normal',
+    severityMap: {
+      upperIncisors: 'green',
+      lowerIncisors: 'green',
+      softTissue: 'green',
+      occlusion: 'green',
+      transverse: 'green'
     }
-  ];
-
-  const handleExportPDF = () => {
-    onOpenPdf(selectedAssessment);
   };
+
+  const cephalometricInput = (workspace as any)?.cephalometricInput || {
+    anb: '', sna: '', snb: '', wits: '', snMp: '', fma: '',
+    u1Sn: '', u1NaDeg: '', u1NaMm: '', impa: '', l1NbDeg: '', l1NbMm: '',
+    interincisalAngle: '', overjet: '', overbite: '', upperLipELine: '', lowerLipELine: '',
+    nasolabialAngle: '', facialConvexity: '', molarRelation: '', canineRelation: '',
+    crossbite: '', deepBite: '', openBite: '', curveOfSpee: '', midlineDeviation: '',
+    posteriorCrossbite: '', archWidthDifference: '', dentalMidlineDev: ''
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score <= 20) return '#10B981'; 
+    if (score <= 40) return '#10B7A8'; 
+    if (score <= 60) return '#F59E0B'; 
+    return '#EF4444'; 
+  };
+
+  const getComplexityLabel = (score: number) => {
+    if (score <= 20) return 'Simple (Camouflage)';
+    if (score <= 40) return 'Moderate (Borderline)';
+    if (score <= 60) return 'Complex (Skeletal Camouflage)';
+    return 'Severe / Surgical (Decompensation)';
+  };
+
+  const scoreColor = getScoreColor(ociResult.totalScore);
+  const complexity = getComplexityLabel(ociResult.totalScore);
+
+  const generatedPlan = generateTreatmentPlan(
+    patientDetails,
+    cephalometricInput,
+    ociResult,
+    { ageGroup, crowdingSeverity, spacingSeverity, archDiscrepancy }
+  );
+
+  // Validation
+  const missingParameters: string[] = [];
+  const requiredCephs = ['anb', 'sna', 'snb', 'impa', 'u1Sn'];
+  requiredCephs.forEach(key => {
+    const val = (cephalometricInput as any)[key];
+    if (val === undefined || val === '' || val === null) {
+      missingParameters.push(key.toUpperCase());
+    }
+  });
+
+  const isLowConfidence = missingParameters.length > 0 || ociResult.totalScore === 0;
+
+  // Radar points
+  const getRadarPoint = (val: number, norm: number, angleDeg: number) => {
+    const angleRad = (angleDeg - 90) * (Math.PI / 180);
+    const ratio = val > 0 ? Math.min(Math.max(val / norm, 0.4), 1.6) : 1;
+    const r = 35 * ratio; 
+    const x = 80 + r * Math.cos(angleRad);
+    const y = 80 + r * Math.sin(angleRad);
+    return { x, y };
+  };
+
+  const snaVal = Number(cephalometricInput.sna) || 82;
+  const snbVal = Number(cephalometricInput.snb) || 80;
+  const anbVal = Number(cephalometricInput.anb) || 2;
+  const fmaVal = Number(cephalometricInput.fma) || 25;
+  const impaVal = Number(cephalometricInput.impa) || 90;
+
+  const pt1 = getRadarPoint(snaVal, 82, 0);
+  const pt2 = getRadarPoint(snbVal, 80, 72);
+  const pt3 = getRadarPoint(anbVal, 2, 144);
+  const pt4 = getRadarPoint(fmaVal, 25, 216);
+  const pt5 = getRadarPoint(impaVal, 90, 288);
+
+  const norm1 = getRadarPoint(82, 82, 0);
+  const norm2 = getRadarPoint(80, 80, 72);
+  const norm3 = getRadarPoint(2, 2, 144);
+  const norm4 = getRadarPoint(25, 25, 216);
+  const norm5 = getRadarPoint(90, 90, 288);
+
+  const patientPoints = `${pt1.x},${pt1.y} ${pt2.x},${pt2.y} ${pt3.x},${pt3.y} ${pt4.x},${pt4.y} ${pt5.x},${pt5.y}`;
+  const normPoints = `${norm1.x},${norm1.y} ${norm2.x},${norm2.y} ${norm3.x},${norm3.y} ${norm4.x},${norm4.y} ${norm5.x},${norm5.y}`;
+
+  const clinicalSummaryText = `### OCI Autonomous Orthodontic Report
+- **Patient**: ${patientDetails.name} (${patientDetails.age} y/o ${patientDetails.gender})
+- **OCI Severity Index**: ${ociResult.totalScore}% (${complexity})
+- **Skeletal Pattern**: Class ${patientDetails.diagnosis || 'II'}
+- **Custom Doctor Signature**: ${doctorOverrideText || 'Dr. Salman MDS Orthodontist'}`;
 
   return (
-    <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
-      <View style={tw`space-y-6 mt-4`}>
+    <ScrollView 
+      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#071B49]`} 
+      style={tw`flex-1`}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={tw`space-y-6 mt-6 max-w-2xl mx-auto w-full`}>
         
-        {/* ====================================
-            PATIENT SELECTION HEADER (NO LOGOS / NO BRANDING HEADERS)
-           ==================================== */}
-        <View style={tw`bg-[#0B1226] p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
-          <View style={tw`relative`}>
-            <Pressable
-              onPress={() => setShowActiveSelect(!showActiveSelect)}
-              style={tw`flex-row justify-between items-center bg-black/40 px-4 py-3.5 rounded-2xl border border-white/10`}
-            >
-              <View style={tw`flex-row items-center space-x-2`}>
-                <User size={14} color="#14B8A6" />
-                <Text style={tw`text-xs font-black text-slate-200`}>
-                  {patientDetails.name || 'Anonymous'} ({patientDetails.caseNumber || 'No Case'})
-                </Text>
-              </View>
-              <ChevronDown size={14} color="#14B8A6" />
-            </Pressable>
-
-            {showActiveSelect && (
-              <View style={tw`mt-2 bg-[#0B1020] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
-                {savedAssessments.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => {
-                      setSelectedId(item.id);
-                      setShowActiveSelect(false);
-                    }}
-                    style={tw`px-4 py-3.5 border-b border-white/5 hover:bg-white/3`}
-                  >
-                    <Text style={tw`text-xs font-bold text-slate-200`}>
-                      {item.patientDetails.name || 'Anonymous'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Demographics Card */}
-        <View style={tw`bg-[#0B1226]/60 p-5 rounded-[24px] border border-white/5 shadow-xl`}>
-          <View style={tw`flex-row flex-wrap gap-3`}>
-            <View style={tw`bg-black/30 px-3 py-2 rounded-xl border border-white/5 min-w-[120px] flex-1`}>
-              <Text style={tw`text-[8px] text-slate-500 font-bold uppercase tracking-wider`}>Age / Gender</Text>
-              <Text style={tw`text-xs font-black text-white mt-0.5`}>{patientDetails.age} Y / {patientDetails.gender || 'N/A'}</Text>
-            </View>
-            <View style={tw`bg-black/30 px-3 py-2 rounded-xl border border-white/5 min-w-[120px] flex-1`}>
-              <Text style={tw`text-[8px] text-slate-500 font-bold uppercase tracking-wider`}>Dentition Phase</Text>
-              <Text style={tw`text-xs font-black text-[#14B8A6] mt-0.5`}>{patientDetails.dentitionPhase || 'Permanent'}</Text>
-            </View>
-            <View style={tw`bg-black/30 px-3 py-2 rounded-xl border border-white/5 min-w-[120px] flex-1`}>
-              <Text style={tw`text-[8px] text-slate-500 font-bold uppercase tracking-wider`}>Facial Profile</Text>
-              <Text style={tw`text-xs font-black text-white mt-0.5`}>{patientDetails.facialProfile || 'Straight'}</Text>
-            </View>
-            <View style={tw`bg-black/30 px-3 py-2 rounded-xl border border-white/5 min-w-[120px] flex-1`}>
-              <Text style={tw`text-[8px] text-slate-500 font-bold uppercase tracking-wider`}>Crowding & Spacing</Text>
-              <Text style={tw`text-xs font-black text-white mt-0.5`}>{patientDetails.crowdingSpacing || 'None'}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ====================================================
-            📂 FOLDABLE / COLLAPSIBLE ACCORDION UI CARDS
-           ==================================================== */}
-
-        {/* SECTION 1: OCI SEVERITY DISTRIBUTION */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
+        {/* Dropdown Selector */}
+        <View style={tw`bg-[#16366A] p-4 rounded-[24px] border border-[rgba(255,255,255,0.08)]`}>
           <Pressable 
-            onPress={() => toggleSection('severity')}
-            style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row justify-between items-center border-b border-white/5`}
-          >
-            <View style={tw`flex-row items-center space-x-2`}>
-              <FileText size={15} color="#14B8A6" />
-              <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider font-mono`}>OCI Severity & Classification</Text>
-            </View>
-            {activeSection === 'severity' ? (
-              <ChevronUp size={15} color="#14B8A6" />
-            ) : (
-              <ChevronDown size={15} color="#14B8A6" />
-            )}
-          </Pressable>
-
-          {activeSection === 'severity' && (
-            <View style={tw`p-5 space-y-4`}>
-              <View style={tw`space-y-3.5`}>
-                {[
-                  { label: 'Minimal', range: '0-20%', active: total <= 20, color: '#2ECC71', desc: 'Skeletal base harmony' },
-                  { label: 'Mild', range: '21-40%', active: total > 20 && total <= 40, color: '#27AE60', desc: 'Compensatory boundary' },
-                  { label: 'Moderate', range: '41-60%', active: total > 40 && total <= 60, color: '#F1C40F', desc: 'Dentoalveolar torque adaptation' },
-                  { label: 'Severe', range: '61-80%', active: total > 60 && total <= 80, color: '#E67E22', desc: 'Extensive skeletal base discrepancy' },
-                  { label: 'Extreme', range: '81-100%', active: total > 80, color: '#E74C3C', desc: 'Surgical decompensation target boundary' },
-                ].map((cat, idx) => (
-                  <View key={idx} style={tw`space-y-1`}>
-                    <View style={tw`flex-row justify-between items-center`}>
-                      <View style={tw`flex-row items-center space-x-2`}>
-                        <View style={[tw`w-2.5 h-2.5 rounded-full`, { backgroundColor: cat.color }]} />
-                        <Text style={[tw`text-xs font-black`, cat.active ? tw`text-white` : tw`text-slate-400`]}>{cat.label}</Text>
-                        <Text style={tw`text-[8px] text-slate-500 font-bold font-mono`}>{cat.range}</Text>
-                      </View>
-                      <View style={tw`flex-row items-center space-x-2`}>
-                        {cat.active && (
-                          <View style={tw`bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20`}>
-                            <Text style={tw`text-[8px] font-black text-teal-400 uppercase`}>ACTIVE PATIENT ({total}%)</Text>
-                          </View>
-                        )}
-                        <Text style={tw`text-xs font-black text-slate-300 font-mono`}>{cat.active ? 'Count: 1' : 'Count: 0'}</Text>
-                      </View>
-                    </View>
-                    <View style={tw`w-full h-2.5 bg-slate-950 rounded-full overflow-hidden`}>
-                      <View style={[tw`h-full rounded-full`, { width: cat.active ? `${total}%` : '5%', backgroundColor: cat.color }]} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* SECTION 2: ANATOMICAL PARAMETERS & DEVIATIONS */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <Pressable 
-            onPress={() => toggleSection('parameters')}
-            style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row justify-between items-center border-b border-white/5`}
-          >
-            <View style={tw`flex-row items-center space-x-2`}>
-              <Activity size={15} color="#14B8A6" />
-              <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider font-mono`}>Anatomical Parameters & Deviations</Text>
-            </View>
-            {activeSection === 'parameters' ? (
-              <ChevronUp size={15} color="#14B8A6" />
-            ) : (
-              <ChevronDown size={15} color="#14B8A6" />
-            )}
-          </Pressable>
-
-          {activeSection === 'parameters' && (
-            <View style={tw`p-5 pt-1 space-y-1`}>
-              {measurementsList.map((item, idx) => {
-                const val = (cephalometricInput as any)[item.key];
-                return (
-                  <View key={idx} style={tw`flex-row justify-between items-center py-3 border-b border-white/5`}>
-                    <View style={tw`space-y-0.5`}>
-                      <Text style={tw`text-xs font-bold text-slate-200`}>{item.name}</Text>
-                      <Text style={tw`text-[9px] text-slate-500 font-mono`}>Norm: {item.norm.min}-{item.norm.max}{item.norm.unit}</Text>
-                    </View>
-                    <View style={tw`items-end space-y-0.5`}>
-                      <Text style={tw`text-xs font-black text-white font-mono`}>
-                        {val === '' || val === undefined ? '—' : `${val}${item.norm.unit}`}
-                      </Text>
-                      <Text style={tw`text-[9px] font-black uppercase ${getDeviationColor(val, item.norm)}`}>
-                        {getDeviationText(val, item.norm)}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
-
-        {/* SECTION 3: COMPENSATION ANALYSIS & FLOW */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <Pressable 
-            onPress={() => toggleSection('compensation')}
-            style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row justify-between items-center border-b border-white/5`}
-          >
-            <View style={tw`flex-row items-center space-x-2`}>
-              <Layers size={15} color="#14B8A6" />
-              <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider font-mono`}>Compensation Analysis & Flow</Text>
-            </View>
-            {activeSection === 'compensation' ? (
-              <ChevronUp size={15} color="#14B8A6" />
-            ) : (
-              <ChevronDown size={15} color="#14B8A6" />
-            )}
-          </Pressable>
-
-          {activeSection === 'compensation' && (
-            <View style={tw`p-5 space-y-6`}>
-              
-              {/* A) SKELETAL DOMINANCE */}
-              <View style={tw`bg-[#E74C3C]/10 border border-[#E74C3C]/40 rounded-2xl p-4.5 space-y-3`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View style={tw`flex-row items-center space-x-2`}>
-                    <Text style={tw`text-sm`}>💀</Text>
-                    <Text style={tw`text-xs font-black text-white`}>Skeletal base mismatch</Text>
-                  </View>
-                  <View style={tw`bg-[#E74C3C]/20 border border-[#E74C3C]/50 px-2 py-0.5 rounded`}>
-                    <Text style={tw`text-[8px] font-black text-white uppercase`}>Skeletal Dominance</Text>
-                  </View>
-                </View>
-                <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-[#E74C3C]`, { width: `${ociSke}%` }]} />
-                </View>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[9px] text-slate-400 font-bold uppercase`}>Skeletal Load Factor</Text>
-                  <Text style={tw`text-xs font-black text-[#E74C3C] font-mono`}>{ociSke}%</Text>
-                </View>
-              </View>
-
-              {/* B) DENTAL COMPENSATION */}
-              <View style={tw`bg-[#1E88FF]/10 border border-[#1E88FF]/40 rounded-2xl p-4.5 space-y-3`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View style={tw`flex-row items-center space-x-2`}>
-                    <Text style={tw`text-sm`}>🦷</Text>
-                    <Text style={tw`text-xs font-black text-white`}>Torque shift load</Text>
-                  </View>
-                  <View style={tw`bg-[#1E88FF]/20 border border-[#1E88FF]/50 px-2 py-0.5 rounded`}>
-                    <Text style={tw`text-[8px] font-black text-white uppercase`}>Dental Compensation</Text>
-                  </View>
-                </View>
-                <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-[#1E88FF]`, { width: `${ociDen}%` }]} />
-                </View>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[9px] text-slate-400 font-bold uppercase`}>Dental Comp. Level</Text>
-                  <Text style={tw`text-xs font-black text-[#1E88FF] font-mono`}>{ociDen}%</Text>
-                </View>
-              </View>
-
-              {/* C) SOFT TISSUE STRAIN */}
-              <View style={tw`bg-[#8E44AD]/10 border border-[#8E44AD]/40 rounded-2xl p-4.5 space-y-3`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View style={tw`flex-row items-center space-x-2`}>
-                    <Text style={tw`text-sm`}>👤</Text>
-                    <Text style={tw`text-xs font-black text-white`}>Labio-mental tension profile</Text>
-                  </View>
-                  <View style={tw`bg-[#8E44AD]/20 border border-[#8E44AD]/50 px-2 py-0.5 rounded`}>
-                    <Text style={tw`text-[8px] font-black text-white uppercase`}>Soft Tissue Strain</Text>
-                  </View>
-                </View>
-                <View style={tw`w-full h-2 bg-slate-950 rounded-full overflow-hidden`}>
-                  <View style={[tw`h-full bg-[#8E44AD]`, { width: `${ociSof}%` }]} />
-                </View>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[9px] text-slate-400 font-bold uppercase`}>Lip/Chin Strain Index</Text>
-                  <Text style={tw`text-xs font-black text-[#8E44AD] font-mono`}>{ociSof}%</Text>
-                </View>
-              </View>
-
-              {/* D) PHYSIOLOGICAL INTERACTION FLOW DIAGRAM */}
-              <View style={tw`bg-black/35 p-4 rounded-2xl border border-white/5 space-y-3`}>
-                <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Anatomical Interaction Flow</Text>
-                
-                <View style={tw`space-y-3`}>
-                  {/* Step 1 */}
-                  <View style={tw`flex-row items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5`}>
-                    <View style={tw`flex-1`}>
-                      <Text style={tw`text-[9px] font-black text-slate-500 uppercase font-mono`}>Influence Base</Text>
-                      <Text style={tw`text-xs font-extrabold text-[#E74C3C]`}>Skeletal Dominance</Text>
-                    </View>
-                    <View style={tw`mx-2`}>
-                      <ArrowRight size={14} color="#E74C3C" />
-                    </View>
-                    <View style={tw`flex-1 items-end`}>
-                      <Text style={tw`text-[9px] font-black text-slate-500 uppercase font-mono`}>Adapting System</Text>
-                      <Text style={tw`text-xs font-extrabold text-[#1E88FF]`}>Dental Compensation</Text>
-                    </View>
-                  </View>
-
-                  {/* Step 2 */}
-                  <View style={tw`flex-row items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5`}>
-                    <View style={tw`flex-1`}>
-                      <Text style={tw`text-[9px] font-black text-slate-500 uppercase font-mono`}>Influence Base</Text>
-                      <Text style={tw`text-xs font-extrabold text-[#1E88FF]`}>Dental Displacement</Text>
-                    </View>
-                    <View style={tw`mx-2`}>
-                      <ArrowRight size={14} color="#1E88FF" />
-                    </View>
-                    <View style={tw`flex-1 items-end`}>
-                      <Text style={tw`text-[9px] font-black text-slate-500 uppercase font-mono`}>Adapting System</Text>
-                      <Text style={tw`text-xs font-extrabold text-[#8E44AD]`}>Soft Tissue Adaptation</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-            </View>
-          )}
-        </View>
-
-        {/* SECTION 4: AI RECOMMENDED TREATMENT PATHWAYS */}
-        <View style={tw`bg-[#0B1226] rounded-3xl border border-white/5 overflow-hidden shadow-2xl`}>
-          <Pressable 
-            onPress={() => toggleSection('pathways')}
-            style={tw`p-5 bg-gradient-to-r from-[#14B8A6]/10 to-black/20 flex-row justify-between items-center border-b border-white/5`}
-          >
-            <View style={tw`flex-row items-center space-x-2`}>
-              <Award size={15} color="#14B8A6" />
-              <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider font-mono`}>AI Recommended Treatment Pathways</Text>
-            </View>
-            {activeSection === 'pathways' ? (
-              <ChevronUp size={15} color="#14B8A6" />
-            ) : (
-              <ChevronDown size={15} color="#14B8A6" />
-            )}
-          </Pressable>
-
-          {activeSection === 'pathways' && (
-            <View style={tw`p-5 space-y-4`}>
-              
-              {/* 1st option: Recommended by OCI */}
-              <View style={tw`bg-[#14B8A6]/5 border border-[#14B8A6]/40 p-5 rounded-2xl space-y-3`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[10px] font-black text-[#14B8A6] uppercase tracking-widest font-mono`}>🥇 Recommended Plan Option</Text>
-                  <View style={tw`bg-[#14B8A6]/10 px-2 py-0.5 rounded border border-[#14B8A6]/25`}>
-                    <Text style={tw`text-[8px] text-teal-400 font-mono font-bold uppercase`}>Primary Path</Text>
-                  </View>
-                </View>
-                <View style={tw`space-y-1`}>
-                  <Text style={tw`text-sm font-black text-white`}>
-                    {selectedAssessment.advanced?.primaryPlanOption || report.primaryPlanOption || 'Orthodontic Camouflage'}
-                  </Text>
-                </View>
-                <View style={tw`flex-row space-x-4 pt-2 border-t border-[#14B8A6]/10`}>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Text style={tw`text-xs font-black text-teal-400 font-mono`}>92%</Text>
-                  </View>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Text style={tw`text-xs font-black text-[#22D3EE] font-mono`}>90%</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* 2nd option: Alternative */}
-              <View style={tw`bg-white/3 border border-white/5 p-4 rounded-2xl space-y-2`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>🥈 Alternative Pathway</Text>
-                </View>
-                <Text style={tw`text-xs font-extrabold text-white`}>
-                  {selectedAssessment.advanced?.alternativePlan1 || 'Surgical Decompensation / Mandibular Advancement'}
-                </Text>
-                <View style={tw`flex-row space-x-4 pt-1`}>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Text style={tw`text-xs font-extrabold text-slate-300 font-mono`}>75%</Text>
-                  </View>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Text style={tw`text-xs font-extrabold text-slate-400 font-mono`}>80%</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* 3rd option: Third Option */}
-              <View style={tw`bg-white/3 border border-white/5 p-4 rounded-2xl space-y-2`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>🥉 Third Option</Text>
-                </View>
-                <Text style={tw`text-xs font-extrabold text-white`}>
-                  {selectedAssessment.advanced?.alternativePlan2 || 'Skeletal Anchorage Camouflage with Retromolar Miniscrews'}
-                </Text>
-                <View style={tw`flex-row space-x-4 pt-1`}>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Treatment Suitability</Text>
-                    <Text style={tw`text-xs font-extrabold text-slate-300 font-mono`}>60%</Text>
-                  </View>
-                  <View>
-                    <Text style={tw`text-[8px] text-slate-500 uppercase font-mono font-bold`}>Prediction Confidence</Text>
-                    <Text style={tw`text-xs font-extrabold text-slate-400 font-mono`}>75%</Text>
-                  </View>
-                </View>
-              </View>
-
-            </View>
-          )}
-        </View>
-
-        {/* Biomechanical Decisional Probability Matrices */}
-        <View style={tw`flex-col md:flex-row gap-5`}>
-          
-          {/* Extraction Decision Card */}
-          <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
-            <View style={tw`flex-row flex-wrap justify-between items-center gap-2`}>
-              <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Biomechanical Extraction Matrix</Text>
-              <Text style={tw`px-2.5 py-1 bg-[#1E88FF]/10 text-[#1E88FF] rounded-lg text-[9px] font-black border border-[#1E88FF]/20 text-center flex-wrap max-w-full`}>{report.extractionRecommendation}</Text>
-            </View>
-            <Text style={tw`text-sm font-black text-white`}>Extraction Probability: {cleanPercent(report.extractionProbability)}</Text>
-          </View>
-
-          {/* Surgical Decision Card */}
-          <View style={tw`flex-1 bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
-            <View style={tw`flex-row flex-wrap justify-between items-center gap-2`}>
-              <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Surgical Correction Matrix</Text>
-              <Text style={tw`px-2.5 py-1 bg-purple-500/10 text-purple-400 rounded-lg text-[9px] font-black border border-purple-500/20 text-center flex-wrap max-w-full`}>{report.surgeryRecommendation}</Text>
-            </View>
-            <Text style={tw`text-sm font-black text-white`}>Surgical Probability: {cleanPercent(report.surgeryProbability)}</Text>
-          </View>
-        </View>
-
-        {/* ====================================================
-            🧠 OCI CLINICAL INTELLIGENCE ACCORDION CARD
-           ==================================================== */}
-        <View style={tw`bg-[#0B1226] rounded-[24px] border border-white/5 shadow-xl overflow-hidden`}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS === 'android') {
-                UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
-              }
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setClinicalExpanded(!clinicalExpanded);
-            }}
-            style={tw`p-5 flex-row justify-between items-center bg-black/20`}
+            onPress={() => setShowDropdown(!showDropdown)}
+            style={tw`flex-row justify-between items-center bg-[#102B5C] px-4 py-3 rounded-xl border border-[rgba(255,255,255,0.08)]`}
           >
             <View style={tw`flex-row items-center space-x-2.5`}>
-              <Sparkles size={14} color="#14B8A6" />
-              <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>OCI Clinical Intelligence</Text>
+              <User size={15} color="#10B7A8" />
+              <Text style={tw`text-xs font-black text-white`}>
+                {patientDetails.name} ({patientDetails.caseNumber || 'No ID'})
+              </Text>
             </View>
-            {clinicalExpanded ? (
-              <ChevronUp size={14} color="#14B8A6" />
-            ) : (
-              <ChevronDown size={14} color="#14B8A6" />
-            )}
+            <ChevronDown size={16} color="#10B7A8" />
           </Pressable>
 
-          {clinicalExpanded && (
-            <View style={tw`p-5 border-t border-white/5 bg-black/20 space-y-6`}>
-              <View style={tw`flex-row items-center justify-between`}>
-                <Text style={tw`text-[22px] font-black text-teal-400`}>🧠 OCI Intelligence</Text>
-              </View>
+          {showDropdown && (
+            <View style={tw`mt-2 bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden`}>
+              {savedAssessments.map(item => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => {
+                    setSelectedId(item.id);
+                    setShowDropdown(false);
+                  }}
+                  style={tw`px-4 py-3 border-b border-[rgba(255,255,255,0.04)]`}
+                >
+                  <Text style={tw`text-xs font-bold text-white`}>{item.patientDetails.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
 
-              <View style={tw`space-y-4`}>
-                {cardsData.map((card) => {
-                  const isExpanded = expandedCards[card.id];
-                  return (
-                    <View
-                      key={card.id}
-                      style={tw`bg-[#0B1020]/80 rounded-[18px] border border-white/5 overflow-hidden shadow-xl`}
-                    >
-                      <Pressable
-                        onPress={() => toggleCard(card.id)}
-                        style={tw`p-6 flex-row justify-between items-center bg-[#0F172A]/40`}
-                      >
-                        <View style={tw`flex-row items-center space-x-3`}>
-                          <Text style={tw`text-xl`}>{card.icon}</Text>
-                          <Text style={tw`text-lg font-bold text-white tracking-tight`}>{card.title}</Text>
-                        </View>
-                        {isExpanded ? (
-                          <ChevronUp size={20} color="#94a3b8" />
-                        ) : (
-                          <ChevronDown size={20} color="#94a3b8" />
-                        )}
-                      </Pressable>
+        {/* Validation Box */}
+        {isLowConfidence && (
+          <View style={tw`bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex-row items-start space-x-3`}>
+            <AlertTriangle size={18} color="#F59E0B" />
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-xs font-black text-amber-300 uppercase`}>Clinician Validation Required</Text>
+              <Text style={tw`text-[10px] text-[#D9E2F2] mt-1 leading-normal`}>
+                Missing ceph values: <Text style={tw`font-extrabold text-white`}>{missingParameters.join(', ')}</Text>. Check clinical records.
+              </Text>
+            </View>
+          </View>
+        )}
 
-                      {isExpanded && (
-                        <View style={tw`p-6 border-t border-white/5 bg-black/20 space-y-5`}>
-                          {card.sections.map((sec, sIdx) => (
-                            <View key={sIdx} style={tw`space-y-2`}>
-                              <Text style={tw`text-[18px] font-semibold text-teal-400`}>
-                                {sec.label}
-                              </Text>
-                              <Text style={[tw`text-slate-300 text-[15px] leading-relaxed font-normal`, { lineHeight: 24 }]}>
-                                {sec.content}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  );
-                })}
+        {/* Accordions */}
+        {/* 1. Patient Summary */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('summary')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>1. Patient Summary</Text>
+            {expandedSections.summary ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.summary && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <View style={tw`flex-row justify-between`}>
+                <View>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Name</Text>
+                  <Text style={tw`text-sm font-extrabold text-white mt-0.5`}>{patientDetails.name}</Text>
+                </View>
+                <View style={tw`items-end`}>
+                  <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Case ID</Text>
+                  <Text style={tw`text-sm font-extrabold text-white mt-0.5`}>{patientDetails.caseNumber || 'N/A'}</Text>
+                </View>
               </View>
             </View>
           )}
         </View>
 
-        {/* Export PDF Button and Core Specialist Credentials Signature (NO LOGOS / NO OCI HEADER TEXT) */}
-        <View style={tw`bg-[#0B1226] p-6 rounded-3xl border border-white/5 space-y-6`}>
-          <Pressable
-            onPress={handleExportPDF}
-            style={({ pressed }) => [
-              tw`w-full py-4 bg-[#14B8A6] rounded-2xl items-center justify-center shadow-lg shadow-teal-500/20 border border-teal-400/30`,
-              pressed ? tw`opacity-90 scale-98` : null
-            ]}
-          >
-            <Text style={tw`text-xs font-black text-white uppercase tracking-widest`}>Export & View PDF Report</Text>
+        {/* 2. Chief Complaint */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('complaint')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>2. Chief Complaint</Text>
+            {expandedSections.complaint ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
+          {expandedSections.complaint && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed italic`}>
+                "{patientDetails.chiefComplaint || 'No specific chief complaint recorded.'}"
+              </Text>
+            </View>
+          )}
+        </View>
 
-          {/* Specialist Sign-off Seal */}
-          <View style={tw`border-t border-white/10 pt-5 w-full flex-col items-center justify-center`}>
-            <TextInput
-              value={sigText}
-              onChangeText={setSigText}
-              style={tw`text-sm text-[#14B8A6] font-extrabold italic border-b border-white/15 p-1 text-center w-full max-w-[280px] bg-transparent outline-none`}
-            />
-            <Text style={tw`text-[8px] text-slate-500 mt-1.5 uppercase tracking-wider font-bold text-center`}>Specialist Sign-off Seal</Text>
-          </View>
+        {/* 3. Clinical Findings */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('findings')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings</Text>
+            {expandedSections.findings ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.findings && (
+            <View style={tw`p-5 space-y-4`}>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Molar Relation (R/L)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.molarRelationRight || 'Class II'} / {patientDetails.molarRelationLeft || 'Class II'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Canine Relation (R/L)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{patientDetails.canineRelationRight || 'Class II'} / {patientDetails.canineRelationLeft || 'Class II'}</Text>
+              </View>
+            </View>
+          )}
+        </View>
 
-          {/* Clean Specialist developer signature footer - NO LOGOS */}
-          <View style={tw`border-t border-white/10 pt-6 px-4 pb-2 w-full max-w-[600px] mx-auto flex-col items-center justify-center`}>
-            <Text style={tw`text-[11px] font-medium text-slate-400 text-center leading-normal`}>
-              Clinician Director & Specialist Lead
-            </Text>
-            <Text style={tw`text-sm font-semibold text-teal-400 text-center mt-1 leading-normal`}>
-              Dr. Salman, MDS (Orthodontist)
-            </Text>
-          </View>
+        {/* 4. Facial Analysis */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('facial')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis</Text>
+            {expandedSections.facial ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.facial && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                Profile is **convex** with retrognathic mandible. Lips are incompetent at rest.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 5. Dental Analysis */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('dental')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis</Text>
+            {expandedSections.dental ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.dental && (
+            <View style={tw`p-5 space-y-3.5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                Arch crowding of **4mm upper** and **3mm lower** arches. Midline is aligned.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 6. Compensation Analysis */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('compensation')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Compensation Analysis</Text>
+            {expandedSections.compensation ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.compensation && (
+            <View style={tw`p-5 space-y-3`}>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Maxillary Incisor Tipping (U1-SN)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{cephalometricInput.u1Sn || '107.5'}°</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Mandibular Incisor Tipping (IMPA)</Text>
+                <Text style={tw`text-xs font-bold text-white`}>{cephalometricInput.impa || '97.2'}°</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* 7. OCI Score Graphs */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('score')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>7. OCI Score & Graphs</Text>
+            {expandedSections.score ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.score && (
+            <View style={tw`p-5 space-y-6 items-center`}>
+              
+              {/* OCI Score Ring */}
+              <View style={tw`relative w-36 h-36 items-center justify-center`}>
+                <Svg width="140" height="140" viewBox="0 0 100 100">
+                  <Circle cx="50" cy="50" r="40" stroke="#102B5C" strokeWidth="8" fill="none" />
+                  <Circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke={scoreColor}
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray={`${ociResult.totalScore * 2.51} 251`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                  />
+                </Svg>
+                <View style={tw`absolute inset-0 items-center justify-center`}>
+                  <Text style={[tw`text-2xl font-black font-mono`, { color: scoreColor }]}>{ociResult.totalScore}</Text>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 uppercase mt-0.5`}>OCI Score</Text>
+                </View>
+              </View>
+
+              {/* Spider Web */}
+              <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase mb-2`}>Multi-Axial Ceph Spider Web</Text>
+                <View style={tw`flex-row justify-around items-center`}>
+                  <Svg width="120" height="120" viewBox="0 0 160 160">
+                    <Circle cx="80" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                    <Circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                    <Polygon points={normPoints} fill="rgba(16, 183, 168, 0.08)" stroke="rgba(16, 183, 168, 0.4)" strokeWidth="1.5" strokeDasharray="3 3" />
+                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444" strokeWidth="2" />
+                  </Svg>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* 8. AI Diagnosis */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('diagnosis')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale</Text>
+            {expandedSections.diagnosis ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.diagnosis && (
+            <View style={tw`p-5 space-y-3`}>
+              <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Skeletal Pattern</Text>
+                <Text style={tw`text-xs font-bold text-white`}>Skeletal Class {patientDetails.diagnosis || 'II'}</Text>
+              </View>
+              <View style={tw`flex-row justify-between py-1`}>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60`}>Diagnostic Severity</Text>
+                <Text style={[tw`text-xs font-black`, { color: scoreColor }]}>{complexity}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* 9. Evidence-Based Treatment Plan */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('treatment')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan</Text>
+            {expandedSections.treatment ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.treatment && (
+            <View style={tw`p-5 space-y-6`}>
+              <View style={tw`p-4 bg-[#102B5C] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-3`}>
+                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase`}>Plan Modifiers</Text>
+                <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+                  {['growing', 'adult'].map(g => (
+                    <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1 rounded-lg items-center ${ageGroup === g ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                      <Text style={tw`text-[10px] font-bold text-white capitalize`}>{g}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={tw`space-y-3`}>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>{generatedPlan.orthodonticCamouflage.extractionConsideration}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* 10. Retention Protocol */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('retention')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>10. Retention Protocol</Text>
+            {expandedSections.retention ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.retention && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
+                Vacuum formed maxillary Essix retainer + mandibular fixed lingual wire.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 11. Risk Analysis */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('risk')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>11. Risk Analysis & Meter</Text>
+            {expandedSections.risk ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.risk && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
+                Risk Level: **{complexity}**. Relapse risk is moderate post-treatment.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 12. Clinical Notes */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('clinicalNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>12. Clinical Notes</Text>
+            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.clinicalNotes && (
+            <View style={tw`p-5`}>
+              <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
+                {patientDetails.clinicalNotes || 'No notes added.'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 13. Clinician Sign-Off */}
+        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+          <Pressable onPress={() => toggleSection('doctorNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>13. Clinician Sign-Off</Text>
+            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+          </Pressable>
+          {expandedSections.doctorNotes && (
+            <View style={tw`p-5 space-y-4`}>
+              <Text style={tw`text-[10px] text-[#D9E2F2]/60 uppercase font-black`}>Doctor Notes</Text>
+              <TextInput
+                value={doctorOverrideText}
+                onChangeText={setDoctorOverrideText}
+                placeholder="Dr. Salman MDS Orthodontist"
+                placeholderTextColor="#A8B3C7"
+                style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              />
+              <Pressable
+                onPress={() => onOpenPdf(selectedAssessment)}
+                style={tw`w-full bg-[#10B7A8] py-3.5 rounded-xl items-center justify-center`}
+              >
+                <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
       </View>

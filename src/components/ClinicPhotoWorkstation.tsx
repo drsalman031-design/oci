@@ -120,7 +120,7 @@ export default function ClinicPhotoWorkstation({
     const slots = PHOTO_SLOTS.filter(s => s.category === category);
     return (
       <View style={tw`space-y-4`}>
-        <Text style={tw`text-xs font-black text-[#64748B] uppercase tracking-widest`}>{title}</Text>
+        <Text style={tw`text-xs font-black text-[#D9E2F2]/60 uppercase tracking-widest`}>{title}</Text>
         <View style={tw`space-y-3.5`}>
           {slots.map(slot => {
             const photoUri = photos[slot.key];
@@ -129,30 +129,27 @@ export default function ClinicPhotoWorkstation({
             return (
               <View 
                 key={slot.key}
-                style={[
-                  tw`bg-white border border-[#E5E7EB] rounded-2xl p-4 shadow-sm flex-row items-center justify-between`,
-                  { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4 }
-                ]}
+                style={tw`bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 shadow-sm flex-row items-center justify-between`}
               >
                 <View style={tw`flex-row items-center space-x-4 flex-1`}>
                   {hasPhoto ? (
                     <Image 
                       source={{ uri: photoUri }}
-                      style={tw`w-14 h-14 rounded-xl bg-slate-100 border border-[#E5E7EB]`}
+                      style={tw`w-14 h-14 rounded-xl bg-[#102B5C] border border-[rgba(255,255,255,0.08)]`}
                     />
                   ) : (
-                    <View style={tw`w-14 h-14 bg-[#F4F7FB] border border-dashed border-[#E5E7EB] rounded-xl items-center justify-center`}>
-                      <Camera size={18} color="#64748B" />
+                    <View style={tw`w-14 h-14 bg-[#102B5C] border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center`}>
+                      <Camera size={18} color="#A8B3C7" />
                     </View>
                   )}
                   <View style={tw`flex-1 pr-2`}>
                     <View style={tw`flex-row items-center space-x-1.5`}>
-                      <Text style={tw`text-xs font-black text-[#071B49]`}>{slot.label}</Text>
+                      <Text style={tw`text-xs font-black text-white`}>{slot.label}</Text>
                       {slot.required && (
                         <Text style={tw`text-[9px] font-black text-red-500`}>*</Text>
                       )}
                     </View>
-                    <Text style={tw`text-[10px] text-[#64748B] leading-tight mt-0.5`}>{slot.description}</Text>
+                    <Text style={tw`text-[10px] text-[#D9E2F2] leading-tight mt-0.5`}>{slot.description}</Text>
                     
                     {hasPhoto && (
                       <View style={tw`flex-row items-center space-x-1 mt-1`}>
@@ -168,13 +165,13 @@ export default function ClinicPhotoWorkstation({
                     <>
                       <Pressable 
                         onPress={() => requestPicker(slot.key)}
-                        style={tw`w-8 h-8 rounded-lg bg-[#F4F7FB] border border-[#E5E7EB] items-center justify-center`}
+                        style={tw`w-8 h-8 rounded-lg bg-[#102B5C] border border-[rgba(255,255,255,0.08)] items-center justify-center`}
                       >
-                        <RefreshCw size={12} color="#64748B" />
+                        <RefreshCw size={12} color="#A8B3C7" />
                       </Pressable>
                       <Pressable 
                         onPress={() => deletePhoto(slot.key)}
-                        style={tw`w-8 h-8 rounded-lg bg-red-50 border border-red-100 items-center justify-center`}
+                        style={tw`w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 items-center justify-center`}
                       >
                         <Trash2 size={12} color="#EF4444" />
                       </Pressable>
@@ -182,7 +179,7 @@ export default function ClinicPhotoWorkstation({
                   ) : (
                     <Pressable
                       onPress={() => requestPicker(slot.key)}
-                      style={tw`bg-teal-50 border border-teal-100 px-3.5 py-2 rounded-xl`}
+                      style={tw`bg-teal-500/10 border border-teal-500/20 px-3.5 py-2 rounded-xl`}
                     >
                       <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase`}>Upload</Text>
                     </Pressable>
@@ -202,33 +199,34 @@ export default function ClinicPhotoWorkstation({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#F4F7FB]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
       style={tw`flex-1`}
+      showsVerticalScrollIndicator={false}
     >
       <View style={tw`space-y-6 mt-6 max-w-xl mx-auto w-full`}>
         
         {/* Header */}
         <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`space-y-1.5 flex-1 pr-4`}>
-            <View style={tw`flex-row items-center bg-teal-50 border border-teal-100 px-3 py-1 rounded-full self-start`}>
+            <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full self-start`}>
               <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
               <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
                 Step 2 of 3: Record Uploads
               </Text>
             </View>
-            <Text style={tw`text-2xl font-black text-[#071B49] tracking-tight`}>
+            <Text style={tw`text-2xl font-black text-white tracking-tight`}>
               Diagnostic Records
             </Text>
-            <Text style={tw`text-xs text-[#64748B] leading-normal`}>
+            <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
               Upload patient clinical photographs and radiographs. The AI model will process these files to auto-trace landmarks.
             </Text>
           </View>
 
           <Pressable
             onPress={populateMockAll}
-            style={tw`bg-[#E5E7EB] border border-[#E5E7EB] px-3 py-2 rounded-xl mt-2`}
+            style={tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-3 py-2 rounded-xl mt-2`}
           >
-            <Text style={tw`text-[9px] font-black text-[#071B49] uppercase`}>Use Demo Files</Text>
+            <Text style={tw`text-[9px] font-black text-[#D9E2F2] uppercase`}>Use Demo Files</Text>
           </Pressable>
         </View>
 
@@ -242,10 +240,10 @@ export default function ClinicPhotoWorkstation({
           {onBack && (
             <Pressable
               onPress={onBack}
-              style={tw`flex-1 py-4 bg-[#E5E7EB] border border-[#E5E7EB] rounded-xl items-center justify-center flex-row`}
+              style={tw`flex-1 py-4 bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center flex-row`}
             >
-              <ChevronLeft size={14} color="#071B49" style={tw`mr-1`} />
-              <Text style={tw`text-[#071B49] font-bold text-xs uppercase tracking-wider`}>Back</Text>
+              <ChevronLeft size={14} color="#D9E2F2" style={tw`mr-1`} />
+              <Text style={tw`text-[#D9E2F2] font-bold text-xs uppercase tracking-wider`}>Back</Text>
             </Pressable>
           )}
           <Pressable
@@ -253,7 +251,7 @@ export default function ClinicPhotoWorkstation({
             disabled={!hasRequiredPhotos}
             style={({ pressed }) => [
               tw`flex-2 py-4 rounded-xl items-center justify-center flex-row shadow-sm`,
-              hasRequiredPhotos ? tw`bg-[#10B7A8]` : tw`bg-[#E5E7EB] opacity-60`,
+              hasRequiredPhotos ? tw`bg-[#10B7A8]` : tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] opacity-60`,
               pressed && hasRequiredPhotos ? tw`opacity-90 scale-[0.99]` : null
             ]}
           >

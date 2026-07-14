@@ -1,19 +1,19 @@
 export const OCITheme = {
   colors: {
-    primaryBackground: '#F4F7FB',
-    secondaryBackground: '#071B49',
-    cardBackground: '#FFFFFF',
+    primaryBackground: '#071B49',
+    secondaryBackground: '#102B5C',
+    cardBackground: '#16366A',
     primaryAccent: '#10B7A8',
-    primaryText: '#071B49',
-    secondaryText: '#64748B',
-    border: '#E5E7EB'
+    primaryText: '#FFFFFF',
+    secondaryText: '#D9E2F2',
+    border: 'rgba(255,255,255,0.08)'
   },
   styles: {
-    bgPrimary: 'bg-[#F4F7FB]',
-    bgSecondary: 'bg-[#071B49]',
-    bgCard: 'bg-white',
-    textPrimary: 'text-[#071B49]',
-    textSecondary: 'text-[#64748B]',
-    borderStyle: 'border border-[#E5E7EB]'
+    bgPrimary: 'bg-[#071B49]',
+    bgSecondary: 'bg-[#102B5C]',
+    bgCard: 'bg-[#16366A]',
+    textPrimary: 'text-white',
+    textSecondary: 'text-[#D9E2F2]',
+    borderStyle: 'border border-[rgba(255,255,255,0.08)]'
   }
 };

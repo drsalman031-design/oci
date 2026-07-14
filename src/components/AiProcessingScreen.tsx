@@ -60,7 +60,7 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
   }, []);
 
   return (
-    <View style={[tw`flex-1 bg-[#F4F7FB] items-center justify-center p-6`, StyleSheet.absoluteFill]}>
+    <View style={[tw`flex-1 bg-[#071B49] items-center justify-center p-6`, StyleSheet.absoluteFill]}>
       {/* Background glowing gradients */}
       <View style={tw`absolute w-96 h-96 rounded-full bg-teal-500/5 blur-3xl`} />
 
@@ -68,7 +68,7 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
         
         {/* Glowing Brain Core */}
         <Animated.View style={[
-          tw`w-28 h-28 bg-teal-50 rounded-[32px] items-center justify-center border border-teal-100 shadow-sm mb-2`,
+          tw`w-28 h-28 bg-[#16366A] rounded-[32px] items-center justify-center border border-[rgba(255,255,255,0.08)] shadow-sm mb-2`,
           { transform: [{ scale: pulseAnim }] }
         ]}>
           <Brain size={44} color="#10B7A8" />
@@ -76,27 +76,24 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
 
         {/* Title */}
         <View style={tw`items-center space-y-1.5`}>
-          <View style={tw`flex-row items-center bg-teal-50 border border-teal-100 px-3 py-1 rounded-full`}>
+          <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full`}>
             <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
             <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
               OCI Autonomous Diagnostic Tracing
             </Text>
           </View>
-          <Text style={tw`text-2xl font-black text-[#071B49] tracking-tight`}>
+          <Text style={tw`text-2xl font-black text-white tracking-tight`}>
             Analyzing {patientName || 'Patient'}
           </Text>
-          <Text style={tw`text-xs text-[#64748B] text-center px-4 leading-normal`}>
+          <Text style={tw`text-xs text-[#D9E2F2] text-center px-4 leading-normal`}>
             OrthoPilot AI is running automatic landmark tracing and skeletal sagittal relationship mappings. Please do not close the app.
           </Text>
         </View>
 
         {/* Active Stage Tracker */}
-        <View style={[
-          tw`w-full bg-white border border-[#E5E7EB] rounded-3xl p-5 space-y-3 shadow-sm`,
-          { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4 }
-        ]}>
-          <View style={tw`flex-row justify-between items-center border-b border-[#E5E7EB] pb-3`}>
-            <Text style={tw`text-[10px] font-bold text-[#64748B] uppercase tracking-wider`}>
+        <View style={tw`w-full bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-3xl p-5 space-y-3 shadow-sm`}>
+          <View style={tw`flex-row justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3`}>
+            <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>
               Tracing Pipeline
             </Text>
             <View style={tw`flex-row items-center space-x-1.5`}>
@@ -121,9 +118,9 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
                     ) : isActive ? (
                       <ActivityIndicator size="small" color="#10B7A8" style={tw`w-3 h-3 mt-0.5`} />
                     ) : (
-                      <View style={tw`w-3.5 h-3.5 rounded-full border border-[#E5E7EB] mt-0.5`} />
+                      <View style={tw`w-3.5 h-3.5 rounded-full border border-[rgba(255,255,255,0.08)] mt-0.5`} />
                     )}
-                    <Text style={tw`text-xs leading-relaxed flex-1 ${isActive ? 'text-[#071B49] font-extrabold' : isCompleted ? 'text-[#64748B]' : 'text-[#64748B]/40'}`}>
+                    <Text style={tw`text-xs leading-relaxed flex-1 ${isActive ? 'text-white font-extrabold' : isCompleted ? 'text-[#D9E2F2]' : 'text-[#D9E2F2]/30'}`}>
                       {stage}
                     </Text>
                   </View>
@@ -134,9 +131,9 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
         </View>
 
         {/* Practitioner Shield */}
-        <View style={tw`flex-row items-center bg-[#E5E7EB] border border-[#E5E7EB] px-3.5 py-2 rounded-2xl`}>
+        <View style={tw`flex-row items-center bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-2xl`}>
           <ShieldCheck size={12} color="#10B7A8" style={tw`mr-1.5`} />
-          <Text style={tw`text-[9px] text-[#64748B] font-mono uppercase tracking-widest`}>
+          <Text style={tw`text-[9px] text-[#D9E2F2] font-mono uppercase tracking-widest`}>
             Autonomous HIPAA-Secure Tracing Layer
           </Text>
         </View>
