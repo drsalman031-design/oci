@@ -380,7 +380,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
               {/* Spider Web */}
               <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4`}>
-                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase mb-2`}>Multi-Axial Ceph Spider Web</Text>
+                <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase mb-1`}>Multi-Axial Ceph Spider Web</Text>
+                <Text style={tw`text-[9px] text-[#A8B3C7] leading-normal mb-3`}>
+                  The OCI Score Ring measures overall complexity as a percentage, while the spider web plots patient parameters (SNA, SNB, ANB, FMA, IMPA) against normal guidelines.
+                </Text>
                 <View style={tw`flex-row justify-around items-center`}>
                   <Svg width="120" height="120" viewBox="0 0 160 160">
                     <Circle cx="80" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
