@@ -455,6 +455,13 @@ export default function ResultsDashboard({
                 </View>
               </View>
 
+              {/* OCI number-based inference explanation */}
+              <View style={tw`w-full px-4 py-2 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)]`}>
+                <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal text-center`}>
+                  An OCI score of <Text style={tw`font-bold text-[#00E5FF]`}>{ociResult.totalScore}%</Text> indicates a <Text style={tw`font-bold`}>{ociResult.interpretation || 'Moderate'}</Text> discrepancy. Values 0-25% denote mild complexity (non-extraction), 26-50% moderate (camouflage/IPR), 51-75% severe (extraction/orthopedics), and 76-100% extreme (surgical decompensation).
+                </Text>
+              </View>
+
               {/* Pie Chart: Contribution distribution (Skeletal vs Dental vs Soft Tissue) */}
               <View style={tw`w-full space-y-2`}>
                 <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-2`}>Discrepancy Source Distribution</Text>
@@ -488,7 +495,8 @@ export default function ResultsDashboard({
               <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4 space-y-2`}>
                 <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-1`}>Multi-Axial Ceph Spider Web</Text>
                 <Text style={tw`text-[9px] text-[#A8B3C7] leading-normal mb-3`}>
-                  The OCI Score Ring measures overall complexity as a percentage, while the spider web plots patient parameters (SNA, SNB, ANB, FMA, IMPA) against normal guidelines.
+                  The Ceph Spider Web plots patient tracing metrics (SNA, SNB, ANB, FMA, IMPA) against normal guidelines.
+                  {"\n"}This visually isolates whether the discrepancy is skeletal (ANB/SNA/SNB) or dentoalveolar (IMPA/FMA) in origin.
                 </Text>
                 <View style={tw`flex-row justify-around items-center`}>
                   <Svg width="160" height="160" viewBox="0 0 160 160">
