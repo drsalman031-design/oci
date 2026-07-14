@@ -415,37 +415,40 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. OCI AI Treatment Plan</Text>
             {expandedSections.treatment ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
-          {expandedSections.treatment && (
+          {expandedSections.treatment && generatedPlan.rankingSystem && (
             <View style={tw`p-5 space-y-4`}>
               <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Treatment Objectives</Text>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Most Recommended Option</Text>
+                <Text style={tw`text-xs text-white font-extrabold`}>{generatedPlan.rankingSystem.mostRecommended.name}</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>{generatedPlan.rankingSystem.mostRecommended.description}</Text>
+              </View>
+
+              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Clinical Reasoning & Why Recommended</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.whyRecommended}</Text>
+              </View>
+
+              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Alternative Exclusions</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.alternativeNotFirst}</Text>
+              </View>
+
+              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>OCI Impact & Influence</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.ociInfluence}</Text>
+              </View>
+
+              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Expected Benefits</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  • Correct sagittal skeletal mismatch and skeletal protrusion.
-                  {"\n"}• Achieve class I molar and canine intercuspation.
-                  {"\n"}• Relieve crowding, align midlines, and reduce overjet to 2.0 mm.
+                  {generatedPlan.rankingSystem.mostRecommended.benefits.map((b, i) => `• ${b}\n`).join('').trim()}
                 </Text>
               </View>
 
               <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Phase-Wise Treatment</Text>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Potential Limitations</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  • **Phase 1 (0-6 mo):** Unlocking incisors & transverse expansion if needed.
-                  {"\n"}• **Phase 2 (6-18 mo):** Functional growth modification (Twin Block if growing) or camouflage retraction mechanics with TADS.
-                  {"\n"}• **Phase 3 (18-24 mo):** Finishing, detailing, interdigitation, and dental leveling.
-                </Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Appliance & Duration</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  Fixed pre-adjusted MBT 0.022" appliances or clear aligners. Estimated total duration: **18 to 22 months**.
-                </Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Expected Outcomes & OCI Rationale</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  The engine selected camouflage/growth modification because patient's OCI score indicates healthy alveolar parameters capable of dentoalveolar torque adaptations. Surgery was avoided due to moderate limits.
+                  {generatedPlan.rankingSystem.mostRecommended.limitations.map((l, i) => `• ${l}\n`).join('').trim()}
                 </Text>
               </View>
             </View>
@@ -457,26 +460,29 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
             ========================================== */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('alternatives')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Alternative Treatment Options</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Alternative & Additional Options</Text>
             {expandedSections.alternatives ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
-          {expandedSections.alternatives && (
+          {expandedSections.alternatives && generatedPlan.rankingSystem && (
             <View style={tw`p-5 space-y-4`}>
               <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#FFB300] uppercase`}>Alternative A: Non-Extraction Aligners</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  • **Advantages:** Excellent aesthetics, easier oral hygiene, minimal root resorption risk.
-                  {"\n"}• **Disadvantages:** Less control over severe root movement, requires maximum patient compliance.
-                  {"\n"}• **Indications:** Mild dental crowding cases with straight skeletal profiles.
+                <Text style={tw`text-[10px] font-bold text-[#FFB300] uppercase`}>Alternative Option</Text>
+                <Text style={tw`text-xs text-white font-extrabold`}>{generatedPlan.rankingSystem.alternative.name}</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>{generatedPlan.rankingSystem.alternative.description}</Text>
+                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-2`}>
+                  • **Advantages:** {generatedPlan.rankingSystem.alternative.advantages.join(', ')}
+                  {"\n"}• **Disadvantages:** {generatedPlan.rankingSystem.alternative.disadvantages.join(', ')}
+                  {"\n"}• **Indications:** {generatedPlan.rankingSystem.alternative.indications}
                 </Text>
               </View>
 
               <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#FFB300] uppercase`}>Alternative B: Surgical Orthodontics (Bimax)</Text>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Additional Preventive & Interceptive Controls</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  • **Advantages:** Ideal facial aesthetics, correct airway, skeletal base correction.
-                  {"\n"}• **Disadvantages:** Requires general anesthesia, surgical recovery risk, higher cost.
-                  {"\n"}• **Indications:** Severe basal discrepancy (ANB &gt; 7°) or mature adult patients.
+                  • **Preventive:** {generatedPlan.rankingSystem.additional.preventive}
+                  {"\n"}• **Interceptive:** {generatedPlan.rankingSystem.additional.interceptive}
+                  {"\n"}• **Myofunctional:** {generatedPlan.rankingSystem.additional.myofunctional}
+                  {"\n"}• **Referrals / Multidisciplinary:** {generatedPlan.rankingSystem.additional.multidisciplinary}
                 </Text>
               </View>
             </View>

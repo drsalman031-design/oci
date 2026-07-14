@@ -61,6 +61,32 @@ export interface TreatmentPlanResult {
   alternativesText?: string;
   risksText?: string;
   prognosisText?: string;
+
+  // ORTHODONTIC TREATMENT KNOWLEDGE ENGINE
+  rankingSystem?: {
+    mostRecommended: {
+      name: string;
+      description: string;
+      whyRecommended: string;
+      alternativeNotFirst: string;
+      ociInfluence: string;
+      benefits: string[];
+      limitations: string[];
+    };
+    alternative: {
+      name: string;
+      description: string;
+      advantages: string[];
+      disadvantages: string[];
+      indications: string;
+    };
+    additional: {
+      preventive: string;
+      interceptive: string;
+      myofunctional: string;
+      multidisciplinary: string;
+    };
+  };
 }
 
 /**
@@ -671,6 +697,146 @@ export function generateTreatmentPlan(
     prognosis = oci.totalScore > 60 ? 'Fair' : 'Good';
   }
 
+  // ==========================================
+  // ORTHODONTIC TREATMENT KNOWLEDGE ENGINE
+  // ==========================================
+
+  // 1. Preventive Orthodontics
+  let preventiveText = 'Not indicated. Permanent dentition is established and oral environment is stable.';
+  if (age <= 9) {
+    preventiveText = 'Evaluate for space maintenance (e.g., band and loop) if primary teeth are lost early. Space supervision, caries-related space preservation, and periodic eruption guidance are recommended during mixed dentition transition.';
+  }
+
+  // 2. Interceptive Orthodontics
+  let interceptiveText = 'Not indicated. Patient is beyond early interception stage.';
+  if (age >= 8 && age <= 11) {
+    const crowdingText = options.crowdingSeverity === 'severe' 
+      ? 'Indicated: Serial extraction protocol should be evaluated due to severe crowding. ' 
+      : '';
+    interceptiveText = `${crowdingText}Evaluate for space regaining, crossbite correction (for functional shift control), and ectopic eruption management during active transition.`;
+  }
+
+  // 3. Myofunctional Therapy
+  let myofunctionalText = 'Not indicated. No active habits or muscle dysfunctions detected.';
+  const hasActiveHabit = patient.habits && patient.habits.length > 0 && !patient.habits.includes('None') && !patient.habits.includes('');
+  if (hasActiveHabit) {
+    myofunctionalText = 'Indicated. Recommend myofunctional training exercises (tongue posture corrections, lip seal training) combined with interceptive habit correction appliances (tongue crib / spur) to address tongue thrusting or mouth breathing.';
+  }
+
+  // 4. Multidisciplinary referral
+  let multidisciplinaryText = 'Monitor standard orthodontic development.';
+  if (hasActiveHabit && patient.habits && patient.habits.includes('Mouth Breathing')) {
+    multidisciplinaryText = 'ENT referral recommended for airway evaluation (adenoid/tonsillar hypertrophy screening).';
+  } else if (hasActiveHabit && patient.habits && patient.habits.includes('Tongue Thrust')) {
+    multidisciplinaryText = 'Speech therapy and myofunctional specialist referral recommended.';
+  } else if (age > 40) {
+    multidisciplinaryText = 'Periodontics referral for bone support checks; prosthodontics / restorative coordination.';
+  }
+
+  // 5. Most Recommended Option
+  let recName = '';
+  let recDesc = '';
+  let recWhy = '';
+  let recAltNotFirst = '';
+  let recOci = '';
+  let recBenefits: string[] = [];
+  let recLimitations: string[] = [];
+
+  if (isGrowing) {
+    if (skeletalClass === 'Class II' && isDiv1) {
+      recName = 'Growth Modification Therapy (Twin Block functional appliance)';
+      recDesc = 'Orthopedic stimulation of mandibular growth using a Twin Block appliance during peak growth spurt, followed by comprehensive fixed brackets for final detailing.';
+      recWhy = 'Twin Block is the gold standard growth modification therapy for growing patients with Class II retrognathia. It maximizes orthopedic change while avoiding early camouflage extraction or surgery.';
+      recAltNotFirst = 'Surgical correction is delayed until growth completes, and camouflage extractions are not first-line because they flatten the profile and fail to correct the skeletal base mismatch.';
+      recOci = `OCI findings indicate a growing Class II skeletal pattern (${anb}° ANB) with healthy alveolar parameters (${oci.totalScore}% OCI Score) that are highly responsive to orthopedic growth modification.`;
+      recBenefits = ['Stimulates mandibular growth', 'Corrects skeletal profile convexness', 'Improves airway dimension'];
+      recLimitations = ['Requires maximum compliance (22 hours/day)', 'Slight dental tipping of lower incisors'];
+    } else if (skeletalClass === 'Class III') {
+      recName = 'Orthopedic Facemask Protraction & Expansion';
+      recDesc = 'Maxillary expansion using a Hyrax expander combined with a reverse-pull facemask to stimulate maxillary forward growth.';
+      recWhy = 'Interceptive orthopedic therapy is the most effective approach to correct skeletal Class III maxillary deficiency before sutural closure.';
+      recAltNotFirst = 'Surgery is delayed until growth completes, and camouflage alignment does not correct the skeletal jaw base mismatch.';
+      recOci = `OCI findings indicate a Class III skeletal pattern (${anb}° ANB) with ${oci.totalScore}% OCI score, highlighting the need to modify growth interceptively before the sutures fuse.`;
+      recBenefits = ['Promotes maxillary forward growth', 'Corrects anterior crossbite', 'Improves facial aesthetics'];
+      recLimitations = ['Highly dependent on parent/patient compliance', 'Growth relapse risk if mandibular excess continues'];
+    } else {
+      recName = 'Comprehensive Non-Extraction Fixed Orthodontics';
+      recDesc = 'Non-extraction alignment using pre-adjusted fixed brackets or clear aligners to resolve spacing/crowding and settle the occlusion.';
+      recWhy = 'Skeletal pattern is Class I. Space deficiency is mild-to-moderate, which is easily corrected with arch expansion and proclination without sacrificing healthy premolars.';
+      recAltNotFirst = 'Extractions are avoided as they are not indicated for mild-to-moderate Class I crowding and would cause profile flattening.';
+      recOci = `OCI score of ${oci.totalScore}% confirms that skeletal bases are harmonious, allowing direct alignment of teeth.`;
+      recBenefits = ['Resolves crowding conservatively', 'Maintains profile fullness', 'Excellent post-treatment stability'];
+      recLimitations = ['Requires compliance with aligner wear or oral hygiene'];
+    }
+  } else {
+    // Adult
+    if (oci.totalScore > 75) {
+      recName = 'Combined Orthognathic Surgery & Decompensation';
+      recDesc = 'Pre-surgical orthodontic decompensation using fixed appliances, followed by orthognathic surgery (BSSO mandibular advancement/setback and LeFort I) for skeletal base correction.';
+      recWhy = 'Mature skeletal discrepancy is too severe for dentoalveolar camouflage, which would result in periodontal breakdown, root resorption, or flat profile aesthetics.';
+      recAltNotFirst = 'Camouflage was not ranked first because the OCI score exceeds the safety limits for tooth movement.';
+      recOci = `Severe OCI score of ${oci.totalScore}% indicates a basal skeletal discrepancy that exceeds orthodontic camouflage boundaries.`;
+      recBenefits = ['Directly corrects skeletal base discrepancy', 'Optimizes airway and facial aesthetics', 'Highly stable functional occlusion'];
+      recLimitations = ['Requires hospitalization/general anesthesia', 'Longer overall treatment time and higher cost'];
+    } else if (oci.totalScore > 40) {
+      recName = 'Orthodontic Camouflage via Selective Premolar Extractions';
+      recDesc = 'Dentoalveolar camouflage with extraction of two maxillary first premolars (or four premolars for severe crowding) to retract the anterior segment.';
+      recWhy = 'Adult patient with moderate-to-severe discrepancy. Extraction of premolars provides the necessary space to retract incisors and coordinate the arches without pushing them out of the alveolar bone.';
+      recAltNotFirst = 'Non-extraction approach would cause severe incisor proclination and lip protrusion. Surgery is avoided as the OCI score is within camouflage limits.';
+      recOci = `Moderate OCI score of ${oci.totalScore}% indicates that the skeletal discrepancy can be corrected via dental compensation using extraction spaces.`;
+      recBenefits = ['Corrects overjet and crowding', 'Achieves class I canine relationship', 'Stable periodontal support'];
+      recLimitations = ['Requires maximum anchorage control (TADs/TPA)', 'Profile changes must be carefully monitored'];
+    } else {
+      recName = 'Non-Extraction Corrective Orthodontics';
+      recDesc = 'Non-extraction alignment using fixed conventional brackets, self-ligating brackets, or clear aligners with selective IPR.';
+      recWhy = 'Discrepancy is mild. Non-extraction mechanics (IPR, distalization, expansion) are sufficient to gain space without extraction risks.';
+      recAltNotFirst = 'Extractions are avoided to prevent arch collapse and profile flattening in a mild case.';
+      recOci = `OCI score of ${oci.totalScore}% indicates a simple case suitable for direct alignment and minor interproximal reduction.`;
+      recBenefits = ['Minimal biological cost', 'Highly predictable tooth movement', 'Shorter treatment duration'];
+      recLimitations = ['Relies on strict compliance for retention stability'];
+    }
+  }
+
+  // 6. Alternative Option
+  let altName = 'Clear Aligner Therapy with Auxiliaries';
+  let altDesc = 'Sequenced thermoplastic clear aligners combined with attachments, IPR, and Class II/III elastics.';
+  let altAdvs = ['Superior aesthetics and comfort', 'Facilitates excellent oral hygiene', 'Precise control of individual tooth movements'];
+  let altDisadvs = ['Highly reliant on patient compliance (22 hours/day)', 'Less effective for complex skeletal corrections'];
+  let altIndications = 'Suitable for patients with high aesthetic demands presenting with mild-to-moderate dental discrepancies.';
+
+  if (oci.totalScore > 75) {
+    altName = 'Compromise Orthodontic Camouflage (TAD-supported)';
+    altDesc = 'Maxillary arch distalization using absolute anchorage TADs to avoid jaw surgery.';
+    altAdvs = ['Avoids surgical risks and hospitalization', 'Lower cost and downtime'];
+    altDisadvs = ['Does not correct the underlying skeletal jaw base mismatch', 'High risk of relapse or root blunting'];
+    altIndications = 'Mature patients rejecting orthognathic surgery with mild-to-moderate soft tissue tolerance.';
+  }
+
+  const rankingSystem = {
+    mostRecommended: {
+      name: recName,
+      description: recDesc,
+      whyRecommended: recWhy,
+      alternativeNotFirst: recAltNotFirst,
+      ociInfluence: recOci,
+      benefits: recBenefits,
+      limitations: recLimitations
+    },
+    alternative: {
+      name: altName,
+      description: altDesc,
+      advantages: altAdvs,
+      disadvantages: altDisadvs,
+      indications: altIndications
+    },
+    additional: {
+      preventive: preventiveText,
+      interceptive: interceptiveText,
+      myofunctional: myofunctionalText,
+      multidisciplinary: multidisciplinaryText
+    }
+  };
+
   // Formatting deterministic output text
   const diagnosisText = `Skeletal ${skeletalClass} due to ${skeletalEtiology}. ${dentalPattern}. ${verticalPattern}. ${growthStatusText}.`;
   const recommendedTreatmentText = primaryTreatment.map((t, idx) => `${idx + 1}. ${t}`).join('\n');
@@ -717,6 +883,7 @@ export function generateTreatmentPlan(
     whySelectedText: whySelected,
     alternativesText: possibleApproaches.map(a => `• **${a.name}**\n  *Advantage*: ${a.advantages.join(', ')}\n  *Disadvantage*: ${a.disadvantages.join(', ')}`).join('\n\n'),
     risksText: risks.join('\n'),
-    prognosisText: `Prognosis is rated as **${prognosis}** assuming cooperative patient compliance with elastics and active retention appliances.`
+    prognosisText: `Prognosis is rated as **${prognosis}** assuming cooperative patient compliance with elastics and active retention appliances.`,
+    rankingSystem
   };
 }
