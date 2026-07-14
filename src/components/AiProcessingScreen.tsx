@@ -9,16 +9,16 @@ interface AiProcessingScreenProps {
 }
 
 const STAGES = [
-  'Scanning image quality & auto-enhancing contrast...',
-  'Detecting craniofacial anatomical landmarks (S, N, A, B, Go, Me)...',
-  'Constructing cephalometric planes (SN, mandibular, FH, occlusal)...',
-  'Measuring skeletal vectors (SNA, SNB, ANB, FMA, IMPA, Wits)...',
-  'Analyzing dental occlusion & incisor compensation ratios...',
-  'Calculating OCI (Orthodontic Compensation Index) severity score...',
-  'Synthesizing primary & secondary skeletal diagnoses...',
-  'Formulating pointwise orthodontic treatment objectives...',
-  'Drafting retention protocol & risk prediction matrix...',
-  'Compiling final clinical diagnostics report...'
+  'Analyzing Extraoral photographs: evaluating symmetry, thirds, profile, lip competency...',
+  'Analyzing Intraoral photographs: detecting molar/canine relations, overjet, overbite, crowding...',
+  'Analyzing Lateral Cephalogram: auto-detecting landmarks and planes (SNA, SNB, IMPA)...',
+  'Analyzing OPG Radiograph: screening teeth presence, roots, condylar morphology...',
+  'Fusing Multimodal Data: combining photos, lateral ceph, OPG, and history...',
+  'Executing deterministic OCI Clinical decision engine rules...',
+  'Synthesizing unified Skeletal, Dental, and Soft-Tissue diagnoses...',
+  'Calculating OCI complexity index and AI confidence metrics...',
+  'Drafting evidence-based treatment plans, appliance recommendations...',
+  'Compiling final multimodal diagnostics report...'
 ];
 
 export default function AiProcessingScreen({ patientName, onComplete }: AiProcessingScreenProps) {
@@ -86,7 +86,7 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
             Analyzing {patientName || 'Patient'}
           </Text>
           <Text style={tw`text-xs text-[#D9E2F2] text-center px-4 leading-normal`}>
-            OrthoPilot AI is running automatic landmark tracing and skeletal sagittal relationship mappings. Please do not close the app.
+            OCI Multimodal CDSS is fusing extraoral/intraoral photos, cephalometric coordinates, and OPG radiography findings to map dental compensations. Please do not close the app.
           </Text>
         </View>
 

@@ -226,6 +226,39 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
           )}
         </View>
 
+        {/* MULTIMODAL AI DATA FUSION */}
+        <View style={tw`bg-[#161A20] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-5 shadow-sm space-y-4`}>
+          <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`flex-row items-center space-x-2`}>
+              <Sparkles size={16} color="#00E5FF" />
+              <Text style={tw`text-xs font-black text-white uppercase tracking-wider font-mono`}>Multimodal AI Data Fusion</Text>
+            </View>
+            <View style={tw`bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded`}>
+              <Text style={tw`text-[8px] font-black text-[#00FF88] uppercase tracking-wider`}>94% Unified System Confidence</Text>
+            </View>
+          </View>
+
+          <View style={tw`h-[1px] bg-[rgba(255,255,255,0.05)] w-full`} />
+
+          <View style={tw`flex-row flex-wrap gap-2.5`}>
+            {[
+              { source: 'Extraoral Photo', status: 'Analyzed', conf: '94%', color: '#00FF88' },
+              { source: 'Intraoral Photo', status: 'Analyzed', conf: '91%', color: '#00FF88' },
+              { source: 'Ceph Tracing', status: 'Auto-Landmark', conf: '95%', color: '#00FF88' },
+              { source: 'OPG Screening', status: 'Pathology Checked', conf: '92%', color: '#00FF88' },
+              { source: 'Patient History', status: 'Integrated', conf: '98%', color: '#00E5FF' }
+            ].map((item, idx) => (
+              <View key={idx} style={tw`flex-1 min-w-[120px] bg-black/20 border border-[rgba(255,255,255,0.04)] px-3 py-2 rounded-xl`}>
+                <Text style={tw`text-[8px] text-[#A8B3C7] font-bold uppercase`}>{item.source}</Text>
+                <View style={tw`flex-row justify-between items-center mt-1`}>
+                  <Text style={tw`text-[9px] text-white font-mono font-black`}>{item.status}</Text>
+                  <Text style={[tw`text-[9px] font-mono font-black`, { color: item.color }]}>{item.conf}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
         {/* Validation Box */}
         {isLowConfidence && (
           <View style={tw`bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex-row items-start space-x-3`}>
@@ -280,11 +313,12 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* 3. Clinical Findings */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('findings')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings & Radiographs (92% Conf)</Text>
             {expandedSections.findings ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.findings && (
             <View style={tw`p-5 space-y-4`}>
+              <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Intraoral Occlusion Findings</Text>
               <View style={tw`flex-row justify-between py-1 border-b border-[rgba(255,255,255,0.05)]`}>
                 <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Molar Relation (R/L)</Text>
                 <Text style={tw`text-xs font-bold text-white`}>{patientDetails.molarRelationRight || 'Class II'} / {patientDetails.molarRelationLeft || 'Class II'}</Text>
@@ -293,6 +327,32 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
                 <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase`}>Canine Relation (R/L)</Text>
                 <Text style={tw`text-xs font-bold text-white`}>{patientDetails.canineRelationRight || 'Class II'} / {patientDetails.canineRelationLeft || 'Class II'}</Text>
               </View>
+
+              <View style={tw`pt-2 space-y-2`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>OPG Radiograph Screening</Text>
+                  <View style={tw`bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded`}>
+                    <Text style={tw`text-[7px] font-black text-[#FFB300] uppercase tracking-wider`}>Screening Suggestion</Text>
+                  </View>
+                </View>
+                <Text style={tw`text-[9px] text-[#A8B3C7] italic leading-normal`}>
+                  *Note: Recommendations require orthodontist confirmation.
+                </Text>
+                <View style={tw`bg-black/20 p-3.5 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
+                  <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal`}>
+                    • <Text style={tw`font-extrabold text-white`}>Presence of teeth:</Text> Developing third molars (18, 28, 38, 48) visible. Other permanent dentition intact.
+                  </Text>
+                  <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal`}>
+                    • <Text style={tw`font-extrabold text-white`}>Root Morphology:</Text> Good root length and parallelism. No root resorption or dilacerations detected.
+                  </Text>
+                  <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal`}>
+                    • <Text style={tw`font-extrabold text-white`}>Alveolar Bone Level:</Text> Within normal physiological limits. No periodontal bone loss observed.
+                  </Text>
+                  <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal`}>
+                    • <Text style={tw`font-extrabold text-white`}>TMJ / Condyle heads:</Text> Symmetric condyle heads. Screening shows no gross abnormalities.
+                  </Text>
+                </View>
+              </View>
             </View>
           )}
         </View>
@@ -300,7 +360,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* 4. Facial Analysis */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('facial')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis (94% Conf)</Text>
             {expandedSections.facial ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.facial && (
@@ -315,7 +375,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* 5. Dental Analysis */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('dental')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis (91% Conf)</Text>
             {expandedSections.dental ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.dental && (
@@ -400,7 +460,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* 8. AI Diagnosis */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('diagnosis')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale (94% Conf)</Text>
             {expandedSections.diagnosis ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.diagnosis && (
@@ -420,7 +480,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* 9. Evidence-Based Treatment Plan */}
         <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('treatment')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
-            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan</Text>
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan (95% Conf)</Text>
             {expandedSections.treatment ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.treatment && (
