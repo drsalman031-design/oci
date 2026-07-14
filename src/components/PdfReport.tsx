@@ -443,13 +443,13 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
   }
 
   let severityLabel = 'Mild';
-  let severityColor = '#10B981'; // green
+  let severityColor = '#00FF88'; // green
   if (total > 65) {
     severityLabel = 'Severe';
-    severityColor = '#EF4444';
+    severityColor = '#FF4D4D';
   } else if (total > 35) {
     severityLabel = 'Moderate';
-    severityColor = '#F59E0B';
+    severityColor = '#FFB300';
   }
 
   // Build AI summaries & interpretations
@@ -465,31 +465,31 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
 
   // Segment declarations for both React JSX and PDF templates
   const overallSegments: DonutSegment[] = [
-    { name: 'Skeletal Compensation', value: ociSke, color: '#F59E0B' },
-    { name: 'Dental Compensation', value: ociDen, color: '#10B981' },
+    { name: 'Skeletal Compensation', value: ociSke, color: '#FFB300' },
+    { name: 'Dental Compensation', value: ociDen, color: '#00FF88' },
     { name: 'Soft Tissue Compensation', value: ociSof, color: '#3B82F6' }
   ];
 
   const skeletalSegments: DonutSegment[] = [
-    { name: 'Maxilla Position', value: maxillaPct, color: '#EF4444' },
+    { name: 'Maxilla Position', value: maxillaPct, color: '#FF4D4D' },
     { name: 'Mandible Position', value: mandiblePct, color: '#3B82F6' },
-    { name: 'Vertical Pattern', value: verticalPct, color: '#F59E0B' },
-    { name: 'Facial Skeletal Balance', value: balancePct, color: '#10B981' }
+    { name: 'Vertical Pattern', value: verticalPct, color: '#FFB300' },
+    { name: 'Facial Skeletal Balance', value: balancePct, color: '#00FF88' }
   ];
 
   const dentalSegments: DonutSegment[] = [
     { name: 'Upper Incisor', value: upperIncisorPct, color: '#EC4899' },
     { name: 'Lower Incisor', value: lowerIncisorPct, color: '#8B5CF6' },
-    { name: 'Upper Molar', value: upperMolarPct, color: '#10B981' },
+    { name: 'Upper Molar', value: upperMolarPct, color: '#00FF88' },
     { name: 'Lower Molar', value: lowerMolarPct, color: '#3B82F6' },
-    { name: 'Occlusal Plane', value: occlusalPct, color: '#F59E0B' }
+    { name: 'Occlusal Plane', value: occlusalPct, color: '#FFB300' }
   ];
 
   const softTissueSegments: DonutSegment[] = [
-    { name: 'Upper Lip', value: upperLipPct, color: '#EF4444' },
+    { name: 'Upper Lip', value: upperLipPct, color: '#FF4D4D' },
     { name: 'Lower Lip', value: lowerLipPct, color: '#3B82F6' },
-    { name: 'Chin', value: chinPct, color: '#10B981' },
-    { name: 'Nasolabial Angle', value: nasoPct, color: '#F59E0B' },
+    { name: 'Chin', value: chinPct, color: '#00FF88' },
+    { name: 'Nasolabial Angle', value: nasoPct, color: '#FFB300' },
     { name: 'Facial Convexity', value: convexityPct, color: '#8B5CF6' }
   ];
 
@@ -534,34 +534,34 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
 
     // Overall Allocation Segments
     const overallSegments = [
-      { name: 'Skeletal Compensation', value: ociSke, color: '#F59E0B' },
-      { name: 'Dental Compensation', value: ociDen, color: '#10B981' },
+      { name: 'Skeletal Compensation', value: ociSke, color: '#FFB300' },
+      { name: 'Dental Compensation', value: ociDen, color: '#00FF88' },
       { name: 'Soft Tissue Compensation', value: ociSof, color: '#3B82F6' }
     ];
 
     // Card 1 Segments
     const skeletalSegments = [
-      { name: 'Maxilla Position', value: maxillaPct, color: '#EF4444' },
+      { name: 'Maxilla Position', value: maxillaPct, color: '#FF4D4D' },
       { name: 'Mandible Position', value: mandiblePct, color: '#3B82F6' },
-      { name: 'Vertical Pattern', value: verticalPct, color: '#F59E0B' },
-      { name: 'Facial Skeletal Balance', value: balancePct, color: '#10B981' }
+      { name: 'Vertical Pattern', value: verticalPct, color: '#FFB300' },
+      { name: 'Facial Skeletal Balance', value: balancePct, color: '#00FF88' }
     ];
 
     // Card 2 Segments
     const dentalSegments = [
       { name: 'Upper Incisor', value: upperIncisorPct, color: '#EC4899' },
       { name: 'Lower Incisor', value: lowerIncisorPct, color: '#8B5CF6' },
-      { name: 'Upper Molar', value: upperMolarPct, color: '#10B981' },
+      { name: 'Upper Molar', value: upperMolarPct, color: '#00FF88' },
       { name: 'Lower Molar', value: lowerMolarPct, color: '#3B82F6' },
-      { name: 'Occlusal Plane', value: occlusalPct, color: '#F59E0B' }
+      { name: 'Occlusal Plane', value: occlusalPct, color: '#FFB300' }
     ];
 
     // Card 3 Segments
     const softTissueSegments = [
-      { name: 'Upper Lip', value: upperLipPct, color: '#EF4444' },
+      { name: 'Upper Lip', value: upperLipPct, color: '#FF4D4D' },
       { name: 'Lower Lip', value: lowerLipPct, color: '#3B82F6' },
-      { name: 'Chin', value: chinPct, color: '#10B981' },
-      { name: 'Nasolabial Angle', value: nasoPct, color: '#F59E0B' },
+      { name: 'Chin', value: chinPct, color: '#00FF88' },
+      { name: 'Nasolabial Angle', value: nasoPct, color: '#FFB300' },
       { name: 'Facial Convexity', value: convexityPct, color: '#8B5CF6' }
     ];
 
@@ -570,7 +570,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
     const findingsList = (assessment.patientDetails.clinicalPhotoFindings || [])
       .map((f: string) => `
         <div style="display: flex; align-items: center; gap: 4px; padding: 2px 0;">
-          <span style="color: #10B981; font-weight: bold;">✓</span>
+          <span style="color: #00FF88; font-weight: bold;">✓</span>
           <span style="color: #D1D5DB; font-family: monospace; font-size: 8px;">${f}</span>
         </div>
       `).join('');
@@ -663,7 +663,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
           
           <div class="flex-1 flex flex-col justify-center items-center space-y-8 my-auto">
             <div class="w-24 h-24 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20 mb-2">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 16v-4"></path>
                 <path d="M12 8h.01"></path>
@@ -925,7 +925,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
 
         ${(assessment.patientDetails.analysisMode === 'clinic') ? `
         <div class="pdf-page" style="width: 794px; height: 1123px; background-color: white; padding: 50px; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; break-after: page;">
-          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: linear-gradient(to right, #0D9488, #0F172A);"></div>
+          <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-slate-900" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: linear-gradient(to right, #00B8CC, #0F172A);"></div>
           
           <div class="space-y-4" style="display: flex; flex-direction: column; gap: 16px;">
             <div style="display: flex; justify-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-top: 16px;">
@@ -943,15 +943,15 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
               <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px; background-color: #F8FAFC;">
                 <p style="font-size: 9px; font-weight: bold; color: #1E293B; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between;">
                   <span>Frontal Rest Profile</span>
-                  <span style="color: #0D9488; font-family: monospace; font-size: 8px;">Symmetry & Thirds</span>
+                  <span style="color: #00B8CC; font-family: monospace; font-size: 8px;">Symmetry & Thirds</span>
                 </p>
                 <div style="aspect-ratio: 1/1; background-color: #020617; border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 160px;">
                   <img src="https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=200&auto=format&fit=crop" style="width: 100%; height: 100%; opacity: 0.35; position: absolute; top: 0; left: 0;" />
                   <svg width="100%" height="100%" viewBox="0 0 100 100" style="position: absolute; inset: 0;">
-                    <line x1="50" y1="0" x2="50" y2="100" stroke="#EF4444" stroke-width="0.5" stroke-dasharray="1,1" />
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="#FF4D4D" stroke-width="0.5" stroke-dasharray="1,1" />
                     <line x1="20" y1="35" x2="80" y2="35" stroke="#3B82F6" stroke-width="0.5" stroke-dasharray="1,1" />
-                    <line x1="10" y1="15" x2="90" y2="15" stroke="#10B981" stroke-width="0.3" stroke-dasharray="1,1" />
-                    <line x1="10" y1="60" x2="90" y2="60" stroke="#10B981" stroke-width="0.3" stroke-dasharray="1,1" />
+                    <line x1="10" y1="15" x2="90" y2="15" stroke="#00FF88" stroke-width="0.3" stroke-dasharray="1,1" />
+                    <line x1="10" y1="60" x2="90" y2="60" stroke="#00FF88" stroke-width="0.3" stroke-dasharray="1,1" />
                     <circle cx="50" cy="60" r="1.5" fill="#3B82F6" />
                     <circle cx="30" cy="35" r="1.5" fill="#3B82F6" />
                     <circle cx="70" cy="35" r="1.5" fill="#3B82F6" />
@@ -963,13 +963,13 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
               <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px; background-color: #F8FAFC;">
                 <p style="font-size: 9px; font-weight: bold; color: #1E293B; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between;">
                   <span>Right Profile Analysis</span>
-                  <span style="color: #0D9488; font-family: monospace; font-size: 8px;">E-Line & Convexity</span>
+                  <span style="color: #00B8CC; font-family: monospace; font-size: 8px;">E-Line & Convexity</span>
                 </p>
                 <div style="aspect-ratio: 1/1; background-color: #020617; border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 160px;">
                   <img src="https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=200&auto=format&fit=crop" style="width: 100%; height: 100%; opacity: 0.35; position: absolute; top: 0; left: 0;" />
                   <svg width="100%" height="100%" viewBox="0 0 100 100" style="position: absolute; inset: 0;">
-                    <line x1="70" y1="30" x2="50" y2="80" stroke="#EF4444" stroke-width="0.5" stroke-dasharray="1,1" />
-                    <path d="M 40,15 Q 60,40 40,65 T 50,80" fill="none" stroke="#10B981" stroke-width="1" />
+                    <line x1="70" y1="30" x2="50" y2="80" stroke="#FF4D4D" stroke-width="0.5" stroke-dasharray="1,1" />
+                    <path d="M 40,15 Q 60,40 40,65 T 50,80" fill="none" stroke="#00FF88" stroke-width="1" />
                     <circle cx="70" cy="30" r="1.5" fill="#3B82F6" />
                     <circle cx="50" cy="80" r="1.5" fill="#3B82F6" />
                   </svg>
@@ -980,14 +980,14 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
               <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px; background-color: #F8FAFC;">
                 <p style="font-size: 9px; font-weight: bold; color: #1E293B; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between;">
                   <span>Frontal Occlusion</span>
-                  <span style="color: #0D9488; font-family: monospace; font-size: 8px;">Midlines & Overbite</span>
+                  <span style="color: #00B8CC; font-family: monospace; font-size: 8px;">Midlines & Overbite</span>
                 </p>
                 <div style="aspect-ratio: 1/1; background-color: #020617; border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 160px;">
                   <img src="https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=200&auto=format&fit=crop" style="width: 100%; height: 100%; opacity: 0.35; position: absolute; top: 0; left: 0;" />
                   <svg width="100%" height="100%" viewBox="0 0 100 100" style="position: absolute; inset: 0;">
                     <line x1="48" y1="20" x2="48" y2="50" stroke="#3B82F6" stroke-width="0.5" />
-                    <line x1="52" y1="50" x2="52" y2="80" stroke="#EF4444" stroke-width="0.5" />
-                    <rect x="42" y="45" width="16" height="8" fill="none" stroke="#10B981" stroke-width="0.5" stroke-dasharray="1,1" />
+                    <line x1="52" y1="50" x2="52" y2="80" stroke="#FF4D4D" stroke-width="0.5" />
+                    <rect x="42" y="45" width="16" height="8" fill="none" stroke="#00FF88" stroke-width="0.5" stroke-dasharray="1,1" />
                   </svg>
                 </div>
               </div>
@@ -996,15 +996,15 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
               <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px; background-color: #F8FAFC;">
                 <p style="font-size: 9px; font-weight: bold; color: #1E293B; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between;">
                   <span>Maxillary Occlusal Arch</span>
-                  <span style="color: #0D9488; font-family: monospace; font-size: 8px;">Arch Form & Crowding</span>
+                  <span style="color: #00B8CC; font-family: monospace; font-size: 8px;">Arch Form & Crowding</span>
                 </p>
                 <div style="aspect-ratio: 1/1; background-color: #020617; border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 160px;">
                   <img src="https://images.unsplash.com/photo-1579684389782-64d84b5e9053?q=80&w=200&auto=format&fit=crop" style="width: 100%; height: 100%; opacity: 0.35; position: absolute; top: 0; left: 0;" />
                   <svg width="100%" height="100%" viewBox="0 0 100 100" style="position: absolute; inset: 0;">
                     <path d="M 20,80 C 20,30 80,30 80,80" fill="none" stroke="#3B82F6" stroke-width="0.8" stroke-dasharray="1,1" />
-                    <line x1="50" y1="15" x2="50" y2="85" stroke="#EF4444" stroke-width="0.4" stroke-dasharray="1,1" />
-                    <circle cx="30" cy="45" r="3" fill="none" stroke="#F59E0B" stroke-width="0.5" />
-                    <circle cx="50" cy="30" r="3.5" fill="none" stroke="#EF4444" stroke-width="0.5" />
+                    <line x1="50" y1="15" x2="50" y2="85" stroke="#FF4D4D" stroke-width="0.4" stroke-dasharray="1,1" />
+                    <circle cx="30" cy="45" r="3" fill="none" stroke="#FFB300" stroke-width="0.5" />
+                    <circle cx="50" cy="30" r="3.5" fill="none" stroke="#FF4D4D" stroke-width="0.5" />
                   </svg>
                 </div>
               </div>
@@ -1297,7 +1297,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
                   <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Risk Assessment</span>
                 </div>
                 <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
-                  <p style="margin-bottom: 6px;"><strong>Risk Level:</strong> ${total > 60 ? '<span style="color: #EF4444; font-weight: 800;">🔴 HIGH</span>' : '<span style="color: #10B981; font-weight: 800;">🟢 LOW</span>'}</p>
+                  <p style="margin-bottom: 6px;"><strong>Risk Level:</strong> ${total > 60 ? '<span style="color: #FF4D4D; font-weight: 800;">🔴 HIGH</span>' : '<span style="color: #00FF88; font-weight: 800;">🟢 LOW</span>'}</p>
                   <p style="margin-bottom: 6px;"><strong>Clinical Risks:</strong> • Root resorption risk during alignment <br/>• Elastic wear compliance <br/>• Oral hygiene maintenance</p>
                   <p style="margin-bottom: 0;"><strong>Overall:</strong> ${total > 60 ? 'High movement mechanics require thin alveolar plate monitoring and active root evaluation.' : 'The overall treatment risk is low and routine orthodontic precautions are sufficient.'}</p>
                 </div>
@@ -1323,7 +1323,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
                   <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Prognosis</span>
                 </div>
                 <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
-                  <p style="margin-bottom: 6px;"><strong>Overall Prognosis:</strong> <span style="color: #10B981; font-weight: 800;">🟢 ${report.overallPrognosis || 'EXCELLENT'}</span></p>
+                  <p style="margin-bottom: 6px;"><strong>Overall Prognosis:</strong> <span style="color: #00FF88; font-weight: 800;">🟢 ${report.overallPrognosis || 'EXCELLENT'}</span></p>
                   <p style="margin-bottom: 0;"><strong>Explanation:</strong> Based on the available findings, predictable dental correction is expected with excellent long-term stability when treatment objectives are achieved. ${report.explanationWhy || ''}</p>
                 </div>
               </div>
@@ -1347,7 +1347,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
                   <span style="font-size: 11px; font-weight: 800; color: #1E293B; text-transform: uppercase;">Relapse Assessment</span>
                 </div>
                 <div style="font-size: 9.5px; line-height: 1.5; color: #475569;">
-                  <p style="margin-bottom: 6px;"><strong>Relapse Risk:</strong> <span style="color: #10B981; font-weight: 800;">🟢 ${report.relapseRisk || 'LOW'}</span></p>
+                  <p style="margin-bottom: 6px;"><strong>Relapse Risk:</strong> <span style="color: #00FF88; font-weight: 800;">🟢 ${report.relapseRisk || 'LOW'}</span></p>
                   <p style="margin-bottom: 6px;"><strong>Explanation:</strong> ${report.relapseReason || 'Stable post-treatment sagittal coordinates decrease relapse potential.'}</p>
                   <p style="margin-bottom: 0;"><strong>Retention Advice:</strong> ${report.estimatedRetention || 'Standard retention protocols (fixed lingual retainers and vacuum formed overlays) are highly recommended.'}</p>
                 </div>
@@ -1368,7 +1368,7 @@ export default function PdfReport({ assessment: propAssessment, onClose }: PdfRe
 
             <!-- Specialist Sign-off Seal -->
             <div style="border-top: 1px solid #E2E8F0; padding-top: 15px; margin-top: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <div style="width: 100%; max-width: 240px; border-bottom: 1px solid #CBD5E1; padding-bottom: 3px; text-align: center; font-weight: bold; font-style: italic; color: #0D9488; font-size: 11px;">
+              <div style="width: 100%; max-width: 240px; border-bottom: 1px solid #CBD5E1; padding-bottom: 3px; text-align: center; font-weight: bold; font-style: italic; color: #00B8CC; font-size: 11px;">
                 ${sigText}
               </div>
               <p style="font-size: 8px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold; margin-top: 4px; margin-bottom: 0;">Specialist Sign-off Seal</p>
@@ -1419,11 +1419,11 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
         setIsGeneratingPdf(true);
         setPdfProgress('Compiling native report vectors...');
         
-        let scoreColor = '#10B981'; // green
+        let scoreColor = '#00FF88'; // green
         let bgLight = '#ECFDF5';
         if (total > 80) { scoreColor = '#06B6D4'; bgLight = '#F0FDFD'; }
         else if (total > 60) { scoreColor = '#22D3EE'; bgLight = '#ECFEFF'; }
-        else if (total > 40) { scoreColor = '#14B8A6'; bgLight = '#F0FDFA'; }
+        else if (total > 40) { scoreColor = '#00E5FF'; bgLight = '#F0FDFA'; }
         else if (total > 20) { scoreColor = '#34D399'; bgLight = '#F0FDF4'; }
 
         const printHtml = getHtmlTemplate(scoreColor, bgLight);
@@ -1448,12 +1448,12 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
     setPdfProgress('Initializing document template...');
 
     // Color helpers for the printed layout based on OCI Score
-    let scoreColor = '#10B981'; // green
+    let scoreColor = '#00FF88'; // green
     let bgLight = '#ECFDF5';
-    if (total > 80) { scoreColor = '#EF4444'; bgLight = '#FEF2F2'; }
+    if (total > 80) { scoreColor = '#FF4D4D'; bgLight = '#FEF2F2'; }
     else if (total > 60) { scoreColor = '#F97316'; bgLight = '#FFF7ED'; }
-    else if (total > 40) { scoreColor = '#F59E0B'; bgLight = '#FEFBE8'; }
-    else if (total > 20) { scoreColor = '#14B8A6'; bgLight = '#F0FDFA'; }
+    else if (total > 40) { scoreColor = '#FFB300'; bgLight = '#FEFBE8'; }
+    else if (total > 20) { scoreColor = '#00E5FF'; bgLight = '#F0FDFA'; }
 
     try {
       const { jsPDF } = require('jspdf');
@@ -1536,12 +1536,12 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
       return;
     }
 
-    let scoreColor = '#10B981'; // green
+    let scoreColor = '#00FF88'; // green
     let bgLight = '#ECFDF5';
-    if (total > 80) { scoreColor = '#EF4444'; bgLight = '#FEF2F2'; }
+    if (total > 80) { scoreColor = '#FF4D4D'; bgLight = '#FEF2F2'; }
     else if (total > 60) { scoreColor = '#F97316'; bgLight = '#FFF7ED'; }
-    else if (total > 40) { scoreColor = '#F59E0B'; bgLight = '#FEFBE8'; }
-    else if (total > 20) { scoreColor = '#14B8A6'; bgLight = '#F0FDFA'; }
+    else if (total > 40) { scoreColor = '#FFB300'; bgLight = '#FEFBE8'; }
+    else if (total > 20) { scoreColor = '#00E5FF'; bgLight = '#F0FDFA'; }
 
     const printContent = getHtmlTemplate(scoreColor, bgLight);
 
@@ -1643,7 +1643,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
             <Pressable
               onPress={handleDownloadPdf}
               style={({ pressed }) => [
-                tw`px-4 py-2 bg-[#14B8A6] rounded-xl flex-row items-center justify-center shadow-lg border border-teal-400/30`,
+                tw`px-4 py-2 bg-[#00E5FF] rounded-xl flex-row items-center justify-center shadow-lg border border-teal-400/30`,
                 pressed ? tw`opacity-90 scale-98` : null
               ]}
             >
@@ -1679,7 +1679,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
           {/* Clinical Customizer Strip */}
           <View style={tw`bg-[#0B1226] p-4 rounded-2xl border border-white/5 flex-row gap-4 items-center`}>
             <View style={tw`bg-teal-500/10 p-2 rounded-xl`}>
-              <User size={16} color="#14B8A6" />
+              <User size={16} color="#00E5FF" />
             </View>
             <View style={tw`flex-1 flex-row gap-4`}>
               <View style={tw`flex-1`}>
@@ -1779,7 +1779,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
             <View style={tw`flex-row flex-wrap justify-between items-center gap-2 border-b border-white/5 pb-3`}>
               <View style={tw`flex-row items-center gap-2 flex-1 min-w-[180px]`}>
                 <View style={tw`bg-amber-500/10 p-1.5 rounded-lg`}>
-                  <Layers size={14} color="#F59E0B" />
+                  <Layers size={14} color="#FFB300" />
                 </View>
                 <Text style={tw`text-sm font-black text-white flex-1`}>1. Skeletal Base Allocation</Text>
               </View>
@@ -1823,7 +1823,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
             <View style={tw`flex-row flex-wrap justify-between items-center gap-2 border-b border-white/5 pb-3`}>
               <View style={tw`flex-row items-center gap-2 flex-1 min-w-[180px]`}>
                 <View style={tw`bg-emerald-500/10 p-1.5 rounded-lg`}>
-                  <Activity size={14} color="#10B981" />
+                  <Activity size={14} color="#00FF88" />
                 </View>
                 <Text style={tw`text-sm font-black text-white flex-1`}>2. Dental Torque & Arch Allocation</Text>
               </View>
@@ -1954,7 +1954,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
                 <Text style={tw`text-[8px] text-teal-400 font-black uppercase font-mono`}>9. Treatment Prognosis</Text>
                 <Text style={tw`text-xs font-extrabold text-white mt-1`}>{report.overallPrognosis}</Text>
               </View>
-              <View style={tw`bg-[#115E59]/10 p-3.5 rounded-2xl border border-[#14B8A6]/20 w-full sm:w-[48%] flex-grow`}>
+              <View style={tw`bg-[#115E59]/10 p-3.5 rounded-2xl border border-[#00E5FF]/20 w-full sm:w-[48%] flex-grow`}>
                 <Text style={tw`text-[8px] text-[#22D3EE] font-black uppercase font-mono`}>10. AI Treatment Action</Text>
                 <Text style={tw`text-xs font-black text-white mt-1`}>
                   {report.extractionRecommendation === 'Yes' ? 'Premolar Extraction Sequence' : 'Camouflage Non-extraction approach'}
@@ -1990,7 +1990,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
           {/* Primary Sequence Path Option */}
           <View style={tw`bg-[#0B1226] p-5 rounded-3xl border border-white/5 space-y-2`}>
             <Text style={tw`text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Primary Treatment Sequence Pathway</Text>
-            <Text style={tw`text-sm font-extrabold text-[#14B8A6]`}>{report.primaryPlanOption}</Text>
+            <Text style={tw`text-sm font-extrabold text-[#00E5FF]`}>{report.primaryPlanOption}</Text>
             <Text style={tw`text-xs text-slate-300 leading-relaxed font-medium`}>{report.finalClinicalSummary}</Text>
           </View>
 
@@ -1999,7 +1999,7 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
             <TextInput
               value={sigText}
               onChangeText={setSigText}
-              style={tw`text-sm text-[#14B8A6] font-extrabold italic border-b border-white/15 p-1 text-center w-full max-w-[280px] bg-transparent outline-none`}
+              style={tw`text-sm text-[#00E5FF] font-extrabold italic border-b border-white/15 p-1 text-center w-full max-w-[280px] bg-transparent outline-none`}
             />
             <Text style={tw`text-[8px] text-slate-500 mt-1.5 uppercase tracking-wider font-bold text-center`}>Specialist Sign-off Seal</Text>
           </View>
@@ -2027,9 +2027,9 @@ Developed & Innovated by Dr. Salman, MDS (Orthodontist)`;
       {/* Premium Loader Overlay */}
       {isGeneratingPdf && (
         <View style={[tw`absolute inset-0 bg-black/80 z-[9999] justify-center items-center p-6`]}>
-          <View style={tw`bg-[#0B1020] border border-[#14B8A6]/20 rounded-3xl p-8 max-w-xs w-full shadow-2xl items-center space-y-6`}>
-            <View style={tw`w-16 h-16 rounded-full border-4 border-[#14B8A6]/10 border-t-[#14B8A6] items-center justify-center animate-spin`}>
-              <FileText size={24} color="#14B8A6" />
+          <View style={tw`bg-[#0B1020] border border-[#00E5FF]/20 rounded-3xl p-8 max-w-xs w-full shadow-2xl items-center space-y-6`}>
+            <View style={tw`w-16 h-16 rounded-full border-4 border-[#00E5FF]/10 border-t-[#00E5FF] items-center justify-center animate-spin`}>
+              <FileText size={24} color="#00E5FF" />
             </View>
             <View style={tw`space-y-2 items-center`}>
               <Text style={tw`text-white font-black text-xs uppercase tracking-widest text-center`}>Compiling Clinical Dossier</Text>

@@ -291,7 +291,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
       <View style={tw`px-5 py-4 bg-[#0B1020] border-b border-white/5 flex-row justify-between items-center`}>
         <View style={tw`flex-1 mr-4`}>
           <View style={tw`flex-row items-center mb-1`}>
-            <Cpu size={18} color="#14B8A6" style={tw`mr-2`} />
+            <Cpu size={18} color="#00E5FF" style={tw`mr-2`} />
             <Text style={tw`text-base font-black text-white`}>AI AUTO-CEPH ANALYZER</Text>
             <View style={tw`ml-2 px-2 py-0.5 bg-teal-500/10 border border-teal-500/30 rounded-md`}>
               <Text style={tw`text-[9px] font-mono text-teal-400 font-black`}>STEP 1-10 FULLY AUTOMATIC</Text>
@@ -348,9 +348,9 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
             <Pressable
               key={tab.id}
               onPress={() => setActiveTab(tab.id as any)}
-              style={tw`flex-1 py-3.5 items-center justify-center border-b-2 ${isSelected ? 'border-[#14B8A6] bg-white/5' : 'border-transparent'}`}
+              style={tw`flex-1 py-3.5 items-center justify-center border-b-2 ${isSelected ? 'border-[#00E5FF] bg-white/5' : 'border-transparent'}`}
             >
-              <IconComp size={15} color={isSelected ? '#14B8A6' : '#94A3B8'} style={tw`mb-1`} />
+              <IconComp size={15} color={isSelected ? '#00E5FF' : '#94A3B8'} style={tw`mb-1`} />
               <Text style={tw`text-[9px] font-black uppercase tracking-wider ${isSelected ? 'text-teal-400' : 'text-slate-400'} text-center`}>
                 {tab.label}
               </Text>
@@ -435,8 +435,8 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
             <Svg width="100%" height="100%" viewBox="0 0 360 340" style={tw`absolute inset-0`}>
               <Defs>
                 <RadialGradient id="compensationGlow" cx="65%" cy="65%" r="35%">
-                  <Stop offset="0%" stopColor="#EF4444" stopOpacity={0.4} />
-                  <Stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
+                  <Stop offset="0%" stopColor="#FF4D4D" stopOpacity={0.4} />
+                  <Stop offset="100%" stopColor="#FF4D4D" stopOpacity={0} />
                 </RadialGradient>
               </Defs>
 
@@ -458,12 +458,12 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                   <SvgText x="190" y="85" fill="#38BDF8" fontSize="8" fontWeight="bold" fontFamily="monospace">SN Plane</SvgText>
 
                   {/* Frankfort Horizontal (Porion to Orbitale) - Po(80, 120), Or(220, 125) */}
-                  <Line x1={coords.Po.x} y1={coords.Po.y} x2={coords.Or.x} y2={coords.Or.y} stroke="#F59E0B" strokeWidth="1.5" strokeDasharray="3,3" />
-                  <SvgText x="90" y="115" fill="#F59E0B" fontSize="8" fontWeight="bold" fontFamily="monospace">FH Plane</SvgText>
+                  <Line x1={coords.Po.x} y1={coords.Po.y} x2={coords.Or.x} y2={coords.Or.y} stroke="#FFB300" strokeWidth="1.5" strokeDasharray="3,3" />
+                  <SvgText x="90" y="115" fill="#FFB300" fontSize="8" fontWeight="bold" fontFamily="monospace">FH Plane</SvgText>
 
                   {/* Palatal Plane (PNS to ANS) */}
-                  <Line x1={coords.PNS.x} y1={coords.PNS.y} x2={coords.ANS.x} y2={coords.ANS.y} stroke="#10B981" strokeWidth="1.5" />
-                  <SvgText x="175" y="158" fill="#10B981" fontSize="8" fontWeight="bold" fontFamily="monospace">Palatal</SvgText>
+                  <Line x1={coords.PNS.x} y1={coords.PNS.y} x2={coords.ANS.x} y2={coords.ANS.y} stroke="#00FF88" strokeWidth="1.5" />
+                  <SvgText x="175" y="158" fill="#00FF88" fontSize="8" fontWeight="bold" fontFamily="monospace">Palatal</SvgText>
 
                   {/* Mandibular Plane (Go to Me) */}
                   <Line x1={coords.Go.x} y1={coords.Go.y} x2={coords.Me.x} y2={coords.Me.y} stroke="#F43F5E" strokeWidth="1.8" />
@@ -490,7 +490,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                       cx={lm.x} 
                       cy={lm.y} 
                       r={isSelected ? 6 : 3.5} 
-                      fill={isSelected ? '#22D3EE' : lm.type === 'dental' ? '#EC4899' : lm.type === 'soft-tissue' ? '#A855F7' : '#10B981'}
+                      fill={isSelected ? '#22D3EE' : lm.type === 'dental' ? '#EC4899' : lm.type === 'soft-tissue' ? '#A855F7' : '#00FF88'}
                       stroke="#ffffff"
                       strokeWidth={isSelected ? 1.5 : 0.8}
                       {...(Platform.OS === 'web' ? {
@@ -573,7 +573,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
               
               <View style={tw`bg-[#0B1020]/90 p-5 rounded-3xl border border-white/5 space-y-4`}>
                 <View style={tw`flex-row items-center space-x-2.5`}>
-                  <Cpu size={16} color="#14B8A6" />
+                  <Cpu size={16} color="#00E5FF" />
                   <Text style={tw`text-sm font-black text-white uppercase tracking-wider`}>Automatic Tracing Summary</Text>
                 </View>
                 <Text style={tw`text-xs text-slate-300 leading-normal`}>
@@ -583,7 +583,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                 <View style={tw`space-y-2 bg-black/35 p-4 rounded-2xl border border-white/5`}>
                   <View style={tw`flex-row justify-between border-b border-white/5 pb-2`}>
                     <Text style={tw`text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono`}>Parameters Calculated</Text>
-                    <Text style={tw`text-[10px] font-bold text-[#14B8A6] uppercase tracking-widest font-mono`}>Confidence Metrics</Text>
+                    <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-widest font-mono`}>Confidence Metrics</Text>
                   </View>
                   
                   <View style={tw`flex-row justify-between py-1.5`}>
@@ -608,10 +608,10 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
               <View style={tw`bg-teal-500/10 border border-teal-500/20 p-5 rounded-3xl space-y-3`}>
                 <View style={tw`flex-row justify-between items-center`}>
                   <View style={tw`flex-row items-center space-x-2`}>
-                    <Sparkles size={16} color="#14B8A6" />
+                    <Sparkles size={16} color="#00E5FF" />
                     <Text style={tw`text-xs font-black text-teal-400 uppercase tracking-widest font-mono`}>Generate Diagnostic Plan</Text>
                   </View>
-                  <Zap size={14} color="#14B8A6" />
+                  <Zap size={14} color="#00E5FF" />
                 </View>
                 <Text style={tw`text-[11px] text-slate-300 leading-relaxed`}>
                   Run our server-side LLM Consulting Orthodontist module to generate problem lists, extractions vs camouflage, expected tissue movements, and risk guidelines automatically!
@@ -621,7 +621,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                   onPress={handleGenerateAIReport}
                   disabled={isGeneratingReport}
                   style={({ pressed }) => [
-                    tw`bg-[#14B8A6] py-3.5 px-4 rounded-xl items-center justify-center flex-row space-x-2 mt-2`,
+                    tw`bg-[#00E5FF] py-3.5 px-4 rounded-xl items-center justify-center flex-row space-x-2 mt-2`,
                     pressed ? tw`opacity-90` : null
                   ]}
                 >
@@ -682,7 +682,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
               
               {/* Skeletal Parameters Grid */}
               <View style={tw`space-y-3`}>
-                <Text style={tw`text-[10px] font-black text-[#14B8A6] uppercase tracking-widest font-mono`}>Skeletal Parameters</Text>
+                <Text style={tw`text-[10px] font-black text-[#00E5FF] uppercase tracking-widest font-mono`}>Skeletal Parameters</Text>
                 <View style={tw`grid gap-3 flex-row flex-wrap`}>
                   {[
                     { label: 'ANB Angle', val: measurements.anb, norm: '2°', status: measurements.anb > 4.5 || measurements.anb < 0 ? 'Severe Dev' : 'Normal' },
@@ -763,7 +763,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                 </ScrollView>
               ) : (
                 <View style={tw`flex-1 items-center justify-center p-6 space-y-4`}>
-                  <FileText size={42} color="#14B8A6" />
+                  <FileText size={42} color="#00E5FF" />
                   <View style={tw`space-y-1 items-center`}>
                     <Text style={tw`text-sm font-black text-white uppercase`}>Clinical AI Report Standby</Text>
                     <Text style={tw`text-xs text-slate-400 text-center max-w-[280px]`}>
@@ -811,7 +811,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
                     <View key={idx} style={tw`p-3 bg-black/35 rounded-2xl border border-white/5`}>
                       <View style={tw`flex-row justify-between items-center mb-1`}>
                         <Text style={tw`text-xs font-black text-white`}>{check.label}</Text>
-                        <Text style={tw`text-xs font-mono font-bold text-[#14B8A6]`}>{check.status}</Text>
+                        <Text style={tw`text-xs font-mono font-bold text-[#00E5FF]`}>{check.status}</Text>
                       </View>
                       <Text style={tw`text-[11px] text-slate-400 leading-normal`}>{check.details}</Text>
                     </View>
@@ -845,7 +845,7 @@ export default function CephAnalyzer({ patientDetails, onApplyAnalysis, onCancel
         <Pressable
           onPress={handleSyncData}
           style={({ pressed }) => [
-            tw`px-6 py-3.5 bg-[#14B8A6] rounded-2xl flex-row items-center justify-center shadow-lg shadow-teal-500/20 border border-teal-400/30`,
+            tw`px-6 py-3.5 bg-[#00E5FF] rounded-2xl flex-row items-center justify-center shadow-lg shadow-teal-500/20 border border-teal-400/30`,
             pressed ? tw`opacity-90 scale-98` : null
           ]}
         >

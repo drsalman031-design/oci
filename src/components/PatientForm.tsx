@@ -75,7 +75,7 @@ export default function PatientForm({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -84,8 +84,8 @@ export default function PatientForm({
         {/* Header */}
         <View style={tw`space-y-1.5`}>
           <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full self-start`}>
-            <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
-            <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
+            <Sparkles size={11} color="#00E5FF" style={tw`mr-1.5`} />
+            <Text style={tw`text-[#00E5FF] text-[9px] font-black uppercase tracking-wider`}>
               Step 1 of 3: Patient Intake
             </Text>
           </View>
@@ -98,12 +98,12 @@ export default function PatientForm({
         </View>
 
         {/* Form Card */}
-        <View style={tw`bg-[#16366A] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-5`}>
+        <View style={tw`bg-[#161A20] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-5`}>
           
           {/* Patient Name */}
           <View style={tw`space-y-1.5`}>
             <Text style={tw`text-xs font-bold text-[#D9E2F2]`}>Patient Name *</Text>
-            <View style={tw`flex-row items-center w-full h-12 bg-[#102B5C] rounded-xl border ${errors.name ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
+            <View style={tw`flex-row items-center w-full h-12 bg-[#161A20] rounded-xl border ${errors.name ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
               <User size={16} color="#A8B3C7" style={tw`mr-2`} />
               <TextInput
                 value={name}
@@ -119,7 +119,7 @@ export default function PatientForm({
           {/* Patient ID */}
           <View style={tw`space-y-1.5`}>
             <Text style={tw`text-xs font-bold text-[#D9E2F2]`}>Patient ID / Case Number *</Text>
-            <View style={tw`flex-row items-center w-full h-12 bg-[#102B5C] rounded-xl border ${errors.caseNumber ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
+            <View style={tw`flex-row items-center w-full h-12 bg-[#161A20] rounded-xl border ${errors.caseNumber ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} px-4`}>
               <FileText size={16} color="#A8B3C7" style={tw`mr-2`} />
               <TextInput
                 value={caseNumber}
@@ -143,7 +143,7 @@ export default function PatientForm({
                 keyboardType="numeric"
                 placeholder="e.g. 24"
                 placeholderTextColor="#A8B3C7"
-                style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border ${errors.age ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} text-white text-xs font-bold`}
+                style={tw`w-full h-12 px-4 bg-[#161A20] rounded-xl border ${errors.age ? 'border-red-500' : 'border-[rgba(255,255,255,0.08)]'} text-white text-xs font-bold`}
               />
               {errors.age && <Text style={tw`text-[10px] text-red-500 font-bold`}>{errors.age}</Text>}
             </View>
@@ -151,14 +151,14 @@ export default function PatientForm({
             {/* Gender */}
             <View style={tw`flex-1 space-y-1.5`}>
               <Text style={tw`text-xs font-bold text-[#D9E2F2]`}>Gender</Text>
-              <View style={tw`flex-row bg-[#102B5C] p-1 rounded-xl h-12 items-center`}>
+              <View style={tw`flex-row bg-[#161A20] p-1 rounded-xl h-12 items-center`}>
                 {['Male', 'Female'].map((g) => {
                   const isSelected = gender === g;
                   return (
                     <Pressable
                       key={g}
                       onPress={() => setGender(g as any)}
-                      style={tw`flex-1 h-10 rounded-lg items-center justify-center ${isSelected ? 'bg-[#10B7A8]' : 'bg-transparent'}`}
+                      style={tw`flex-1 h-10 rounded-lg items-center justify-center ${isSelected ? 'bg-[#00E5FF]' : 'bg-transparent'}`}
                     >
                       <Text style={tw`text-xs font-bold ${isSelected ? 'text-white' : 'text-[#A8B3C7]'}`}>
                         {g}
@@ -178,7 +178,7 @@ export default function PatientForm({
               onChangeText={setChiefComplaint}
               placeholder="e.g. Crowded lower anterior teeth, difficulty chewing"
               placeholderTextColor="#A8B3C7"
-              style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              style={tw`w-full h-12 px-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
             />
           </View>
 
@@ -192,7 +192,7 @@ export default function PatientForm({
               placeholderTextColor="#A8B3C7"
               multiline
               numberOfLines={3}
-              style={tw`w-full min-h-[80px] p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+              style={tw`w-full min-h-[80px] p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
             />
           </View>
 
@@ -203,7 +203,7 @@ export default function PatientForm({
           <Pressable
             onPress={onCancel}
             style={({ pressed }) => [
-              tw`flex-1 py-4 bg-[#102B5C] rounded-xl items-center justify-center`,
+              tw`flex-1 py-4 bg-[#161A20] rounded-xl items-center justify-center`,
               pressed ? tw`opacity-80` : null
             ]}
           >
@@ -212,7 +212,7 @@ export default function PatientForm({
           <Pressable
             onPress={handleSubmit}
             style={({ pressed }) => [
-              tw`flex-1 py-4 bg-[#10B7A8] rounded-xl items-center justify-center flex-row shadow-sm`,
+              tw`flex-1 py-4 bg-[#00E5FF] rounded-xl items-center justify-center flex-row shadow-sm`,
               pressed ? tw`opacity-90 scale-[0.99]` : null
             ]}
           >

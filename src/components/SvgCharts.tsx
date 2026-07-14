@@ -47,14 +47,14 @@ export default function SvgCharts({ categoryScores }: SvgChartsProps) {
 
   const getClinicalColor = (name: string) => {
     switch (name) {
-      case 'Skeletal Compensation': return '#F59E0B';
-      case 'Maxillary Dental Compensation': return '#14B8A6';
+      case 'Skeletal Compensation': return '#FFB300';
+      case 'Maxillary Dental Compensation': return '#00E5FF';
       case 'Mandibular Dental Compensation': return '#22D3EE';
       case 'Interincisal Relationship': return '#A855F7';
-      case 'Overjet/Overbite Compensation': return '#EF4444';
+      case 'Overjet/Overbite Compensation': return '#FF4D4D';
       case 'Soft Tissue Compensation': return '#EC4899';
-      case 'Overall Harmony/Compensation': return '#10B981';
-      default: return '#14B8A6';
+      case 'Overall Harmony/Compensation': return '#00FF88';
+      default: return '#00E5FF';
     }
   };
 
@@ -74,7 +74,7 @@ export default function SvgCharts({ categoryScores }: SvgChartsProps) {
           <Svg width="100%" height="100%" viewBox="0 0 300 300" style={tw`overflow-visible`}>
             <Defs>
               <RadialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset="0%" stopColor="#14B8A6" stopOpacity="0.35" />
+                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.35" />
                 <Stop offset="100%" stopColor="#22D3EE" stopOpacity="0.02" />
               </RadialGradient>
             </Defs>
@@ -111,7 +111,7 @@ export default function SvgCharts({ categoryScores }: SvgChartsProps) {
             <SvgPolygon
               points={scorePoints}
               fill="url(#radarGlow)"
-              stroke="#14B8A6"
+              stroke="#00E5FF"
               strokeWidth="2.5"
             />
 

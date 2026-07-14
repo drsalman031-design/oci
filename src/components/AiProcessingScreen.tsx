@@ -60,7 +60,7 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
   }, []);
 
   return (
-    <View style={[tw`flex-1 bg-[#071B49] items-center justify-center p-6`, StyleSheet.absoluteFill]}>
+    <View style={[tw`flex-1 bg-[#0A0C10] items-center justify-center p-6`, StyleSheet.absoluteFill]}>
       {/* Background glowing gradients */}
       <View style={tw`absolute w-96 h-96 rounded-full bg-teal-500/5 blur-3xl`} />
 
@@ -68,17 +68,17 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
         
         {/* Glowing Brain Core */}
         <Animated.View style={[
-          tw`w-28 h-28 bg-[#16366A] rounded-[32px] items-center justify-center border border-[rgba(255,255,255,0.08)] shadow-sm mb-2`,
+          tw`w-28 h-28 bg-[#161A20] rounded-[32px] items-center justify-center border border-[rgba(255,255,255,0.08)] shadow-sm mb-2`,
           { transform: [{ scale: pulseAnim }] }
         ]}>
-          <Brain size={44} color="#10B7A8" />
+          <Brain size={44} color="#00E5FF" />
         </Animated.View>
 
         {/* Title */}
         <View style={tw`items-center space-y-1.5`}>
           <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full`}>
-            <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
-            <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
+            <Sparkles size={11} color="#00E5FF" style={tw`mr-1.5`} />
+            <Text style={tw`text-[#00E5FF] text-[9px] font-black uppercase tracking-wider`}>
               OCI Autonomous Diagnostic Tracing
             </Text>
           </View>
@@ -91,14 +91,14 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
         </View>
 
         {/* Active Stage Tracker */}
-        <View style={tw`w-full bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-3xl p-5 space-y-3 shadow-sm`}>
+        <View style={tw`w-full bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-3xl p-5 space-y-3 shadow-sm`}>
           <View style={tw`flex-row justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3`}>
             <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>
               Tracing Pipeline
             </Text>
             <View style={tw`flex-row items-center space-x-1.5`}>
-              <ActivityIndicator size="small" color="#10B7A8" />
-              <Text style={tw`text-[10px] font-bold text-[#10B7A8] font-mono`}>
+              <ActivityIndicator size="small" color="#00E5FF" />
+              <Text style={tw`text-[10px] font-bold text-[#00E5FF] font-mono`}>
                 {Math.round(((currentStageIdx + 1) / STAGES.length) * 100)}%
               </Text>
             </View>
@@ -114,9 +114,9 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
                 return (
                   <View key={idx} style={tw`flex-row items-start space-x-2.5 py-0.5`}>
                     {isCompleted ? (
-                      <CheckCircle size={13} color="#10B7A8" style={tw`mt-0.5`} />
+                      <CheckCircle size={13} color="#00E5FF" style={tw`mt-0.5`} />
                     ) : isActive ? (
-                      <ActivityIndicator size="small" color="#10B7A8" style={tw`w-3 h-3 mt-0.5`} />
+                      <ActivityIndicator size="small" color="#00E5FF" style={tw`w-3 h-3 mt-0.5`} />
                     ) : (
                       <View style={tw`w-3.5 h-3.5 rounded-full border border-[rgba(255,255,255,0.08)] mt-0.5`} />
                     )}
@@ -131,8 +131,8 @@ export default function AiProcessingScreen({ patientName, onComplete }: AiProces
         </View>
 
         {/* Practitioner Shield */}
-        <View style={tw`flex-row items-center bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-2xl`}>
-          <ShieldCheck size={12} color="#10B7A8" style={tw`mr-1.5`} />
+        <View style={tw`flex-row items-center bg-[#161A20] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-2xl`}>
+          <ShieldCheck size={12} color="#00E5FF" style={tw`mr-1.5`} />
           <Text style={tw`text-[9px] text-[#D9E2F2] font-mono uppercase tracking-widest`}>
             Autonomous HIPAA-Secure Tracing Layer
           </Text>

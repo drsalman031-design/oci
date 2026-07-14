@@ -73,10 +73,10 @@ export default function ResultsDashboard({
   };
 
   const getScoreColor = (score: number) => {
-    if (score <= 20) return '#10B981'; // Green
-    if (score <= 40) return '#10B7A8'; // Teal
-    if (score <= 60) return '#F59E0B'; // Orange
-    return '#EF4444'; // Red
+    if (score <= 20) return '#00FF88'; // Green
+    if (score <= 40) return '#00E5FF'; // Teal
+    if (score <= 60) return '#FFB300'; // Orange
+    return '#FF4D4D'; // Red
   };
 
   const getComplexityLabel = (score: number) => {
@@ -153,7 +153,7 @@ export default function ResultsDashboard({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
@@ -163,7 +163,7 @@ export default function ResultsDashboard({
         <View style={tw`flex-row justify-between items-center`}>
           <Pressable 
             onPress={onBack}
-            style={tw`flex-row items-center bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-4 py-2 rounded-xl shadow-sm`}
+            style={tw`flex-row items-center bg-[#161A20] border border-[rgba(255,255,255,0.08)] px-4 py-2 rounded-xl shadow-sm`}
           >
             <ChevronLeft size={14} color="#D9E2F2" style={tw`mr-1`} />
             <Text style={tw`text-[#D9E2F2] font-bold text-xs uppercase tracking-wider`}>Dashboard</Text>
@@ -171,7 +171,7 @@ export default function ResultsDashboard({
 
           <Pressable 
             onPress={() => onOpenPdf(clinicalSummaryText)}
-            style={tw`flex-row items-center bg-[#10B7A8] px-4 py-2.5 rounded-xl shadow-sm`}
+            style={tw`flex-row items-center bg-[#00E5FF] px-4 py-2.5 rounded-xl shadow-sm`}
           >
             <FileText size={14} color="#FFF" style={tw`mr-1.5`} />
             <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
@@ -181,7 +181,7 @@ export default function ResultsDashboard({
         {/* CLINICAL VALIDATION / WARNING BOX */}
         {isLowConfidence && (
           <View style={tw`bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex-row items-start space-x-3`}>
-            <AlertTriangle size={18} color="#F59E0B" style={tw`mt-0.5`} />
+            <AlertTriangle size={18} color="#FFB300" style={tw`mt-0.5`} />
             <View style={tw`flex-1`}>
               <Text style={tw`text-xs font-black text-amber-300 uppercase tracking-wide`}>Clinician Validation Required</Text>
               <Text style={tw`text-[10px] text-[#D9E2F2] mt-1 leading-normal`}>
@@ -194,10 +194,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             1. PATIENT SUMMARY SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('summary')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>1. Patient Summary</Text>
-            {expandedSections.summary ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.summary ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.summary && (
             <View style={tw`p-5 space-y-3.5`}>
@@ -228,10 +228,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             2. CHIEF COMPLAINT SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('complaint')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>2. Chief Complaint</Text>
-            {expandedSections.complaint ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.complaint ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.complaint && (
             <View style={tw`p-5`}>
@@ -245,10 +245,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             3. CLINICAL FINDINGS SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('findings')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings</Text>
-            {expandedSections.findings ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.findings ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.findings && (
             <View style={tw`p-5 space-y-4`}>
@@ -275,21 +275,21 @@ export default function ResultsDashboard({
         {/* ==========================================
             4. FACIAL ANALYSIS SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('facial')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis</Text>
-            {expandedSections.facial ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.facial ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.facial && (
             <View style={tw`p-5 space-y-3.5`}>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Facial Profile & Aesthetics</Text>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Facial Profile & Aesthetics</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
                   The patient displays a **convex facial profile** with a retrognathic mandible posture. Nasolabial angle is within normal limits (102°). Mentolabial sulcus is moderately deep.
                 </Text>
               </View>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Lips & Asymmetry</Text>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Lips & Asymmetry</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
                   Lips are **incompetent at rest**, requiring mild circumoral muscle strain to achieve seal. Facial midline corresponds to skeletal midline; no structural asymmetry observed.
                 </Text>
@@ -301,20 +301,20 @@ export default function ResultsDashboard({
         {/* ==========================================
             5. DENTAL ANALYSIS SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('dental')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis</Text>
-            {expandedSections.dental ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.dental ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.dental && (
             <View style={tw`p-5 space-y-3.5`}>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
                 <Text style={tw`text-[10px] font-bold text-teal-400 uppercase tracking-wider`}>Arch crowding & Spacing</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
                   Maxillary arch shows **4mm of crowding** clustered primarily in the anterior canine region. Mandibular arch shows **3mm of crowding** with moderate incisor rotation.
                 </Text>
               </View>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)] space-y-2`}>
                 <Text style={tw`text-[10px] font-bold text-teal-400 uppercase tracking-wider`}>Midlines & Arch Form</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-relaxed`}>
                   Dental midline deviates 1mm to the right in the maxillary arch. Curve of Spee is moderately increased in the lower arch (1.5mm). Maxillary arch is symmetric.
@@ -327,10 +327,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             6. COMPENSATION ANALYSIS SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('compensation')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Compensation Analysis</Text>
-            {expandedSections.compensation ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.compensation ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.compensation && (
             <View style={tw`p-5 space-y-4`}>
@@ -356,10 +356,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             7. OCI SCORE & GRAPHICAL WIDGETS
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('score')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>7. OCI Score & Graphs</Text>
-            {expandedSections.score ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.score ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.score && (
             <View style={tw`p-5 space-y-6 items-center`}>
@@ -371,7 +371,7 @@ export default function ResultsDashboard({
                     cx="50"
                     cy="50"
                     r="40"
-                    stroke="#102B5C"
+                    stroke="#161A20"
                     strokeWidth="8"
                     fill="none"
                   />
@@ -401,23 +401,23 @@ export default function ResultsDashboard({
                 <View style={tw`flex-row justify-around items-center`}>
                   <Svg width="90" height="90" viewBox="0 0 42 42">
                     {/* Sector 1: Skeletal (40% - 0 to 144 deg) */}
-                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#EF4444" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="25" />
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#FF4D4D" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="25" />
                     {/* Sector 2: Dental (40% - 144 to 288 deg) */}
-                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#10B7A8" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="85" />
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#00E5FF" strokeWidth="6" strokeDasharray="40 60" strokeDashoffset="85" />
                     {/* Sector 3: Soft Tissue (20% - 288 to 360 deg) */}
-                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#F59E0B" strokeWidth="6" strokeDasharray="20 80" strokeDashoffset="45" />
+                    <Circle cx="21" cy="21" r="15.915" fill="none" stroke="#FFB300" strokeWidth="6" strokeDasharray="20 80" strokeDashoffset="45" />
                   </Svg>
                   <View style={tw`space-y-1.5`}>
                     <View style={tw`flex-row items-center space-x-2`}>
-                      <View style={tw`w-2 h-2 rounded-full bg-[#EF4444]`} />
+                      <View style={tw`w-2 h-2 rounded-full bg-[#FF4D4D]`} />
                       <Text style={tw`text-[10px] text-white font-bold`}>Skeletal Discrepancy (40%)</Text>
                     </View>
                     <View style={tw`flex-row items-center space-x-2`}>
-                      <View style={tw`w-2 h-2 rounded-full bg-[#10B7A8]`} />
+                      <View style={tw`w-2 h-2 rounded-full bg-[#00E5FF]`} />
                       <Text style={tw`text-[10px] text-white font-bold`}>Dental Camouflage (40%)</Text>
                     </View>
                     <View style={tw`flex-row items-center space-x-2`}>
-                      <View style={tw`w-2 h-2 rounded-full bg-[#F59E0B]`} />
+                      <View style={tw`w-2 h-2 rounded-full bg-[#FFB300]`} />
                       <Text style={tw`text-[10px] text-white font-bold`}>Soft Tissue Tension (20%)</Text>
                     </View>
                   </View>
@@ -445,7 +445,7 @@ export default function ResultsDashboard({
                     {/* Normal limits polygon */}
                     <Polygon points={normPoints} fill="rgba(16, 183, 168, 0.08)" stroke="rgba(16, 183, 168, 0.4)" strokeWidth="1.5" strokeDasharray="3 3" />
                     {/* Patient polygon */}
-                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444" strokeWidth="2" />
+                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#FF4D4D" strokeWidth="2" />
 
                     {/* Labels */}
                     <SvgText x="80" y="12" fill="#D9E2F2" fontSize="8" fontWeight="bold" textAnchor="middle">SNA</SvgText>
@@ -456,11 +456,11 @@ export default function ResultsDashboard({
                   </Svg>
                   <View style={tw`space-y-1.5`}>
                     <View style={tw`flex-row items-center space-x-2`}>
-                      <View style={tw`w-2 h-2 rounded-full bg-[#EF4444]`} />
+                      <View style={tw`w-2 h-2 rounded-full bg-[#FF4D4D]`} />
                       <Text style={tw`text-[10px] text-white font-bold`}>Patient Tracing</Text>
                     </View>
                     <View style={tw`flex-row items-center space-x-2`}>
-                      <View style={tw`w-2.5 h-1 border-t border-dashed border-[#10B7A8]`} />
+                      <View style={tw`w-2.5 h-1 border-t border-dashed border-[#00E5FF]`} />
                       <Text style={tw`text-[10px] text-white font-bold`}>Normative Target</Text>
                     </View>
                   </View>
@@ -471,17 +471,17 @@ export default function ResultsDashboard({
               <View style={tw`w-full border-t border-[rgba(255,255,255,0.05)] pt-4 space-y-3`}>
                 <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>Module Severity Indexes</Text>
                 {[
-                  { label: 'Skeletal Mismatch', val: 58, col: '#F59E0B' },
-                  { label: 'Dentoalveolar Tipping', val: 78, col: '#EF4444' },
-                  { label: 'Lip Incompetence', val: 32, col: '#10B7A8' },
-                  { label: 'Arch Crowding', val: 45, col: '#F59E0B' }
+                  { label: 'Skeletal Mismatch', val: 58, col: '#FFB300' },
+                  { label: 'Dentoalveolar Tipping', val: 78, col: '#FF4D4D' },
+                  { label: 'Lip Incompetence', val: 32, col: '#00E5FF' },
+                  { label: 'Arch Crowding', val: 45, col: '#FFB300' }
                 ].map((item, idx) => (
                   <View key={idx} style={tw`space-y-1`}>
                     <View style={tw`flex-row justify-between`}>
                       <Text style={tw`text-[9px] font-bold text-[#D9E2F2]`}>{item.label}</Text>
                       <Text style={tw`text-[9px] font-black text-white font-mono`}>{item.val}%</Text>
                     </View>
-                    <View style={tw`w-full h-2 bg-[#102B5C] rounded-full overflow-hidden`}>
+                    <View style={tw`w-full h-2 bg-[#161A20] rounded-full overflow-hidden`}>
                       <View style={[tw`h-full rounded-full`, { width: `${item.val}%`, backgroundColor: item.col }]} />
                     </View>
                   </View>
@@ -495,10 +495,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             8. AI ASSISTED DIAGNOSIS
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('diagnosis')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale</Text>
-            {expandedSections.diagnosis ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.diagnosis ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.diagnosis && (
             <View style={tw`p-5 space-y-4`}>
@@ -533,24 +533,24 @@ export default function ResultsDashboard({
         {/* ==========================================
             9. EVIDENCE-BASED TREATMENT PLAN
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('treatment')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan</Text>
-            {expandedSections.treatment ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.treatment ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.treatment && (
             <View style={tw`p-5 space-y-6`}>
               
               {/* Interactive Modifiers */}
-              <View style={tw`p-4 bg-[#102B5C] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-4`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Interactive Plan Modifiers</Text>
+              <View style={tw`p-4 bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-4`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Interactive Plan Modifiers</Text>
                 
                 {/* Age Group */}
                 <View style={tw`space-y-1`}>
                   <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase`}>Age Category</Text>
-                  <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+                  <View style={tw`flex-row bg-[#0A0C10] p-1 rounded-xl`}>
                     {['growing', 'adult'].map(g => (
-                      <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${ageGroup === g ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                      <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${ageGroup === g ? 'bg-[#00E5FF]' : 'bg-transparent'}`}>
                         <Text style={tw`text-[10px] font-bold text-white capitalize`}>{g}</Text>
                       </Pressable>
                     ))}
@@ -560,9 +560,9 @@ export default function ResultsDashboard({
                 {/* Crowding */}
                 <View style={tw`space-y-1`}>
                   <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase`}>Crowding Severity</Text>
-                  <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+                  <View style={tw`flex-row bg-[#0A0C10] p-1 rounded-xl`}>
                     {['none', 'mild', 'moderate', 'severe'].map(s => (
-                      <Pressable key={s} onPress={() => setCrowdingSeverity(s as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${crowdingSeverity === s ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                      <Pressable key={s} onPress={() => setCrowdingSeverity(s as any)} style={tw`flex-1 py-1.5 rounded-lg items-center ${crowdingSeverity === s ? 'bg-[#00E5FF]' : 'bg-transparent'}`}>
                         <Text style={tw`text-[9px] font-bold text-white capitalize`}>{s}</Text>
                       </Pressable>
                     ))}
@@ -573,8 +573,8 @@ export default function ResultsDashboard({
               {/* Dynamic OrthoKnowledgeBase Suggested Mechanics */}
               <View style={tw`space-y-3.5`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
-                  <Sparkles size={14} color="#10B7A8" />
-                  <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Expert System CDSS Mechanics</Text>
+                  <Sparkles size={14} color="#00E5FF" />
+                  <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Expert System CDSS Mechanics</Text>
                 </View>
 
                 <View style={tw`space-y-3`}>
@@ -617,12 +617,12 @@ export default function ResultsDashboard({
                     ].map((t, idx) => (
                       <React.Fragment key={idx}>
                         <View style={tw`items-center`}>
-                          <View style={tw`w-6 h-6 rounded-full bg-[#10B7A8] items-center justify-center`}>
+                          <View style={tw`w-6 h-6 rounded-full bg-[#00E5FF] items-center justify-center`}>
                             <Text style={tw`text-white text-[9px] font-black`}>{t.step}</Text>
                           </View>
                           <Text style={tw`text-[8px] text-[#D9E2F2] font-bold mt-1`}>{t.title}</Text>
                         </View>
-                        {idx < 3 && <View style={tw`flex-1 h-0.5 bg-[#102B5C]`} />}
+                        {idx < 3 && <View style={tw`flex-1 h-0.5 bg-[#161A20]`} />}
                       </React.Fragment>
                     ))}
                   </View>
@@ -636,21 +636,21 @@ export default function ResultsDashboard({
         {/* ==========================================
             10. RETENTION PROTOCOL SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('retention')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>10. Retention Protocol</Text>
-            {expandedSections.retention ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.retention ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.retention && (
             <View style={tw`p-5 space-y-3`}>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Dual Retention Strategy</Text>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Dual Retention Strategy</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>
                   Maxillary Vacuum-Formed Retainer (ESSIX) for full-time wear (22h/day) for 6 months, followed by nighttime-only wear.
                 </Text>
               </View>
-              <View style={tw`p-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase tracking-wider`}>Fixed Lingual Retention</Text>
+              <View style={tw`p-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.05)]`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Fixed Lingual Retention</Text>
                 <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>
                   Mandibular fixed bonded 3-3 lingual wire (0.016-inch multi-strand stainless steel) to prevent rotational relapse.
                 </Text>
@@ -662,10 +662,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             11. RISK ANALYSIS SECTION & SPEEDO METER
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('risk')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>11. Risk Analysis & Meter</Text>
-            {expandedSections.risk ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.risk ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.risk && (
             <View style={tw`p-5 space-y-5 items-center`}>
@@ -677,7 +677,7 @@ export default function ResultsDashboard({
                   <Path
                     d="M 10 50 A 40 40 0 0 1 90 50"
                     fill="none"
-                    stroke="#102B5C"
+                    stroke="#161A20"
                     strokeWidth="8"
                     strokeLinecap="round"
                   />
@@ -733,10 +733,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             12. CLINICAL NOTES SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('clinicalNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>12. Clinical Notes</Text>
-            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.clinicalNotes && (
             <View style={tw`p-5`}>
@@ -750,10 +750,10 @@ export default function ResultsDashboard({
         {/* ==========================================
             13. DOCTOR NOTES & SIGN-OFF SECTION
             ========================================== */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('doctorNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>13. Clinician Sign-Off</Text>
-            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.doctorNotes && (
             <View style={tw`p-5 space-y-4`}>
@@ -763,11 +763,11 @@ export default function ResultsDashboard({
                 onChangeText={setDoctorOverrideText}
                 placeholder="Dr. Salman MDS Orthodontist"
                 placeholderTextColor="#A8B3C7"
-                style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+                style={tw`w-full h-12 px-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
               />
               <Pressable
                 onPress={() => onSaveAssessment(doctorOverrideText || 'Completed')}
-                style={tw`w-full bg-[#10B7A8] py-3.5 rounded-xl items-center justify-center`}
+                style={tw`w-full bg-[#00E5FF] py-3.5 rounded-xl items-center justify-center`}
               >
                 <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Save Complete Assessment</Text>
               </Pressable>
@@ -779,7 +779,7 @@ export default function ResultsDashboard({
         <Pressable
           onPress={onBack}
           style={({ pressed }) => [
-            tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] py-4 rounded-2xl items-center justify-center shadow-sm`,
+            tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] py-4 rounded-2xl items-center justify-center shadow-sm`,
             pressed ? tw`opacity-80` : null
           ]}
         >

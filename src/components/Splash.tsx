@@ -65,15 +65,15 @@ export default function Splash({ onFinish }: SplashProps) {
           ]} />
           
           <View style={tw`w-24 h-24 bg-teal-500/5 rounded-[32px] items-center justify-center border border-teal-500/10 shadow-sm`}>
-            <Brain size={44} color="#14B8A6" />
+            <Brain size={44} color="#00E5FF" />
           </View>
         </View>
   
         {/* Title */}
         <View style={tw`items-center mb-6`}>
           <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-4 py-1.5 rounded-full mb-3`}>
-            <Sparkles size={11} color="#0D9488" style={tw`mr-2`} />
-            <Text style={tw`text-[#0D9488] text-[9px] font-black uppercase tracking-widest font-mono`}>
+            <Sparkles size={11} color="#00B8CC" style={tw`mr-2`} />
+            <Text style={tw`text-[#00B8CC] text-[9px] font-black uppercase tracking-widest font-mono`}>
               AI Orthodontic Decision Support
             </Text>
           </View>
@@ -95,7 +95,7 @@ export default function Splash({ onFinish }: SplashProps) {
         {/* Loader */}
         <View style={tw`items-center mb-8`}>
           <View style={tw`flex-row items-center justify-center bg-slate-50 border border-slate-100 rounded-full px-4 py-2`}>
-            <ActivityIndicator size="small" color="#14B8A6" style={tw`mr-2.5`} />
+            <ActivityIndicator size="small" color="#00E5FF" style={tw`mr-2.5`} />
             <Text style={tw`text-[10px] text-slate-600 font-mono font-bold uppercase tracking-wider`}>
               Initializing OCI Core Engine...
             </Text>
@@ -105,7 +105,7 @@ export default function Splash({ onFinish }: SplashProps) {
         {/* Practitioner Info */}
         <View style={tw`mt-4 items-center`}>
           <View style={tw`flex-row items-center bg-slate-50 border border-slate-100 px-3.5 py-1.5 rounded-2xl`}>
-            <ShieldCheck size={12} color="#14B8A6" style={tw`mr-1.5`} />
+            <ShieldCheck size={12} color="#00E5FF" style={tw`mr-1.5`} />
             <Text style={tw`text-[9px] text-slate-500 font-mono uppercase tracking-widest`}>
               Director: Dr. Salman MDS Orthodontist
             </Text>

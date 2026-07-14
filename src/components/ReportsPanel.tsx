@@ -56,10 +56,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
   if (savedAssessments.length === 0) {
     return (
-      <ScrollView contentContainerStyle={tw`pb-28 px-6 bg-[#071B49]`} style={tw`flex-1`}>
-        <View style={tw`bg-[#16366A] p-8 rounded-[32px] border border-[rgba(255,255,255,0.08)] shadow-2xl mt-8 items-center space-y-4`}>
+      <ScrollView contentContainerStyle={tw`pb-28 px-6 bg-[#0A0C10]`} style={tw`flex-1`}>
+        <View style={tw`bg-[#161A20] p-8 rounded-[32px] border border-[rgba(255,255,255,0.08)] shadow-2xl mt-8 items-center space-y-4`}>
           <View style={tw`w-14 h-14 bg-teal-500/10 rounded-full items-center justify-center border border-teal-500/20`}>
-            <FileText size={28} color="#10B7A8" />
+            <FileText size={28} color="#00E5FF" />
           </View>
           <Text style={tw`text-lg font-black text-white`}>Reports Archive</Text>
           <Text style={tw`text-[#D9E2F2] text-xs text-center leading-normal max-w-xs`}>
@@ -113,10 +113,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
   };
 
   const getScoreColor = (score: number) => {
-    if (score <= 20) return '#10B981'; 
-    if (score <= 40) return '#10B7A8'; 
-    if (score <= 60) return '#F59E0B'; 
-    return '#EF4444'; 
+    if (score <= 20) return '#00FF88'; 
+    if (score <= 40) return '#00E5FF'; 
+    if (score <= 60) return '#FFB300'; 
+    return '#FF4D4D'; 
   };
 
   const getComplexityLabel = (score: number) => {
@@ -187,29 +187,29 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-32 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
       <View style={tw`space-y-6 mt-6 max-w-2xl mx-auto w-full`}>
         
         {/* Dropdown Selector */}
-        <View style={tw`bg-[#16366A] p-4 rounded-[24px] border border-[rgba(255,255,255,0.08)]`}>
+        <View style={tw`bg-[#161A20] p-4 rounded-[24px] border border-[rgba(255,255,255,0.08)]`}>
           <Pressable 
             onPress={() => setShowDropdown(!showDropdown)}
-            style={tw`flex-row justify-between items-center bg-[#102B5C] px-4 py-3 rounded-xl border border-[rgba(255,255,255,0.08)]`}
+            style={tw`flex-row justify-between items-center bg-[#161A20] px-4 py-3 rounded-xl border border-[rgba(255,255,255,0.08)]`}
           >
             <View style={tw`flex-row items-center space-x-2.5`}>
-              <User size={15} color="#10B7A8" />
+              <User size={15} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white`}>
                 {patientDetails.name} ({patientDetails.caseNumber || 'No ID'})
               </Text>
             </View>
-            <ChevronDown size={16} color="#10B7A8" />
+            <ChevronDown size={16} color="#00E5FF" />
           </Pressable>
 
           {showDropdown && (
-            <View style={tw`mt-2 bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden`}>
+            <View style={tw`mt-2 bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden`}>
               {savedAssessments.map(item => (
                 <Pressable
                   key={item.id}
@@ -229,7 +229,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         {/* Validation Box */}
         {isLowConfidence && (
           <View style={tw`bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex-row items-start space-x-3`}>
-            <AlertTriangle size={18} color="#F59E0B" />
+            <AlertTriangle size={18} color="#FFB300" />
             <View style={tw`flex-1`}>
               <Text style={tw`text-xs font-black text-amber-300 uppercase`}>Clinician Validation Required</Text>
               <Text style={tw`text-[10px] text-[#D9E2F2] mt-1 leading-normal`}>
@@ -241,10 +241,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
 
         {/* Accordions */}
         {/* 1. Patient Summary */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('summary')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>1. Patient Summary</Text>
-            {expandedSections.summary ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.summary ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.summary && (
             <View style={tw`p-5 space-y-3.5`}>
@@ -263,10 +263,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 2. Chief Complaint */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('complaint')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>2. Chief Complaint</Text>
-            {expandedSections.complaint ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.complaint ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.complaint && (
             <View style={tw`p-5`}>
@@ -278,10 +278,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 3. Clinical Findings */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('findings')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>3. Clinical Findings</Text>
-            {expandedSections.findings ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.findings ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.findings && (
             <View style={tw`p-5 space-y-4`}>
@@ -298,10 +298,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 4. Facial Analysis */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('facial')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>4. Facial Analysis</Text>
-            {expandedSections.facial ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.facial ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.facial && (
             <View style={tw`p-5 space-y-3.5`}>
@@ -313,10 +313,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 5. Dental Analysis */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('dental')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. Dental Analysis</Text>
-            {expandedSections.dental ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.dental ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.dental && (
             <View style={tw`p-5 space-y-3.5`}>
@@ -328,10 +328,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 6. Compensation Analysis */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('compensation')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>6. Compensation Analysis</Text>
-            {expandedSections.compensation ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.compensation ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.compensation && (
             <View style={tw`p-5 space-y-3`}>
@@ -348,10 +348,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 7. OCI Score Graphs */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('score')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>7. OCI Score & Graphs</Text>
-            {expandedSections.score ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.score ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.score && (
             <View style={tw`p-5 space-y-6 items-center`}>
@@ -359,7 +359,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
               {/* OCI Score Ring */}
               <View style={tw`relative w-36 h-36 items-center justify-center`}>
                 <Svg width="140" height="140" viewBox="0 0 100 100">
-                  <Circle cx="50" cy="50" r="40" stroke="#102B5C" strokeWidth="8" fill="none" />
+                  <Circle cx="50" cy="50" r="40" stroke="#161A20" strokeWidth="8" fill="none" />
                   <Circle
                     cx="50"
                     cy="50"
@@ -386,7 +386,7 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
                     <Circle cx="80" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                     <Circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
                     <Polygon points={normPoints} fill="rgba(16, 183, 168, 0.08)" stroke="rgba(16, 183, 168, 0.4)" strokeWidth="1.5" strokeDasharray="3 3" />
-                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444" strokeWidth="2" />
+                    <Polygon points={patientPoints} fill="rgba(239, 68, 68, 0.2)" stroke="#FF4D4D" strokeWidth="2" />
                   </Svg>
                 </View>
               </View>
@@ -395,10 +395,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 8. AI Diagnosis */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('diagnosis')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>8. AI Diagnosis Rationale</Text>
-            {expandedSections.diagnosis ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.diagnosis ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.diagnosis && (
             <View style={tw`p-5 space-y-3`}>
@@ -415,18 +415,18 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 9. Evidence-Based Treatment Plan */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('treatment')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>9. Evidence-Based Treatment Plan</Text>
-            {expandedSections.treatment ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.treatment ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.treatment && (
             <View style={tw`p-5 space-y-6`}>
-              <View style={tw`p-4 bg-[#102B5C] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-3`}>
-                <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase`}>Plan Modifiers</Text>
-                <View style={tw`flex-row bg-[#071B49] p-1 rounded-xl`}>
+              <View style={tw`p-4 bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.05)] space-y-3`}>
+                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Plan Modifiers</Text>
+                <View style={tw`flex-row bg-[#0A0C10] p-1 rounded-xl`}>
                   {['growing', 'adult'].map(g => (
-                    <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1 rounded-lg items-center ${ageGroup === g ? 'bg-[#10B7A8]' : 'bg-transparent'}`}>
+                    <Pressable key={g} onPress={() => setAgeGroup(g as any)} style={tw`flex-1 py-1 rounded-lg items-center ${ageGroup === g ? 'bg-[#00E5FF]' : 'bg-transparent'}`}>
                       <Text style={tw`text-[10px] font-bold text-white capitalize`}>{g}</Text>
                     </Pressable>
                   ))}
@@ -441,10 +441,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 10. Retention Protocol */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('retention')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>10. Retention Protocol</Text>
-            {expandedSections.retention ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.retention ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.retention && (
             <View style={tw`p-5`}>
@@ -456,10 +456,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 11. Risk Analysis */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('risk')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>11. Risk Analysis & Meter</Text>
-            {expandedSections.risk ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.risk ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.risk && (
             <View style={tw`p-5`}>
@@ -471,10 +471,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 12. Clinical Notes */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('clinicalNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>12. Clinical Notes</Text>
-            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.clinicalNotes ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.clinicalNotes && (
             <View style={tw`p-5`}>
@@ -486,10 +486,10 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
         </View>
 
         {/* 13. Clinician Sign-Off */}
-        <View style={tw`bg-[#16366A] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
+        <View style={tw`bg-[#161A20] rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden`}>
           <Pressable onPress={() => toggleSection('doctorNotes')} style={tw`p-4 flex-row justify-between items-center bg-black/10`}>
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>13. Clinician Sign-Off</Text>
-            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#10B7A8" /> : <ChevronDown size={16} color="#A8B3C7" />}
+            {expandedSections.doctorNotes ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
           {expandedSections.doctorNotes && (
             <View style={tw`p-5 space-y-4`}>
@@ -499,11 +499,11 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
                 onChangeText={setDoctorOverrideText}
                 placeholder="Dr. Salman MDS Orthodontist"
                 placeholderTextColor="#A8B3C7"
-                style={tw`w-full h-12 px-4 bg-[#102B5C] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
+                style={tw`w-full h-12 px-4 bg-[#161A20] rounded-xl border border-[rgba(255,255,255,0.08)] text-white text-xs font-bold`}
               />
               <Pressable
                 onPress={() => onOpenPdf(selectedAssessment)}
-                style={tw`w-full bg-[#10B7A8] py-3.5 rounded-xl items-center justify-center`}
+                style={tw`w-full bg-[#00E5FF] py-3.5 rounded-xl items-center justify-center`}
               >
                 <Text style={tw`text-white font-black text-xs uppercase tracking-wider`}>Export PDF Report</Text>
               </Pressable>

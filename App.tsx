@@ -131,7 +131,7 @@ export default function App() {
       const style = document.createElement('style');
       style.textContent = `
         body {
-          background-color: #071B49 !important;
+          background-color: #0A0C10 !important;
           margin: 0;
           padding: 0;
         }
@@ -848,11 +848,11 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-[#071B49] justify-center items-center`}>
-      <StatusBar barStyle="light-content" backgroundColor="#071B49" />
+    <SafeAreaView style={tw`flex-1 bg-[#0A0C10] justify-center items-center`}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0C10" />
 
       {/* Main mobile viewport container */}
-      <View style={[tw`w-full max-w-[480px] bg-[#071B49] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
+      <View style={[tw`w-full max-w-[480px] bg-[#0A0C10] border-x border-white/10 shadow-2xl relative overflow-hidden`, { height: '100%', flex: 1 }]}>
         
         {/* 1. Splash Screen Overlay */}
         {screen === 'splash' && (
@@ -861,7 +861,7 @@ export default function App() {
 
         {/* 2. Top Navigation Bar (Hidden during Splash or if Not Authenticated) */}
         {screen !== 'splash' && userEmail && (
-          <View style={tw`bg-[#071B49] border-b border-[rgba(255,255,255,0.08)] px-4 py-3 flex-row items-center justify-between`}>
+          <View style={tw`bg-[#0A0C10] border-b border-[rgba(255,255,255,0.08)] px-4 py-3 flex-row items-center justify-between`}>
             <Pressable onPress={() => setScreen('home')} style={tw`flex-row items-center space-x-2`}>
               <View>
                 <Text style={tw`font-extrabold text-xs text-white tracking-wide`}>
@@ -1009,7 +1009,7 @@ export default function App() {
 
               {screen === 'about' && (
                 <ScrollView contentContainerStyle={tw`p-5 pb-24 max-w-4xl w-full mx-auto`}>
-                  <View style={tw`bg-[#102B5C] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] shadow-sm space-y-4`}>
+                  <View style={tw`bg-[#161A20] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] shadow-sm space-y-4`}>
                     <Text style={tw`text-lg font-black text-white`}>
                       Orthodontic Compensation Index (OCI) Guidelines
                     </Text>
@@ -1051,7 +1051,7 @@ export default function App() {
                         <Text style={tw`text-xs font-extrabold text-white`}>Dr. Salman MDS Orthodontist</Text>
                       </View>
                       <View style={tw`px-2.5 py-1.5 bg-teal-500/10 rounded-xl`}>
-                        <Text style={tw`text-[9px] font-black text-[#10B7A8] uppercase`}>Research Edition</Text>
+                        <Text style={tw`text-[9px] font-black text-[#00E5FF] uppercase`}>Research Edition</Text>
                       </View>
                     </View>
                   </View>
@@ -1084,7 +1084,7 @@ export default function App() {
         {/* 5. Floating Bottom Navigation for Mobile Devices */}
         {screen !== 'splash' && userEmail && (
           <View style={[
-            tw`absolute bottom-4 left-4 right-4 bg-[#071B49] rounded-3xl flex-row justify-around items-center px-2`,
+            tw`absolute bottom-4 left-4 right-4 bg-[#0A0C10] rounded-3xl flex-row justify-around items-center px-2`,
             { 
               height: 76,
               shadowColor: '#000',
@@ -1120,17 +1120,17 @@ export default function App() {
                   <View style={tw`items-center justify-center`}>
                     <item.icon 
                       size={20} 
-                      color={isActive ? '#10B7A8' : '#A8B3C7'} 
+                      color={isActive ? '#00E5FF' : '#A8B3C7'} 
                       style={tw`mb-1`}
                     />
                     <Text style={[
                       tw`text-[9px] uppercase tracking-wider font-mono`,
-                      isActive ? tw`text-[#10B7A8] font-extrabold` : tw`text-[#A8B3C7] font-bold`
+                      isActive ? tw`text-[#00E5FF] font-extrabold` : tw`text-[#A8B3C7] font-bold`
                     ]}>
                       {item.label}
                     </Text>
                     {isActive && (
-                      <View style={tw`w-1.5 h-1.5 rounded-full bg-[#10B7A8] mt-1 shadow-md`} />
+                      <View style={tw`w-1.5 h-1.5 rounded-full bg-[#00E5FF] mt-1 shadow-md`} />
                     )}
                   </View>
                 </Pressable>

@@ -50,7 +50,7 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
@@ -59,25 +59,25 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
         {/* Header */}
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`flex-row items-center space-x-2`}>
-            <SettingsIcon size={20} color="#10B7A8" />
+            <SettingsIcon size={20} color="#00E5FF" />
             <Text style={tw`text-2xl font-black text-white tracking-tight`}>Settings</Text>
           </View>
           <Pressable 
             onPress={onClose}
-            style={tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-4 py-2 rounded-xl shadow-sm`}
+            style={tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] px-4 py-2 rounded-xl shadow-sm`}
           >
             <Text style={tw`text-[#D9E2F2] font-bold text-xs uppercase tracking-wider`}>Close</Text>
           </Pressable>
         </View>
 
         {/* 1. Profile Settings */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('profile')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <User size={16} color="#10B7A8" />
+              <User size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Profile Settings</Text>
             </View>
             {activeSection === 'profile' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -91,13 +91,13 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
         </View>
 
         {/* 2. Theme Settings */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('theme')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Sun size={16} color="#10B7A8" />
+              <Sun size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Theme Mode</Text>
             </View>
             {activeSection === 'theme' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -105,19 +105,19 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
           {activeSection === 'theme' && (
             <View style={tw`p-5 border-t border-[rgba(255,255,255,0.08)] flex-row justify-between items-center`}>
               <Text style={tw`text-xs text-[#D9E2F2] font-bold`}>Dark Mode Enabled</Text>
-              <Switch value={darkMode} onValueChange={setDarkMode} thumbColor="#FFFFFF" trackColor={{ true: '#10B7A8' }} />
+              <Switch value={darkMode} onValueChange={setDarkMode} thumbColor="#FFFFFF" trackColor={{ true: '#00E5FF' }} />
             </View>
           )}
         </View>
 
         {/* 3. Notifications */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('notifications')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Bell size={16} color="#10B7A8" />
+              <Bell size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Notifications</Text>
             </View>
             {activeSection === 'notifications' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -125,19 +125,19 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
           {activeSection === 'notifications' && (
             <View style={tw`p-5 border-t border-[rgba(255,255,255,0.08)] flex-row justify-between items-center`}>
               <Text style={tw`text-xs text-[#D9E2F2] font-bold`}>Enable system push notifications</Text>
-              <Switch value={notifications} onValueChange={setNotifications} thumbColor="#FFFFFF" trackColor={{ true: '#10B7A8' }} />
+              <Switch value={notifications} onValueChange={setNotifications} thumbColor="#FFFFFF" trackColor={{ true: '#00E5FF' }} />
             </View>
           )}
         </View>
 
         {/* 4. Language */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('language')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Globe size={16} color="#10B7A8" />
+              <Globe size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Language</Text>
             </View>
             {activeSection === 'language' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -150,13 +150,13 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
         </View>
 
         {/* 5. Security & Privacy */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('security')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Lock size={16} color="#10B7A8" />
+              <Lock size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Security & Privacy</Text>
             </View>
             {activeSection === 'security' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -170,13 +170,13 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
         </View>
 
         {/* 6. Database & Backup */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('backup')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Database size={16} color="#10B7A8" />
+              <Database size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Database & Backup</Text>
             </View>
             {activeSection === 'backup' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}
@@ -194,13 +194,13 @@ export default function SettingsPanel({ onClose, onLogout }: SettingsPanelProps)
         </View>
 
         {/* 7. About OCI Analyzer */}
-        <View style={tw`bg-[#16366A] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
+        <View style={tw`bg-[#161A20] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden shadow-sm`}>
           <Pressable 
             onPress={() => toggleSection('about')}
-            style={tw`flex-row justify-between items-center p-5 bg-[#102B5C]`}
+            style={tw`flex-row justify-between items-center p-5 bg-[#161A20]`}
           >
             <View style={tw`flex-row items-center space-x-3`}>
-              <Info size={16} color="#10B7A8" />
+              <Info size={16} color="#00E5FF" />
               <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>About OCI Analyzer</Text>
             </View>
             {activeSection === 'about' ? <ChevronUp size={14} color="#A8B3C7" /> : <ChevronDown size={14} color="#A8B3C7" />}

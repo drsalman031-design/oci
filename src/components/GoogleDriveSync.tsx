@@ -471,7 +471,7 @@ export default function GoogleDriveSync({
         {/* Custom Header */}
         <View style={tw`flex-row items-center justify-between border-b border-white/5 pb-4 mb-4`}>
           <Pressable onPress={onClose} style={tw`flex-row items-center space-x-2 bg-white/5 px-3 py-2 rounded-xl`}>
-            <ArrowLeft size={16} color="#14B8A6" />
+            <ArrowLeft size={16} color="#00E5FF" />
             <Text style={tw`text-xs font-black text-slate-300 uppercase`}>Close</Text>
           </Pressable>
           
@@ -493,7 +493,7 @@ export default function GoogleDriveSync({
           >
             {isOnline ? (
               <>
-                <Wifi size={13} color="#10B981" style={tw`mr-1.5`} />
+                <Wifi size={13} color="#00FF88" style={tw`mr-1.5`} />
                 <Text style={tw`text-[9px] font-black text-emerald-400 font-mono uppercase`}>Online</Text>
               </>
             ) : (
@@ -535,8 +535,8 @@ export default function GoogleDriveSync({
                 tw`px-3 py-1 rounded-full border flex-row items-center`,
                 isConnected ? tw`bg-teal-500/10 border-teal-500/20` : tw`bg-slate-500/10 border-slate-500/20`
               ]}>
-                <View style={[tw`w-1.5 h-1.5 rounded-full mr-1.5`, { backgroundColor: isConnected ? '#14B8A6' : '#64748B' }]} />
-                <Text style={[tw`text-[9px] font-black uppercase font-mono`, { color: isConnected ? '#14B8A6' : '#94A3B8' }]}>
+                <View style={[tw`w-1.5 h-1.5 rounded-full mr-1.5`, { backgroundColor: isConnected ? '#00E5FF' : '#64748B' }]} />
+                <Text style={[tw`text-[9px] font-black uppercase font-mono`, { color: isConnected ? '#00E5FF' : '#94A3B8' }]}>
                   {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
                 </Text>
               </View>
@@ -546,7 +546,7 @@ export default function GoogleDriveSync({
             <View style={tw`grid grid-cols-2 gap-3 mb-5`}>
               <View style={tw`bg-black/30 p-3 rounded-2xl border border-white/5`}>
                 <View style={tw`flex-row items-center space-x-1.5 mb-1`}>
-                  <HardDrive size={11} color="#14B8A6" />
+                  <HardDrive size={11} color="#00E5FF" />
                   <Text style={tw`text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Cloud Storage</Text>
                 </View>
                 <Text style={tw`text-xs font-black text-white`}>{storageUsed}</Text>
@@ -555,7 +555,7 @@ export default function GoogleDriveSync({
 
               <View style={tw`bg-black/30 p-3 rounded-2xl border border-white/5`}>
                 <View style={tw`flex-row items-center space-x-1.5 mb-1`}>
-                  <Clock size={11} color="#14B8A6" />
+                  <Clock size={11} color="#00E5FF" />
                   <Text style={tw`text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Last Backup</Text>
                 </View>
                 <Text style={tw`text-xs font-black text-white`} numberOfLines={1}>{lastBackupTime}</Text>
@@ -564,7 +564,7 @@ export default function GoogleDriveSync({
 
               <View style={tw`bg-black/30 p-3 rounded-2xl border border-white/5`}>
                 <View style={tw`flex-row items-center space-x-1.5 mb-1`}>
-                  <Database size={11} color="#14B8A6" />
+                  <Database size={11} color="#00E5FF" />
                   <Text style={tw`text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Saved Patients</Text>
                 </View>
                 <Text style={tw`text-xs font-black text-white`}>{assessments.length} Local</Text>
@@ -573,7 +573,7 @@ export default function GoogleDriveSync({
 
               <View style={tw`bg-black/30 p-3 rounded-2xl border border-white/5`}>
                 <View style={tw`flex-row items-center space-x-1.5 mb-1`}>
-                  <FileText size={11} color="#14B8A6" />
+                  <FileText size={11} color="#00E5FF" />
                   <Text style={tw`text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono`}>Reports & Assets</Text>
                 </View>
                 <Text style={tw`text-xs font-black text-white`}>{assessments.length} PDFs</Text>
@@ -584,7 +584,7 @@ export default function GoogleDriveSync({
             {/* Auto Sync Toggle switch */}
             <View style={tw`flex-row justify-between items-center bg-black/40 p-4 rounded-2xl border border-white/10 mb-4`}>
               <View style={tw`flex-row items-center space-x-3`}>
-                <RefreshCw size={16} color="#14B8A6" />
+                <RefreshCw size={16} color="#00E5FF" />
                 <View>
                   <Text style={tw`text-xs font-bold text-slate-200`}>Auto Sync (WorkManager)</Text>
                   <Text style={tw`text-[9px] text-slate-400`}>Secure automatic sync on Wi-Fi</Text>
@@ -593,7 +593,7 @@ export default function GoogleDriveSync({
               <Switch
                 value={autoSync}
                 onValueChange={handleToggleAutoSync}
-                thumbColor={autoSync ? '#14B8A6' : '#64748B'}
+                thumbColor={autoSync ? '#00E5FF' : '#64748B'}
                 trackColor={{ false: '#1E293B', true: '#042F2E' }}
               />
             </View>
@@ -609,7 +609,7 @@ export default function GoogleDriveSync({
                 ]}
               >
                 {isConnecting ? (
-                  <ActivityIndicator size="small" color="#14B8A6" />
+                  <ActivityIndicator size="small" color="#00E5FF" />
                 ) : (
                   <>
                     <View style={tw`w-4 h-4 rounded-full bg-white items-center justify-center`}>
@@ -626,7 +626,7 @@ export default function GoogleDriveSync({
                     onPress={triggerBackup}
                     style={tw`flex-1 py-3.5 bg-teal-500/10 border border-teal-500/25 rounded-2xl items-center justify-center flex-row space-x-1.5`}
                   >
-                    <Cloud size={13} color="#14B8A6" />
+                    <Cloud size={13} color="#00E5FF" />
                     <Text style={tw`text-[10px] font-black text-teal-400 uppercase tracking-wider`}>Backup Now</Text>
                   </Pressable>
 
@@ -666,7 +666,7 @@ export default function GoogleDriveSync({
             <View style={tw`bg-[#0B1020]/95 rounded-[28px] border border-white/10 p-5 shadow-2xl space-y-4`}>
               <View style={tw`flex-row justify-between items-center`}>
                 <View style={tw`flex-row items-center space-x-2`}>
-                  <ActivityIndicator size="small" color="#14B8A6" />
+                  <ActivityIndicator size="small" color="#00E5FF" />
                   <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-widest font-mono`}>
                     {syncMode === 'backup' ? 'Backup In Progress' : syncMode === 'restore' ? 'Restoring from Cloud' : 'Two-Way Syncing'}
                   </Text>
@@ -701,7 +701,7 @@ export default function GoogleDriveSync({
           <View style={tw`bg-[#030712] rounded-[28px] border border-white/5 p-5 shadow-2xl space-y-3`}>
             <View style={tw`flex-row justify-between items-center border-b border-white/5 pb-2`}>
               <View style={tw`flex-row items-center space-x-2`}>
-                <Cpu size={14} color="#14B8A6" />
+                <Cpu size={14} color="#00E5FF" />
                 <Text style={tw`text-[10px] font-black text-slate-300 uppercase tracking-widest font-mono`}>
                   Android OS Console Diagnostics
                 </Text>
@@ -737,7 +737,7 @@ export default function GoogleDriveSync({
 
             {/* Architecture Explainer footnotes */}
             <View style={tw`flex-row items-center bg-white/5 p-3 rounded-2xl border border-white/5`}>
-              <Lock size={12} color="#14B8A6" style={tw`mr-2 shrink-0`} />
+              <Lock size={12} color="#00E5FF" style={tw`mr-2 shrink-0`} />
               <Text style={tw`text-[8px] text-slate-400 leading-normal`}>
                 <Text style={tw`font-bold text-white`}>FIPS 140-2 Encrypted Vaults:</Text> Patient notes, landmark coordinates, and Case IDs are encrypted using <Text style={tw`font-bold text-teal-400`}>AES-256-GCM</Text> locally with symmetric keys generated in the <Text style={tw`font-bold text-cyan-400`}>Android Hardware Keystore</Text> before cloud upload.
               </Text>

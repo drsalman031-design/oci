@@ -100,7 +100,7 @@ How would you like to proceed today? Select a preset topic below or write your s
       >
         {/* Upper Brand Card */}
         <View style={tw`bg-gradient-to-br from-teal-950/40 to-indigo-950/40 p-5 rounded-[28px] border border-teal-500/20 mb-6 shadow-2xl relative overflow-hidden`}>
-          <View style={tw`absolute top-0 right-0 w-32 h-32 bg-[#14B8A6]/5 rounded-full blur-2xl`} />
+          <View style={tw`absolute top-0 right-0 w-32 h-32 bg-[#00E5FF]/5 rounded-full blur-2xl`} />
           <View style={tw`flex-row items-center mb-2`}>
             <View style={tw`w-10 h-10 bg-teal-500/10 border border-teal-500/20 rounded-xl items-center justify-center mr-3 shadow-inner`}>
               <Brain size={20} color="#22D3EE" />
@@ -146,7 +146,7 @@ How would you like to proceed today? Select a preset topic below or write your s
 
           {loading && (
             <View style={tw`flex-row items-center bg-white/5 p-4 rounded-[24px] border border-white/10 self-start max-w-[80%] rounded-tl-none`}>
-              <ActivityIndicator size="small" color="#14B8A6" style={tw`mr-3`} />
+              <ActivityIndicator size="small" color="#00E5FF" style={tw`mr-3`} />
               <View>
                 <Text style={tw`text-xs font-bold text-white font-mono uppercase tracking-wider`}>Thinking...</Text>
                 <Text style={tw`text-[9px] text-slate-400 font-mono mt-0.5`}>{loadingStatus}</Text>
@@ -195,7 +195,7 @@ How would you like to proceed today? Select a preset topic below or write your s
           disabled={loading || !input.trim()}
           style={({ pressed }) => [
             tw`w-11 h-11 rounded-2xl items-center justify-center shadow-lg`,
-            input.trim() ? tw`bg-[#14B8A6]` : tw`bg-white/5 border border-white/10`,
+            input.trim() ? tw`bg-[#00E5FF]` : tw`bg-white/5 border border-white/10`,
             pressed ? tw`opacity-80` : null,
           ]}
         >

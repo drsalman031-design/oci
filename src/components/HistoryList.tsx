@@ -97,9 +97,9 @@ export default function HistoryList({
   };
 
   const getScoreColorPalette = (score: number) => {
-    if (score <= 20) return { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', glow: '#10B981' };
-    if (score <= 40) return { bg: 'bg-teal-500/10 border-teal-500/20', text: 'text-teal-400', glow: '#14B8A6' };
-    if (score <= 60) return { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', glow: '#F59E0B' };
+    if (score <= 20) return { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', glow: '#00FF88' };
+    if (score <= 40) return { bg: 'bg-teal-500/10 border-teal-500/20', text: 'text-teal-400', glow: '#00E5FF' };
+    if (score <= 60) return { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', glow: '#FFB300' };
     if (score <= 80) return { bg: 'bg-orange-500/10 border-orange-500/20', text: 'text-orange-400', glow: '#F97316' };
     return { bg: 'bg-rose-500/10 border-rose-500/20', text: 'text-rose-400', glow: '#F43F5E' };
   };
@@ -128,8 +128,8 @@ export default function HistoryList({
   };
 
   return (
-    <View style={tw`flex-1 relative bg-[#071B49]`}>
-      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#071B49]`} style={tw`flex-1`}>
+    <View style={tw`flex-1 relative bg-[#0A0C10]`}>
+      <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#0A0C10]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
         
         {/* Brand Card header */}
@@ -138,7 +138,7 @@ export default function HistoryList({
           <View style={tw`flex-row justify-between items-start`}>
             <View style={tw`space-y-1`}>
               <View style={tw`flex-row items-center bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full self-start mb-2`}>
-                <Award size={11} color="#14B8A6" style={tw`mr-1.5`} />
+                <Award size={11} color="#00E5FF" style={tw`mr-1.5`} />
                 <Text style={tw`text-[#22D3EE] text-[8px] font-black uppercase tracking-wider font-mono`}>Digital Archive Suite</Text>
               </View>
               <Text style={tw`font-black text-xl text-white tracking-tight`}>Patient Records</Text>
@@ -151,7 +151,7 @@ export default function HistoryList({
                 pressed ? tw`opacity-90` : null
               ]}
             >
-              <PlusCircle size={18} color="#14B8A6" />
+              <PlusCircle size={18} color="#00E5FF" />
             </Pressable>
           </View>
 
@@ -160,11 +160,11 @@ export default function HistoryList({
             <Pressable
               onPress={onOpenSyncDashboard}
               style={({ pressed }) => [
-                tw`flex-1 py-3 bg-[#14B8A6]/10 border border-[#14B8A6]/25 rounded-2xl items-center justify-center flex-row space-x-1.5`,
-                pressed ? tw`bg-[#14B8A6]/20` : null
+                tw`flex-1 py-3 bg-[#00E5FF]/10 border border-[#00E5FF]/25 rounded-2xl items-center justify-center flex-row space-x-1.5`,
+                pressed ? tw`bg-[#00E5FF]/20` : null
               ]}
             >
-              <Cloud size={12} color="#14B8A6" />
+              <Cloud size={12} color="#00E5FF" />
               <Text style={tw`text-[10px] font-black text-teal-400 uppercase tracking-widest`}>Google Cloud Backup</Text>
             </Pressable>
             <View style={tw`px-4 bg-teal-500/5 rounded-2xl border border-teal-500/10 justify-center items-center`}>
@@ -194,7 +194,7 @@ export default function HistoryList({
               style={tw`flex-row items-center bg-black/40 px-4 py-3 rounded-2xl border border-white/10 justify-between`}
             >
               <View style={tw`flex-row items-center`}>
-                <Filter size={12} color="#14B8A6" style={tw`mr-2`} />
+                <Filter size={12} color="#00E5FF" style={tw`mr-2`} />
                 <Text style={tw`text-xs font-bold text-slate-300`}>
                   Filter: {diagFilter === 'all' ? 'All Diagnostic Archetypes' : diagFilter}
                 </Text>
@@ -203,7 +203,7 @@ export default function HistoryList({
             </Pressable>
 
             {showFilterDropdown && (
-              <View style={tw`mt-2 bg-[#102B5C] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
+              <View style={tw`mt-2 bg-[#161A20] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50`}>
                 {['all', 'Class I', 'Class II', 'Class III'].map((dx) => (
                   <Pressable
                     key={dx}
@@ -238,10 +238,10 @@ export default function HistoryList({
                 <Pressable
                   key={st.id}
                   onPress={() => toggleSort(st.id as any)}
-                  style={tw`flex-row items-center bg-white/5 px-3.5 py-2 rounded-xl border ${isActive ? 'border-[#14B8A6] bg-[#14B8A6]/10' : 'border-white/5'}`}
+                  style={tw`flex-row items-center bg-white/5 px-3.5 py-2 rounded-xl border ${isActive ? 'border-[#00E5FF] bg-[#00E5FF]/10' : 'border-white/5'}`}
                 >
                   <Text style={tw`text-[9px] font-black uppercase tracking-widest ${isActive ? 'text-teal-400' : 'text-slate-400'}`}>{st.label}</Text>
-                  <ArrowUpDown size={9} color={isActive ? '#14B8A6' : '#64748b'} style={tw`ml-1.5`} />
+                  <ArrowUpDown size={9} color={isActive ? '#00E5FF' : '#64748b'} style={tw`ml-1.5`} />
                 </Pressable>
               );
             })}
@@ -257,7 +257,7 @@ export default function HistoryList({
               return (
                 <View 
                   key={item.id} 
-                  style={tw`bg-[#16366A]/95 rounded-[28px] border border-white/5 shadow-2xl p-5 relative overflow-hidden`}
+                  style={tw`bg-[#161A20]/95 rounded-[28px] border border-white/5 shadow-2xl p-5 relative overflow-hidden`}
                 >
                   {/* Glowing background hint based on severity */}
                   <View style={[tw`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10`, { backgroundColor: colors.glow }]} />
@@ -371,7 +371,7 @@ export default function HistoryList({
 
                     <View style={tw`flex-row items-center space-x-3`}>
                       <View style={tw`flex-row items-center space-x-1`}>
-                        <Cloud size={10} color={isDriveConnected ? "#14B8A6" : "#64748B"} />
+                        <Cloud size={10} color={isDriveConnected ? "#00E5FF" : "#64748B"} />
                         <Text style={[tw`text-[8px] font-mono font-bold`, isDriveConnected ? tw`text-teal-400` : tw`text-slate-500`]}>
                           {isDriveConnected ? "Cloud Sync: Synced" : "Local Vault"}
                         </Text>
@@ -393,7 +393,7 @@ export default function HistoryList({
                         pressed ? tw`opacity-80` : null
                       ]}
                     >
-                      <FileText size={12} color="#14B8A6" style={tw`mr-2`} />
+                      <FileText size={12} color="#00E5FF" style={tw`mr-2`} />
                       <Text style={tw`text-xs font-black text-teal-400 uppercase tracking-widest`}>Analyze Case</Text>
                     </Pressable>
 
@@ -444,7 +444,7 @@ export default function HistoryList({
     {/* Custom Premium Delete Confirmation Modal */}
     {deleteTarget && (
       <View style={tw`absolute inset-0 bg-black/85 z-50 justify-center items-center p-6`}>
-        <View style={tw`bg-[#102B5C] border border-white/10 rounded-[28px] p-6 max-w-sm w-full shadow-2xl space-y-4`}>
+        <View style={tw`bg-[#161A20] border border-white/10 rounded-[28px] p-6 max-w-sm w-full shadow-2xl space-y-4`}>
           <View style={tw`w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 items-center justify-center self-center mb-1`}>
             <Trash2 size={20} color="#F43F5E" />
           </View>
@@ -483,7 +483,7 @@ export default function HistoryList({
 
     {/* Custom Toast Notification Banner */}
     {toast && (
-      <View style={tw`absolute bottom-20 left-4 right-4 bg-[#14B8A6] border border-teal-400 rounded-2xl p-4 shadow-2xl flex-row items-center z-50`}>
+      <View style={tw`absolute bottom-20 left-4 right-4 bg-[#00E5FF] border border-teal-400 rounded-2xl p-4 shadow-2xl flex-row items-center z-50`}>
         <Award size={16} color="#ffffff" style={tw`mr-3`} />
         <Text style={tw`text-white text-xs font-extrabold flex-1`}>{toast}</Text>
         <Pressable onPress={() => setToast(null)}>

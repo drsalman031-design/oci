@@ -129,16 +129,16 @@ export default function ClinicPhotoWorkstation({
             return (
               <View 
                 key={slot.key}
-                style={tw`bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 shadow-sm flex-row items-center justify-between`}
+                style={tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 shadow-sm flex-row items-center justify-between`}
               >
                 <View style={tw`flex-row items-center space-x-4 flex-1`}>
                   {hasPhoto ? (
                     <Image 
                       source={{ uri: photoUri }}
-                      style={tw`w-14 h-14 rounded-xl bg-[#102B5C] border border-[rgba(255,255,255,0.08)]`}
+                      style={tw`w-14 h-14 rounded-xl bg-[#161A20] border border-[rgba(255,255,255,0.08)]`}
                     />
                   ) : (
-                    <View style={tw`w-14 h-14 bg-[#102B5C] border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center`}>
+                    <View style={tw`w-14 h-14 bg-[#161A20] border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center`}>
                       <Camera size={18} color="#A8B3C7" />
                     </View>
                   )}
@@ -153,8 +153,8 @@ export default function ClinicPhotoWorkstation({
                     
                     {hasPhoto && (
                       <View style={tw`flex-row items-center space-x-1 mt-1`}>
-                        <CheckCircle size={10} color="#10B7A8" />
-                        <Text style={tw`text-[8px] font-black text-[#10B7A8] uppercase`}>AI READY</Text>
+                        <CheckCircle size={10} color="#00E5FF" />
+                        <Text style={tw`text-[8px] font-black text-[#00E5FF] uppercase`}>AI READY</Text>
                       </View>
                     )}
                   </View>
@@ -165,7 +165,7 @@ export default function ClinicPhotoWorkstation({
                     <>
                       <Pressable 
                         onPress={() => requestPicker(slot.key)}
-                        style={tw`w-8 h-8 rounded-lg bg-[#102B5C] border border-[rgba(255,255,255,0.08)] items-center justify-center`}
+                        style={tw`w-8 h-8 rounded-lg bg-[#161A20] border border-[rgba(255,255,255,0.08)] items-center justify-center`}
                       >
                         <RefreshCw size={12} color="#A8B3C7" />
                       </Pressable>
@@ -173,7 +173,7 @@ export default function ClinicPhotoWorkstation({
                         onPress={() => deletePhoto(slot.key)}
                         style={tw`w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 items-center justify-center`}
                       >
-                        <Trash2 size={12} color="#EF4444" />
+                        <Trash2 size={12} color="#FF4D4D" />
                       </Pressable>
                     </>
                   ) : (
@@ -181,7 +181,7 @@ export default function ClinicPhotoWorkstation({
                       onPress={() => requestPicker(slot.key)}
                       style={tw`bg-teal-500/10 border border-teal-500/20 px-3.5 py-2 rounded-xl`}
                     >
-                      <Text style={tw`text-[10px] font-bold text-[#10B7A8] uppercase`}>Upload</Text>
+                      <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Upload</Text>
                     </Pressable>
                   )}
                 </View>
@@ -199,7 +199,7 @@ export default function ClinicPhotoWorkstation({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
@@ -209,8 +209,8 @@ export default function ClinicPhotoWorkstation({
         <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`space-y-1.5 flex-1 pr-4`}>
             <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full self-start`}>
-              <Sparkles size={11} color="#10B7A8" style={tw`mr-1.5`} />
-              <Text style={tw`text-[#10B7A8] text-[9px] font-black uppercase tracking-wider`}>
+              <Sparkles size={11} color="#00E5FF" style={tw`mr-1.5`} />
+              <Text style={tw`text-[#00E5FF] text-[9px] font-black uppercase tracking-wider`}>
                 Step 2 of 3: Record Uploads
               </Text>
             </View>
@@ -224,7 +224,7 @@ export default function ClinicPhotoWorkstation({
 
           <Pressable
             onPress={populateMockAll}
-            style={tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] px-3 py-2 rounded-xl mt-2`}
+            style={tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] px-3 py-2 rounded-xl mt-2`}
           >
             <Text style={tw`text-[9px] font-black text-[#D9E2F2] uppercase`}>Use Demo Files</Text>
           </Pressable>
@@ -240,7 +240,7 @@ export default function ClinicPhotoWorkstation({
           {onBack && (
             <Pressable
               onPress={onBack}
-              style={tw`flex-1 py-4 bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center flex-row`}
+              style={tw`flex-1 py-4 bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-xl items-center justify-center flex-row`}
             >
               <ChevronLeft size={14} color="#D9E2F2" style={tw`mr-1`} />
               <Text style={tw`text-[#D9E2F2] font-bold text-xs uppercase tracking-wider`}>Back</Text>
@@ -251,7 +251,7 @@ export default function ClinicPhotoWorkstation({
             disabled={!hasRequiredPhotos}
             style={({ pressed }) => [
               tw`flex-2 py-4 rounded-xl items-center justify-center flex-row shadow-sm`,
-              hasRequiredPhotos ? tw`bg-[#10B7A8]` : tw`bg-[#102B5C] border border-[rgba(255,255,255,0.08)] opacity-60`,
+              hasRequiredPhotos ? tw`bg-[#00E5FF]` : tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] opacity-60`,
               pressed && hasRequiredPhotos ? tw`opacity-90 scale-[0.99]` : null
             ]}
           >

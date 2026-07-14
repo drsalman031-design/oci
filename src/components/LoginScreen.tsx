@@ -519,7 +519,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={tw`flex-1 bg-[#071B49]`}
+      style={tw`flex-1 bg-[#0A0C10]`}
     >
       <ScrollView 
         contentContainerStyle={tw`flex-grow justify-center px-5 py-8`}
@@ -537,7 +537,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </Animated.View>
 
           {/* Core Panel Card */}
-          <View style={tw`bg-[#102B5C]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
+          <View style={tw`bg-[#161A20]/90 p-5 rounded-[28px] border border-white/5 shadow-2xl space-y-4`}>
             
             {/* Action Header Title */}
             <View style={tw`border-b border-white/5 pb-2.5`}>
@@ -570,7 +570,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {/* Success alerts */}
             {successMessage ? (
               <View style={tw`bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex-row items-center space-x-2`}>
-                <Check size={14} color="#10B981" style={tw`shrink-0`} />
+                <Check size={14} color="#00FF88" style={tw`shrink-0`} />
                 <Text style={tw`text-[11px] text-emerald-300 font-bold flex-1`}>{successMessage}</Text>
               </View>
             ) : null}
@@ -625,7 +625,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     style={tw`flex-row items-center space-x-1.5`}
                   >
                     {rememberMe ? (
-                      <CheckSquare size={14} color="#14B8A6" />
+                      <CheckSquare size={14} color="#00E5FF" />
                     ) : (
                       <Square size={14} color="#475569" />
                     )}
@@ -643,7 +643,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   disabled={isLoading}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   {isLoading ? (
@@ -808,7 +808,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   style={tw`flex-row items-center space-x-2 pt-2 pb-1`}
                 >
                   {acceptTerms ? (
-                    <CheckSquare size={14} color="#14B8A6" style={tw`shrink-0`} />
+                    <CheckSquare size={14} color="#00E5FF" style={tw`shrink-0`} />
                   ) : (
                     <Square size={14} color="#475569" style={tw`shrink-0`} />
                   )}
@@ -823,7 +823,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   disabled={isLoading}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 mt-3 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   {isLoading ? (
@@ -859,7 +859,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   disabled={isLoading}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   {isLoading ? (
@@ -877,7 +877,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <View style={tw`space-y-1`}>
                   <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Verification OTP</Text>
                   <View style={tw`flex-row items-center bg-black/40 border border-white/10 rounded-xl px-3 py-2.5`}>
-                    <Key size={15} color="#14B8A6" style={tw`mr-2`} />
+                    <Key size={15} color="#00E5FF" style={tw`mr-2`} />
                     <TextInput
                       value={resetOTP}
                       onChangeText={setResetOTP}
@@ -893,7 +893,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={handleOTPVerify}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Verify OTP</Text>
@@ -947,7 +947,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   disabled={isLoading}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   {isLoading ? (
@@ -963,7 +963,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {mode === 'change-default-password' && (
               <View style={tw`space-y-3.5`}>
                 <View style={tw`bg-teal-500/10 border border-teal-500/20 p-3 rounded-xl flex-row items-start space-x-2 mb-2`}>
-                  <ShieldCheck size={14} color="#14B8A6" style={tw`shrink-0 mt-0.5`} />
+                  <ShieldCheck size={14} color="#00E5FF" style={tw`shrink-0 mt-0.5`} />
                   <Text style={tw`text-[10px] text-teal-300 leading-normal flex-1 font-bold`}>
                     Mandatory Password Policy: To comply with medical privacy standards (HIPAA), you must change your default password on first login.
                   </Text>
@@ -1012,7 +1012,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   disabled={isLoading}
                   style={({ pressed }) => [
                     tw`w-full py-3.5 rounded-xl items-center justify-center flex-row`,
-                    { backgroundColor: pressed ? '#0D9488' : '#14B8A6' }
+                    { backgroundColor: pressed ? '#00B8CC' : '#00E5FF' }
                   ]}
                 >
                   {isLoading ? (
@@ -1031,7 +1031,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={() => { setErrorMessage(''); setSuccessMessage(''); setMode('login'); }}
                   style={tw`flex-row items-center space-x-1`}
                 >
-                  <ArrowLeft size={12} color="#14B8A6" style={tw`mr-1`} />
+                  <ArrowLeft size={12} color="#00E5FF" style={tw`mr-1`} />
                   <Text style={tw`text-[11px] font-black text-teal-400 font-mono uppercase`}>Cancel & Use Another Account</Text>
                 </Pressable>
               ) : mode === 'login' ? (
@@ -1046,7 +1046,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={() => { setErrorMessage(''); setSuccessMessage(''); setMode('login'); }}
                   style={tw`flex-row items-center space-x-1`}
                 >
-                  <ArrowLeft size={12} color="#14B8A6" />
+                  <ArrowLeft size={12} color="#00E5FF" />
                   <Text style={tw`text-[11px] font-black text-teal-400 font-mono uppercase`}>Back to Login</Text>
                 </Pressable>
               )}
@@ -1076,7 +1076,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         onRequestClose={() => setShowGoogleModal(false)}
       >
         <View style={tw`flex-1 bg-black/85 justify-center items-center px-4`}>
-          <View style={tw`w-full max-w-[350px] bg-[#102B5C] rounded-[24px] p-5 shadow-2xl border border-[rgba(255,255,255,0.08)]`}>
+          <View style={tw`w-full max-w-[350px] bg-[#161A20] rounded-[24px] p-5 shadow-2xl border border-[rgba(255,255,255,0.08)]`}>
             
             {/* Google Logo */}
             <View style={tw`items-center mb-5`}>
@@ -1103,8 +1103,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Pressable
                   onPress={() => selectGoogleAccount('drsalman031@gmail.com', 'Dr. Salman MDS')}
                   style={({ pressed }) => [
-                    tw`flex-row items-center p-3 border border-[rgba(255,255,255,0.08)] rounded-xl bg-[#16366A]`,
-                    pressed ? tw`bg-[#16366A]/80` : {}
+                    tw`flex-row items-center p-3 border border-[rgba(255,255,255,0.08)] rounded-xl bg-[#161A20]`,
+                    pressed ? tw`bg-[#161A20]/80` : {}
                   ]}
                 >
                   <View style={tw`w-8 h-8 rounded-full bg-teal-500 items-center justify-center mr-3 shadow-sm`}>
@@ -1121,10 +1121,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={() => selectGoogleAccount('clinician.guest@gmail.com', 'Guest Clinician')}
                   style={({ pressed }) => [
                     tw`flex-row items-center p-3 border border-[rgba(255,255,255,0.08)] rounded-xl`,
-                    pressed ? tw`bg-[#16366A]` : {}
+                    pressed ? tw`bg-[#161A20]` : {}
                   ]}
                 >
-                  <View style={tw`w-8 h-8 rounded-full bg-[#071B49] items-center justify-center mr-3`}>
+                  <View style={tw`w-8 h-8 rounded-full bg-[#0A0C10] items-center justify-center mr-3`}>
                     <User size={15} color="#A8B3C7" />
                   </View>
                   <View style={tw`flex-1`}>
@@ -1154,7 +1154,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {googleStep === 'success' && (
               <View style={tw`py-6 items-center space-y-2`}>
                 <View style={tw`w-10 h-10 bg-emerald-100 rounded-full items-center justify-center border border-emerald-300`}>
-                  <Check size={20} color="#10B981" />
+                  <Check size={20} color="#00FF88" />
                 </View>
                 <Text style={tw`text-xs font-black text-slate-800`}>
                   Successfully Authenticated

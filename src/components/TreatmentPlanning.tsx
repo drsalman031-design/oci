@@ -306,7 +306,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
     return (
       <View style={tw`flex-1 justify-center items-center p-6 bg-[#050814]`}>
         <View style={tw`bg-[#0B1020] border border-white/5 rounded-3xl p-8 max-w-md w-full items-center text-center shadow-2xl`}>
-          <ShieldAlert size={48} color="#EF4444" style={tw`mb-4`} />
+          <ShieldAlert size={48} color="#FF4D4D" style={tw`mb-4`} />
           <Text style={tw`text-lg font-black text-white text-center`}>No Patients Found</Text>
           <Text style={tw`text-xs text-slate-400 text-center mt-2 leading-relaxed`}>
             Please complete an OCI analysis first to access the dynamic Treatment Planner.
@@ -318,10 +318,10 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
 
   const complexityColor = (comp?: string) => {
     switch (comp) {
-      case 'Severe / Surgical': return '#EF4444';
-      case 'Complex': return '#F59E0B';
-      case 'Moderate': return '#14B8A6';
-      default: return '#10B981';
+      case 'Severe / Surgical': return '#FF4D4D';
+      case 'Complex': return '#FFB300';
+      case 'Moderate': return '#00E5FF';
+      default: return '#00FF88';
     }
   };
 
@@ -405,9 +405,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 </Text>
               </View>
               {showPatientSelect ? (
-                <ChevronUp size={14} color="#14B8A6" />
+                <ChevronUp size={14} color="#00E5FF" />
               ) : (
-                <ChevronDown size={14} color="#14B8A6" />
+                <ChevronDown size={14} color="#00E5FF" />
               )}
             </Pressable>
  
@@ -430,7 +430,7 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                       <Text style={tw`text-xs font-black text-white`}>{item.patientDetails.name}</Text>
                       <Text style={tw`text-[9px] text-slate-500 mt-0.5`}>ID: {item.patientDetails.caseNumber || 'N/A'}</Text>
                     </View>
-                    {selectedId === item.id && <Check size={12} color="#14B8A6" />}
+                    {selectedId === item.id && <Check size={12} color="#00E5FF" />}
                   </Pressable>
                 ))}
               </View>
@@ -504,13 +504,13 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 style={tw`p-5 flex-row justify-between items-center bg-black/25`}
               >
                 <View style={tw`flex-row items-center space-x-2.5`}>
-                  <Sparkles size={14} color="#14B8A6" />
+                  <Sparkles size={14} color="#00E5FF" />
                   <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>OCI Intelligence Treatment Planning</Text>
                 </View>
                 {intelligenceExpanded ? (
-                  <ChevronUp size={14} color="#14B8A6" />
+                  <ChevronUp size={14} color="#00E5FF" />
                 ) : (
-                  <ChevronDown size={14} color="#14B8A6" />
+                  <ChevronDown size={14} color="#00E5FF" />
                 )}
               </Pressable>
 
@@ -604,9 +604,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 {[
                   { label: 'Retraction Force', val: 35, color: '#1E88FF', intensity: 'Controlled Loading' },
                   { label: 'Intrusion Force', val: 50, color: '#8E44AD', intensity: 'Optimum Intrusion' },
-                  { label: 'Expansion Force', val: 65, color: '#2ECC71', intensity: 'Active Arch Widening' },
+                  { label: 'Expansion Force', val: 65, color: '#00FF88', intensity: 'Active Arch Widening' },
                   { label: 'Torque Control', val: 100, color: '#F39C12', intensity: 'Maximum Boundary' },
-                  { label: 'Rotation Correction', val: 70, color: '#E74C3C', intensity: 'Heavy Derotation' },
+                  { label: 'Rotation Correction', val: 70, color: '#FF4D4D', intensity: 'Heavy Derotation' },
                 ].map((item, idx) => (
                   <View key={idx} style={tw`space-y-1`}>
                     <View style={tw`flex-row justify-between items-center`}>
@@ -636,19 +636,19 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 <Text style={tw`text-[8px] text-slate-500 font-bold uppercase mt-0.5`}>Real-time biological reaction safety</Text>
               </View>
               <View style={tw`flex-row flex-wrap gap-2.5`}>
-                <View style={tw`bg-[#2ECC71]/15 border border-[#2ECC71]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
-                  <View style={tw`w-2 h-2 rounded-full bg-[#2ECC71]`} />
-                  <Text style={tw`text-[10px] font-black text-[#2ECC71] uppercase`}>Safe Zone (Light force)</Text>
+                <View style={tw`bg-[#00FF88]/15 border border-[#00FF88]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#00FF88]`} />
+                  <Text style={tw`text-[10px] font-black text-[#00FF88] uppercase`}>Safe Zone (Light force)</Text>
                 </View>
 
-                <View style={tw`bg-[#F1C40F]/15 border border-[#F1C40F]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
-                  <View style={tw`w-2 h-2 rounded-full bg-[#F1C40F]`} />
-                  <Text style={tw`text-[10px] font-black text-[#F1C40F] uppercase`}>Controlled Zone (Moderate force)</Text>
+                <View style={tw`bg-[#FFB300]/15 border border-[#FFB300]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#FFB300]`} />
+                  <Text style={tw`text-[10px] font-black text-[#FFB300] uppercase`}>Controlled Zone (Moderate force)</Text>
                 </View>
 
-                <View style={tw`bg-[#E74C3C]/15 border border-[#E74C3C]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
-                  <View style={tw`w-2 h-2 rounded-full bg-[#E74C3C]`} />
-                  <Text style={tw`text-[10px] font-black text-[#E74C3C] uppercase`}>Risk Zone (Heavy force)</Text>
+                <View style={tw`bg-[#FF4D4D]/15 border border-[#FF4D4D]/30 px-3 py-1.5 rounded-xl flex-row items-center space-x-1.5`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#FF4D4D]`} />
+                  <Text style={tw`text-[10px] font-black text-[#FF4D4D] uppercase`}>Risk Zone (Heavy force)</Text>
                 </View>
 
                 <View style={tw`bg-[#1E88FF]/10 border border-[#1E88FF]/20 px-3 py-1.5 rounded-xl`}>
@@ -718,10 +718,10 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                     <Text style={tw`text-lg`}>➡️</Text>
                   </View>
                   <View style={tw`w-full h-1 bg-slate-950 rounded-full overflow-hidden`}>
-                    <View style={tw`h-full bg-[#2ECC71] w-2/3`} />
+                    <View style={tw`h-full bg-[#00FF88] w-2/3`} />
                   </View>
                   <View style={tw`flex-row justify-between items-center pt-0.5`}>
-                    <Text style={tw`text-[9px] text-[#2ECC71] font-black`}>65 cN</Text>
+                    <Text style={tw`text-[9px] text-[#00FF88] font-black`}>65 cN</Text>
                     <Text style={tw`text-[8px] font-black text-amber-400 uppercase`}>Optimum</Text>
                   </View>
                 </View>
@@ -754,9 +754,9 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
               <View style={tw`space-y-3.5`}>
                 {[
                   { label: 'Stability', val: stabilityVal, color: '#1E88FF' },
-                  { label: 'Esthetics', val: estheticsVal, color: '#2ECC71' },
+                  { label: 'Esthetics', val: estheticsVal, color: '#00FF88' },
                   { label: 'Treatment Efficiency', val: timeVal, color: '#8E44AD' },
-                  { label: 'Risk Level', val: riskVal, color: '#E74C3C' },
+                  { label: 'Risk Level', val: riskVal, color: '#FF4D4D' },
                   { label: 'Anchorage Demand', val: anchorageDemand, color: '#F39C12' },
                 ].map((item, idx) => (
                   <View key={idx} style={tw`space-y-1`}>
@@ -795,12 +795,12 @@ export default function TreatmentPlanning({ savedAssessments, onUpdateAssessment
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   {isSaving ? (
                     <>
-                      <ActivityIndicator size="small" color="#F59E0B" />
+                      <ActivityIndicator size="small" color="#FFB300" />
                       <Text style={tw`text-[10px] font-black text-amber-500 uppercase tracking-widest`}>Saving System...</Text>
                     </>
                   ) : (
                     <>
-                      <CheckCircle size={12} color="#10B981" />
+                      <CheckCircle size={12} color="#00FF88" />
                       <Text style={tw`text-[10px] font-black text-emerald-500 uppercase tracking-widest`}>AI Parameters Sync Completed</Text>
                     </>
                   )}

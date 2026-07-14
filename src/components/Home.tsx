@@ -54,18 +54,18 @@ export default function Home({
 
   return (
     <ScrollView 
-      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#071B49]`} 
+      contentContainerStyle={tw`pb-28 px-6 w-full bg-[#0A0C10]`} 
       style={tw`flex-1`}
       showsVerticalScrollIndicator={false}
     >
       <View style={tw`space-y-8 mt-6 max-w-4xl mx-auto w-full`}>
         
         {/* BRANDING & HERO SECTION */}
-        <View style={tw`bg-[#16366A] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-8 shadow-sm space-y-6`}>
+        <View style={tw`bg-[#161A20] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-8 shadow-sm space-y-6`}>
           <View style={tw`space-y-2`}>
             <View style={tw`flex-row items-center bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full self-start`}>
-              <Sparkles size={12} color="#10B7A8" style={tw`mr-1.5`} />
-              <Text style={tw`text-[#10B7A8] text-[10px] font-black uppercase tracking-wider`}>
+              <Sparkles size={12} color="#00E5FF" style={tw`mr-1.5`} />
+              <Text style={tw`text-[#00E5FF] text-[10px] font-black uppercase tracking-wider`}>
                 OCI CLINICAL SUITE V4.1
               </Text>
             </View>
@@ -80,7 +80,7 @@ export default function Home({
           <Pressable
             onPress={() => onNewAssessment('turbo')}
             style={({ pressed }) => [
-              tw`flex-row items-center justify-center bg-[#10B7A8] py-4 px-6 rounded-2xl shadow-sm`,
+              tw`flex-row items-center justify-center bg-[#00E5FF] py-4 px-6 rounded-2xl shadow-sm`,
               pressed ? tw`opacity-90 scale-[0.99]` : null
             ]}
           >
@@ -100,25 +100,25 @@ export default function Home({
           
           <View style={tw`flex-row flex-wrap gap-4`}>
             {/* Total Patients */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
               <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>Total Patients</Text>
               <Text style={tw`text-2xl font-black text-white`}>{totalReports}</Text>
             </View>
 
             {/* Reports Generated */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
               <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>Reports Generated</Text>
               <Text style={tw`text-2xl font-black text-white`}>{totalReports}</Text>
             </View>
 
             {/* Average OCI Score */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
               <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>Average OCI Score</Text>
               <Text style={tw`text-2xl font-black text-white`}>{avgOciVal}%</Text>
             </View>
 
             {/* High Complexity Cases */}
-            <View style={tw`flex-1 min-w-[45%] bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
+            <View style={tw`flex-1 min-w-[45%] bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
               <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>High Complexity Cases</Text>
               <Text style={tw`text-2xl font-black text-white`}>{highComplexityCount}</Text>
             </View>
@@ -133,13 +133,13 @@ export default function Home({
             </Text>
             {totalReports > 0 && (
               <Pressable onPress={onViewHistory}>
-                <Text style={tw`text-xs font-bold text-[#10B7A8] uppercase`}>View All →</Text>
+                <Text style={tw`text-xs font-bold text-[#00E5FF] uppercase`}>View All →</Text>
               </Pressable>
             )}
           </View>
 
           {/* Quick Search */}
-          <View style={tw`flex-row items-center bg-[#102B5C] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2.5 shadow-sm`}>
+          <View style={tw`flex-row items-center bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2.5 shadow-sm`}>
             <Search size={16} color="#D9E2F2" style={tw`mr-2`} />
             <TextInput
               value={searchQuery}
@@ -156,11 +156,11 @@ export default function Home({
               filteredPatients.slice(0, 5).map((item) => (
                 <View 
                   key={item.id}
-                  style={tw`bg-[#16366A] border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 shadow-sm flex-row items-center justify-between`}
+                  style={tw`bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 shadow-sm flex-row items-center justify-between`}
                 >
                   <View style={tw`flex-row items-center space-x-4`}>
                     <View style={tw`w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 items-center justify-center`}>
-                      <Text style={tw`text-xs font-black text-[#10B7A8]`}>
+                      <Text style={tw`text-xs font-black text-[#00E5FF]`}>
                         {item.patientDetails.diagnosis === 'Class I' ? 'I' : item.patientDetails.diagnosis === 'Class II' ? 'II' : 'III'}
                       </Text>
                     </View>
@@ -172,13 +172,13 @@ export default function Home({
                     </View>
                   </View>
                   <View style={tw`items-end`}>
-                    <Text style={tw`text-sm font-black text-[#10B7A8]`}>{getActiveScore(item)}%</Text>
+                    <Text style={tw`text-sm font-black text-[#00E5FF]`}>{getActiveScore(item)}%</Text>
                     <Text style={tw`text-[9px] text-[#D9E2F2]/60 uppercase font-black tracking-wider`}>OCI Score</Text>
                   </View>
                 </View>
               ))
             ) : (
-              <View style={tw`bg-[#16366A] rounded-2xl p-8 border border-[rgba(255,255,255,0.08)] items-center justify-center space-y-2`}>
+              <View style={tw`bg-[#161A20] rounded-2xl p-8 border border-[rgba(255,255,255,0.08)] items-center justify-center space-y-2`}>
                 <Text style={tw`text-[#D9E2F2] text-xs text-center font-bold`}>
                   No recent patient analyses found.
                 </Text>
@@ -196,7 +196,7 @@ export default function Home({
             <Text style={tw`text-[10px] text-[#D9E2F2]/60 font-bold uppercase tracking-widest text-center`}>
               Developed & Innovated by
             </Text>
-            <Text style={tw`text-xs font-black text-[#10B7A8] tracking-wider text-center uppercase`}>
+            <Text style={tw`text-xs font-black text-[#00E5FF] tracking-wider text-center uppercase`}>
               Dr. Salman, MDS (Orthodontist)
             </Text>
           </View>
