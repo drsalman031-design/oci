@@ -137,7 +137,7 @@ export function generateTreatmentPlan(
   let skeletalClass: 'Class I' | 'Class II' | 'Class III' = 'Class I';
   let skeletalEtiology = '';
   
-  if (anb > 4.5) {
+  if (anb > 4.0 || (snb < 78 && anb > 2)) {
     skeletalClass = 'Class II';
     if (sna > 84 && snb < 78) {
       skeletalEtiology = 'maxillary prognathism and mandibular retrognathism combination';
@@ -235,7 +235,7 @@ export function generateTreatmentPlan(
   // CLASS II DIVISION 1 DECISION TREE
   if (skeletalClass === 'Class II' && isDiv1) {
     if (isGrowing) {
-      if (skeletalEtiology.includes('mandibular retrognathism')) {
+      if (snb < 78 || skeletalEtiology.includes('mandibular retrognathism') || skeletalEtiology.includes('retroretrognathia') || skeletalEtiology.includes('retrusion')) {
         // MANDATORY TWIN BLOCK functional appliance
         primaryTreatment.push(
           'Twin Block functional appliance (first-line growth modification)',
@@ -743,14 +743,24 @@ export function generateTreatmentPlan(
   let recLimitations: string[] = [];
 
   if (isGrowing) {
-    if (skeletalClass === 'Class II' && isDiv1) {
-      recName = 'Growth Modification Therapy (Twin Block functional appliance)';
-      recDesc = 'Orthopedic stimulation of mandibular growth using a Twin Block appliance during peak growth spurt, followed by comprehensive fixed brackets for final detailing.';
-      recWhy = 'Twin Block is the gold standard growth modification therapy for growing patients with Class II retrognathia. It maximizes orthopedic change while avoiding early camouflage extraction or surgery.';
-      recAltNotFirst = 'Surgical correction is delayed until growth completes, and camouflage extractions are not first-line because they flatten the profile and fail to correct the skeletal base mismatch.';
-      recOci = `OCI findings indicate a growing Class II skeletal pattern (${anb}° ANB) with healthy alveolar parameters (${oci.totalScore}% OCI Score) that are highly responsive to orthopedic growth modification.`;
-      recBenefits = ['Stimulates mandibular growth', 'Corrects skeletal profile convexness', 'Improves airway dimension'];
-      recLimitations = ['Requires maximum compliance (22 hours/day)', 'Slight dental tipping of lower incisors'];
+    if (skeletalClass === 'Class II') {
+      if (isDiv2) {
+        recName = 'Growth Modification Therapy (Unlock Bite & Twin Block)';
+        recDesc = 'Initial proclination of retroclined upper incisors to unlock the mandibular path, followed by a Twin Block functional appliance for mandibular orthopedic advancement.';
+        recWhy = 'Class II Division 2 retroretrognathia in a growing child requires unlocking the anterior dental lock first. Once upper central incisors are proclined, functional growth modification stimulates mandibular development during active growth stages (Proffit, Graber).';
+        recAltNotFirst = 'Extractions are contraindicated because they flatten the profile and fail to correct the retrognathic skeletal mismatch. Surgery must be avoided during active growth.';
+        recOci = `OCI score indicates a Class II skeletal pattern with mandibular retrusion (${anb}° ANB) which is highly responsive to orthopedic mandibular advancement once unlocked.`;
+        recBenefits = ['Unlocks mandibular entrapment', 'Promotes mandibular skeletal growth', 'Corrects deep bite and achieves Class I intercuspation'];
+        recLimitations = ['Highly dependent on patient compliance', 'Requires a two-phase treatment sequence'];
+      } else {
+        recName = 'Growth Modification Therapy (Twin Block functional appliance)';
+        recDesc = 'Orthopedic stimulation of mandibular growth using a Twin Block appliance during peak growth spurt, followed by comprehensive fixed brackets for final detailing.';
+        recWhy = 'Twin Block is the gold standard growth modification therapy for growing patients with Class II retrognathia (Rakosi, Angle). It maximizes orthopedic mandibular promotion while avoiding early camouflage extraction or surgery.';
+        recAltNotFirst = 'Surgical correction is delayed until growth completes, and camouflage extractions are not first-line because they flatten the profile and fail to correct the skeletal base mismatch.';
+        recOci = `OCI findings indicate a growing Class II skeletal pattern (${anb}° ANB) with healthy alveolar parameters (${oci.totalScore}% OCI Score) that are highly responsive to orthopedic growth modification.`;
+        recBenefits = ['Stimulates mandibular growth', 'Corrects skeletal profile convexness', 'Improves airway dimension'];
+        recLimitations = ['Requires maximum compliance (22 hours/day)', 'Slight dental tipping of lower incisors'];
+      }
     } else if (skeletalClass === 'Class III') {
       recName = 'Orthopedic Facemask Protraction & Expansion';
       recDesc = 'Maxillary expansion using a Hyrax expander combined with a reverse-pull facemask to stimulate maxillary forward growth.';

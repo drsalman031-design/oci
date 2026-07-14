@@ -159,7 +159,8 @@ export class DecisionEngine {
     mode: 'clinic' | 'ceph' | 'turbo',
     clinical: any,
     ceph: any,
-    oci: OciResult
+    oci: OciResult,
+    patient: PatientDetails
   ): {
     diagnosis: string;
     treatmentPlan: string;
@@ -176,6 +177,21 @@ export class DecisionEngine {
     relapseRisk: string;
     retention: string;
   } {
+    const age = Number(patient.age) || 12;
+    const isFemale = patient.gender === 'Female';
+    const isMale = patient.gender === 'Male';
+    
+    let isGrowing = false;
+    if (patient.growthStatus === 'Growing' || patient.growthStatus === 'Peak Growth') {
+      isGrowing = true;
+    } else if (patient.growthStatus === 'Growth Complete') {
+      isGrowing = false;
+    } else {
+      if (isFemale && age <= 14) isGrowing = true;
+      else if (isMale && age <= 16) isGrowing = true;
+      else if (!isFemale && !isMale && age <= 15) isGrowing = true;
+    }
+
     const isSurgical = oci.totalScore > 60;
     const isExtraction = oci.totalScore > 50;
     
@@ -188,36 +204,60 @@ export class DecisionEngine {
       diag = `Integrated ${clinical.clinicalInterpretation} backed by ${ceph.cephalometricMeasurementsSummary}`;
     }
 
+    const diagUpper = diag.toUpperCase();
+    const isClassII = diagUpper.includes('CLASS II') || (patient.diagnosis && patient.diagnosis === 'Class II');
+    const isClassIII = diagUpper.includes('CLASS III') || (patient.diagnosis && patient.diagnosis === 'Class III');
+    const isRetrognathicMandible = diagUpper.includes('RETROGNATHIC') || diagUpper.includes('RETRUSION') || diagUpper.includes('RETROGNATHY') || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('retrognathic')) || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('mandibular retrusion'));
+
     let plan = 'Dentoalveolar Camouflage Orthodontics';
     let explanation = 'Minor skeletal discrepancies within biological boundaries. Resolution via traditional leveling and space closure.';
     
-    if (isSurgical) {
-      plan = 'Combined Orthodontic-Orthognathic Surgical Correction';
-      explanation = `OCI score (${oci.totalScore}/100) exceeds camouflage limits. Structural skeletal correction required to align jaws safely.`;
-    } else if (isExtraction) {
-      plan = 'Extraction-based Orthodontic Camouflage';
-      explanation = `Arch length discrepancy requires premolar extractions to resolve anterior crowding and retract incisors.`;
+    if (isGrowing) {
+      if (isClassII && (isRetrognathicMandible || Number(ceph.snb) < 78)) {
+        plan = 'Growth Modification Therapy (Twin Block Mandibular Advancement)';
+        explanation = `First-line orthopedic advancement using Twin Block functional appliance during active growth spurt to promote mandibular development.`;
+      } else if (isClassIII) {
+        plan = 'Interceptive Orthopedic Protraction (Facemask & RME)';
+        explanation = `Orthopedic protraction using reverse-pull facemask combined with palatal expansion to correct skeletal Class III maxillary deficiency.`;
+      } else {
+        plan = 'Non-Extraction Corrective Orthodontics';
+        explanation = `Conservative non-extraction alignment using fixed brackets or clear aligners with selective transverse development.`;
+      }
+    } else {
+      if (isSurgical) {
+        plan = 'Combined Orthodontic-Orthognathic Surgical Correction';
+        explanation = `OCI score (${oci.totalScore}/100) exceeds camouflage limits. Structural skeletal correction required to align jaws safely.`;
+      } else if (isExtraction) {
+        plan = 'Extraction-based Orthodontic Camouflage';
+        explanation = `Arch length discrepancy requires premolar extractions to resolve anterior crowding and retract incisors.`;
+      }
     }
+
+    const extractionDecision = isGrowing
+      ? 'Non-extraction first-line. Growth modification and orthopedic development utilized to avoid premolar extractions.'
+      : isSurgical
+        ? 'Surgical decompensation (non-extraction or selective extractions depending on surgical movements).' 
+        : isExtraction 
+          ? 'Extraction of premolars indicated to resolve crowding and reduce protrusion.'
+          : 'Non-extraction campaign with arch expansion or interproximal reduction (IPR).';
 
     return {
       diagnosis: diag,
       treatmentPlan: plan,
-      extractionDecision: isSurgical 
-        ? 'Surgical decompensation (non-extraction or selective extractions depending on surgical movements).' 
-        : isExtraction 
-          ? 'Extraction of premolars indicated to resolve crowding and reduce protrusion.'
-          : 'Non-extraction campaign with arch expansion or interproximal reduction (IPR).',
+      extractionDecision,
       biomechanics: {
-        anchorage: isExtraction ? 'Maximum anchorage: Transpalatal arch (TPA) or skeletal micro-screws (TADs).' : 'Minimum anchorage control.',
+        anchorage: (isExtraction && !isGrowing) ? 'Maximum anchorage: Transpalatal arch (TPA) or skeletal micro-screws (TADs).' : 'Minimum anchorage control.',
         torqueControl: 'Active anterior root torque control during space closure to avoid tipping.',
         verticalControl: ceph?.verticalGrowthPattern?.includes('Hyper') 
           ? 'Intrude posterior teeth with TADs to facilitate mandibular autorotation.' 
           : 'Level arches with continuous wires.',
         sagittalElastics: 'Intermaxillary elastics to coordinate buccal segments.'
       },
-      growthConsiderations: 'Evaluate chronological age and CVM stage to leverage orthopedics if growth remains.',
+      growthConsiderations: isGrowing 
+        ? 'Patient has outstanding growth potential. Prioritize growth modification (Twin Block / reverse-pull facemask) to advance retrognathic mandible/maxilla.'
+        : 'Completed growth; modification is no longer viable.',
       riskAssessment: 'Periodontal bone plate limit checks, root resorption monitoring, and oral hygiene compliance.',
-      prognosis: oci.totalScore > 55 ? 'Guarded to Moderate prognosis due to discrepancy severity.' : 'Excellent prognosis.',
+      prognosis: oci.totalScore > 75 ? 'Guarded prognosis due to extreme discrepancy.' : 'Good prognosis.',
       relapseRisk: 'High risk of lower incisor relapse if initial IMPA torque coordinates are not stabilized.',
       retention: 'Dual retention protocol: fixed bonded lingual retainers 3-3 paired with clear vacuum-formed Essix retainers.'
     };
@@ -356,7 +396,10 @@ export class AISelfValidator {
     cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
     // 3. Extraction Validation
-    const isExtractionRecommended = oci.totalScore > 50;
+    const isGrowingPatient = (patient.gender === 'Female' && Number(patient.age) <= 14) || 
+                             (patient.gender === 'Male' && Number(patient.age) <= 16) ||
+                             patient.growthStatus === 'Growing' || patient.growthStatus === 'Peak Growth';
+    const isExtractionRecommended = oci.totalScore > 50 && !isGrowingPatient;
     if (isExtractionRecommended && cleaned.toLowerCase().includes('non-extraction campaign as primary')) {
       errors.push('Extraction Inconsistency: OCI score indicates extraction, but text recommends non-extraction.');
       cleaned = cleaned.replace(/non-extraction campaign as primary/gi, 'extraction-based camouflage therapy');

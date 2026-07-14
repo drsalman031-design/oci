@@ -253,7 +253,7 @@ export function generateLocalClinicalSynthesis(
   const visionObs = VisionEngine.getObservations(patient);
   const clinicalOutput = ClinicalEngine.analyze(patient, visionObs);
   const cephOutput = CephalometricEngine.analyze(ceph);
-  const decisionOutput = DecisionEngine.formulate(mode, clinicalOutput, cephOutput, oci);
+  const decisionOutput = DecisionEngine.formulate(mode, clinicalOutput, cephOutput, oci, patient);
   const reportMarkdown = ReportEngine.compile(mode, clinicalOutput, cephOutput, decisionOutput, oci);
   
   const validation = AISelfValidator.validate(reportMarkdown, mode, patient, ceph, oci);
@@ -486,7 +486,7 @@ export function generateLocalClinicOnlySynthesis(
   const visionObs = VisionEngine.getObservations(patient);
   const clinicalOutput = ClinicalEngine.analyze(patient, visionObs);
   const cephOutput = CephalometricEngine.analyze(emptyCeph);
-  const decisionOutput = DecisionEngine.formulate('clinic', clinicalOutput, cephOutput, oci);
+  const decisionOutput = DecisionEngine.formulate('clinic', clinicalOutput, cephOutput, oci, patient);
   const reportMarkdown = ReportEngine.compile('clinic', clinicalOutput, cephOutput, decisionOutput, oci);
   
   const validation = AISelfValidator.validate(reportMarkdown, 'clinic', patient, emptyCeph, oci);
