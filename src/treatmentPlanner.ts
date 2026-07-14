@@ -1,6 +1,4 @@
 import { PatientDetails, CephalometricInput, OciResult } from './types';
-import { ClinicalNarrativeQA } from './lib/narrativeQA';
-import { OrthoKnowledgeBase } from './lib/knowledgeEngine';
 
 export interface TreatmentPlanningOptions {
   ageGroup: 'growing' | 'adult';
@@ -55,10 +53,18 @@ export interface TreatmentPlanResult {
     advantages: string[];
     disadvantages: string[];
   }[];
+
+  // OCI V4.1 DETERMINISTIC OUTPUT FIELDS
+  diagnosisText?: string;
+  recommendedTreatmentText?: string;
+  whySelectedText?: string;
+  alternativesText?: string;
+  risksText?: string;
+  prognosisText?: string;
 }
 
 /**
- * Expert system clinical rules engine to formulate treatment consideration.
+ * Deterministic Orthodontic Clinical Decision Engine
  */
 export function generateTreatmentPlan(
   patient: PatientDetails,
@@ -66,357 +72,651 @@ export function generateTreatmentPlan(
   oci: OciResult,
   options: TreatmentPlanningOptions
 ): TreatmentPlanResult {
-  const isClass1 = patient.diagnosis === 'Class I';
-  const isClass2 = patient.diagnosis === 'Class II';
-  const isClass3 = patient.diagnosis === 'Class III';
+
+  // ==========================================
+  // STEP 1 & 2: Determine Growth Potential
+  // ==========================================
+  const age = Number(patient.age) || 12;
+  const isFemale = patient.gender === 'Female';
+  const isMale = patient.gender === 'Male';
   
-  const anb = typeof ceph.anb === 'number' ? ceph.anb : 2;
-  const impa = typeof ceph.impa === 'number' ? ceph.impa : 90;
-  const u1sn = typeof ceph.u1Sn === 'number' ? ceph.u1Sn : 104;
-  const overjet = typeof ceph.overjet === 'number' ? ceph.overjet : 2.5;
-  const overbite = typeof ceph.overbite === 'number' ? ceph.overbite : 2.5;
+  let isGrowing = false;
+  if (patient.growthStatus === 'Growing') {
+    isGrowing = true;
+  } else if (patient.growthStatus === 'Growth Complete') {
+    isGrowing = false;
+  } else {
+    // Deterministic fallback based on age
+    if (isFemale && age <= 14) isGrowing = true;
+    else if (isMale && age <= 16) isGrowing = true;
+    else if (!isFemale && !isMale && age <= 15) isGrowing = true;
+  }
+
+  // Override by explicit options group
+  if (options.ageGroup === 'growing') isGrowing = true;
+  if (options.ageGroup === 'adult') isGrowing = false;
+
+  const growthStatusText = isGrowing 
+    ? 'Growing patient with active growth potential' 
+    : 'Skeletally mature (growth completed)';
+
+  // ==========================================
+  // STEP 3: Determine Skeletal Pattern
+  // ==========================================
+  const anb = ceph.anb !== '' ? Number(ceph.anb) : 2;
+  const sna = ceph.sna !== '' ? Number(ceph.sna) : 82;
+  const snb = ceph.snb !== '' ? Number(ceph.snb) : 80;
+  const fma = ceph.fma !== '' ? Number(ceph.fma) : 25;
+
+  let skeletalClass: 'Class I' | 'Class II' | 'Class III' = 'Class I';
+  let skeletalEtiology = '';
   
+  if (anb > 4.5) {
+    skeletalClass = 'Class II';
+    if (sna > 84 && snb < 78) {
+      skeletalEtiology = 'maxillary prognathism and mandibular retrognathism combination';
+    } else if (sna > 84) {
+      skeletalEtiology = 'maxillary prognathism';
+    } else if (snb < 78) {
+      skeletalEtiology = 'mandibular retrognathism';
+    } else {
+      skeletalEtiology = 'mandibular retrognathism and minor maxillary projection';
+    }
+  } else if (anb < 0) {
+    skeletalClass = 'Class III';
+    if (sna < 79 && snb > 81) {
+      skeletalEtiology = 'maxillary deficiency and mandibular excess combination';
+    } else if (sna < 79) {
+      skeletalEtiology = 'maxillary deficiency';
+    } else if (snb > 81) {
+      skeletalEtiology = 'mandibular excess';
+    } else {
+      skeletalEtiology = 'maxillary deficiency / hypoplasia';
+    }
+  } else {
+    skeletalClass = 'Class I';
+    skeletalEtiology = 'normal skeletal jaw relationship';
+  }
+
+  // Vertical skeletal pattern
+  let verticalPattern = 'Average (Normodivergent)';
+  if (fma > 28) {
+    verticalPattern = 'Hyperdivergent (Vertical grower / High angle)';
+  } else if (fma < 20) {
+    verticalPattern = 'Hypodivergent (Horizontal grower / Low angle)';
+  }
+
+  // ==========================================
+  // STEP 4: Determine Dental Pattern
+  // ==========================================
+  const overjet = ceph.overjet !== '' ? Number(ceph.overjet) : 2.5;
+  const overbite = ceph.overbite !== '' ? Number(ceph.overbite) : 2.5;
+  const u1Sn = ceph.u1Sn !== '' ? Number(ceph.u1Sn) : 104;
+  const impa = ceph.impa !== '' ? Number(ceph.impa) : 90;
+
+  let dentalPattern = 'Class I malocclusion';
+  let isDiv1 = false;
+  let isDiv2 = false;
+
+  if (skeletalClass === 'Class II') {
+    if (u1Sn < 100 && overbite > 4) {
+      isDiv2 = true;
+      dentalPattern = 'Class II Division 2 malocclusion (retroclined upper incisors, deep overbite)';
+    } else {
+      isDiv1 = true;
+      dentalPattern = 'Class II Division 1 malocclusion (proclined/normal upper incisors, increased overjet)';
+    }
+  } else if (skeletalClass === 'Class III') {
+    dentalPattern = 'Class III malocclusion (anterior crossbite / negative overjet)';
+  }
+
   const problemList: string[] = [];
-  const treatmentObjectives: string[] = [];
-  const applianceSuggestions: { category: string; justification: string; items: string[] }[] = [];
-  const retentionConsiderations: string[] = [
-    OrthoKnowledgeBase.RetentionRules.DualRetention,
-    OrthoKnowledgeBase.RetentionRules.ActiveRetention
-  ];
+  problemList.push(`Skeletal ${skeletalClass} due to ${skeletalEtiology}`);
+  problemList.push(dentalPattern);
+  problemList.push(`Vertical Pattern: ${verticalPattern}`);
 
-  // 1. Diagnose skeletal pattern
-  let skeletalPatternDesc = '';
-  if (isClass2 || anb >= OrthoKnowledgeBase.SkeletalSagittal.ClassII.anbRange.min) {
-    skeletalPatternDesc = `Skeletal Class II relationship characterized by a positive sagittal discrepancy (ANB: ${anb}°). `;
-    if (ceph.sna !== '' && (ceph.sna as number) > 84) {
-      skeletalPatternDesc += 'Primary etiology is maxillary protrusion/prognathism. ';
-      problemList.push('Maxillary skeletal protrusion');
-    } else if (ceph.snb !== '' && (ceph.snb as number) < 78) {
-      skeletalPatternDesc += 'Primary etiology is mandibular skeletal retrognathia. ';
-      problemList.push('Mandibular skeletal retrognathia (short mandible)');
-    } else {
-      skeletalPatternDesc += 'Etiology is a combination of maxillary and mandibular skeletal elements. ';
-    }
-  } else if (isClass3 || anb <= OrthoKnowledgeBase.SkeletalSagittal.ClassIII.anbRange.max) {
-    skeletalPatternDesc = `Skeletal Class III relationship characterized by a negative sagittal discrepancy (ANB: ${anb}°). `;
-    if (ceph.sna !== '' && (ceph.sna as number) < 79) {
-      skeletalPatternDesc += 'Primary factor is maxillary hypoplasia / retrusion. ';
-      problemList.push('Maxillary skeletal retrognathia (hypoplasia)');
-    } else if (ceph.snb !== '' && (ceph.snb as number) > 81) {
-      skeletalPatternDesc += 'Primary factor is mandibular skeletal prognathism (excess). ';
-      problemList.push('Mandibular skeletal excess / prognathism');
-    } else {
-      skeletalPatternDesc += 'Etiology is a combined maxillo-mandibular skeletal imbalance. ';
-    }
-  } else {
-    skeletalPatternDesc = `Skeletal Class I relationship with normal jaw harmony (ANB: ${anb}°). `;
-  }
-
-  // 2. Dental Compensation assessment
-  let dentalCompensationDesc = '';
-  if (isClass2) {
-    if (impa > 95) {
-      dentalCompensationDesc = `Natural dental compensation is observed via excessive mandibular incisor proclination (IMPA: ${impa}°) and labial tipping to span the sagittal gap. `;
-      problemList.push(`Dentoalveolar compensation: Mandibular incisor proclination (IMPA: ${impa}°)`);
-      treatmentObjectives.push('Manage and control lower incisor proclination to preserve labial alveolar bone plates');
-    } else if (impa < 87) {
-      dentalCompensationDesc = `Mandibular incisors are retroclined (IMPA: ${impa}°), which is atypical for Class II and represents decompensation, increasing the effective overjet. `;
-      problemList.push(`Decompensated lower incisors (IMPA: ${impa}°)`);
-    } else {
-      dentalCompensationDesc = `Mandibular incisors reside in a relatively normal range (IMPA: ${impa}°). `;
-    }
-    
-    if (u1sn < 100) {
-      dentalCompensationDesc += `Upper incisors are retroclined (U1-SN: ${u1sn}°), indicating a Division 2 compensatory pattern.`;
-      problemList.push(`Upper incisor retroclination (U1-SN: ${u1sn}°)`);
-      treatmentObjectives.push('Intrude and flare upper incisors to unlock mandibular advancement path');
-    }
-  } else if (isClass3) {
-    if (u1sn > 110) {
-      dentalCompensationDesc = `Significant dental compensation is present with highly proclined upper incisors (U1-SN: ${u1sn}°) attempting to bypass the Class III skeletal discrepancy. `;
-      problemList.push(`Dentoalveolar compensation: Maxillary incisor proclination (U1-SN: ${u1sn}°)`);
-      treatmentObjectives.push('Maintain or gently upright excessively flared upper incisors to minimize periodontal strain');
-    }
-    if (impa < 85) {
-      dentalCompensationDesc += `Mandibular incisors display compensatory lingual retroclination (IMPA: ${impa}°) to establish positive overjet.`;
-      problemList.push(`Dentoalveolar compensation: Mandibular incisor retroclination (IMPA: ${impa}°)`);
-    }
-  } else {
-    dentalCompensationDesc = `Upper (U1-SN: ${u1sn}°) and lower incisors (IMPA: ${impa}°) display minimal sagittal tipping compensation. `;
-  }
-
-  // Crowding / Spacing Problems
+  if (overjet > 4) problemList.push(`Increased overjet (${overjet} mm)`);
+  if (overbite > 4) problemList.push(`Deep bite (${overbite} mm)`);
+  if (overbite < 0) problemList.push(`Open bite (${overbite} mm)`);
+  
   if (options.crowdingSeverity !== 'none') {
-    problemList.push(`${options.crowdingSeverity.charAt(0).toUpperCase() + options.crowdingSeverity.slice(1)} dental crowding in arches`);
-    treatmentObjectives.push('Resolve dental crowding and achieve clean arch alignment');
+    problemList.push(`${options.crowdingSeverity.toUpperCase()} crowding in dental arches`);
   }
   if (options.spacingSeverity !== 'none') {
-    problemList.push(`${options.spacingSeverity.charAt(0).toUpperCase() + options.spacingSeverity.slice(1)} space distribution`);
-    treatmentObjectives.push('Close anterior/posterior spacing and stabilize contact points');
+    problemList.push(`${options.spacingSeverity.toUpperCase()} spacing in dental arches`);
   }
-  if (ceph.crossbite && ceph.crossbite !== 'None') {
-    problemList.push(`${ceph.crossbite} crossbite`);
-    treatmentObjectives.push('Correct anterior/posterior crossbite relationships');
+  if (ceph.posteriorCrossbite && ceph.posteriorCrossbite !== 'None') {
+    problemList.push(`${ceph.posteriorCrossbite} posterior crossbite`);
   }
-  if (overjet > 4) {
-    problemList.push(`Increased overjet (${overjet}mm)`);
-    treatmentObjectives.push('Reduce overjet to normal range (2-3mm)');
-  } else if (overjet < 0) {
-    problemList.push(`Negative overjet / Anterior crossbite (${overjet}mm)`);
-    treatmentObjectives.push('Eliminate anterior crossbite and establish positive overjet');
-  }
-  if (overbite > 4) {
-    problemList.push(`Deep overbite (${overbite}mm)`);
-    treatmentObjectives.push('Reduce deep overbite to achieve healthy incisal contact');
-  } else if (overbite < 1) {
-    problemList.push(`Reduced overbite / Open bite (${overbite}mm)`);
-    treatmentObjectives.push('Correct open bite / establish functional overbite');
+  if (ceph.midlineDeviation && ceph.midlineDeviation !== 0) {
+    problemList.push(`Midline deviation`);
   }
 
-  // 3. Complexity Level Determination
-  let complexity: 'Simple' | 'Moderate' | 'Complex' | 'Severe / Surgical' = 'Simple';
-  if (oci.totalScore > 65 || anb > 8 || anb < -2) {
-    complexity = 'Severe / Surgical';
-  } else if (oci.totalScore > 40 || options.crowdingSeverity === 'severe' || options.crowdingSeverity === 'moderate') {
-    complexity = 'Complex';
-  } else if (oci.totalScore > 20 || options.crowdingSeverity === 'mild') {
-    complexity = 'Moderate';
+  // ==========================================
+  // STEP 5: Treatment Decision Tree
+  // ==========================================
+  const primaryTreatment: string[] = [];
+  const phaseDetails = {
+    phase1: 'N/A',
+    phase2: 'Comprehensive fixed orthodontic alignment & leveling',
+    phase3: 'Finishing, settling, and detailing dental intercuspation',
+    phase4: 'Retention: Upper vacuum-formed retainer + lower fixed lingual wire'
+  };
+
+  const suggestions: { category: string; justification: string; items: string[] }[] = [];
+  let whySelected = '';
+
+  // CLASS II DIVISION 1 DECISION TREE
+  if (skeletalClass === 'Class II' && isDiv1) {
+    if (isGrowing) {
+      if (skeletalEtiology.includes('mandibular retrognathism')) {
+        // MANDATORY TWIN BLOCK functional appliance
+        primaryTreatment.push(
+          'Twin Block functional appliance (first-line growth modification)',
+          'Transition to comprehensive fixed orthodontic treatment after correction of the sagittal discrepancy',
+          'Finishing and detailing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Twin Block functional appliance therapy for active mandibular orthopedic advancement (9-12 months)';
+        
+        suggestions.push({
+          category: 'Functional Orthopedics',
+          justification: 'First-line growth modification is indicated to stimulate mandibular growth during active pubertal growth spurt.',
+          items: ['Twin Block functional appliance', 'Herbst appliance (fixed option)', 'Forsus FRD elastics (late-growing option)']
+        });
+
+        whySelected = `Patient is a growing individual (${age} years old) presenting with a skeletal Class II relationship due to mandibular retrognathism. Twin Block functional appliance is selected as the primary growth modification therapy to orthopedicly advance the mandible before epiphyseal fusion, avoiding early camouflage extractions or delayed orthognathic surgery.`;
+      } else {
+        // Maxillary Prognathism growing
+        primaryTreatment.push(
+          'Orthopedic Headgear or maxillary arch distalization',
+          'Transition to comprehensive fixed orthodontic treatment',
+          'Finishing and detailing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Orthopedic High-pull / Cervical headgear to restrict maxillary growth (8-10 months)';
+        
+        suggestions.push({
+          category: 'Maxillary Growth Restraint',
+          justification: 'Indicated to restrict skeletal maxillary projection during active growing years.',
+          items: ['High-pull headgear', 'Kariere Motion distalizer', 'Transpalatal arch']
+        });
+
+        whySelected = `Patient is a growing individual with a skeletal Class II relationship caused by maxillary prognathism. Orthopedic headgear or maxillary distalization is indicated to restrict maxillary projection and coordinate the dental arches.`;
+      }
+    } else {
+      // Adult Class II Div 1
+      if (oci.totalScore <= 40) {
+        // Mild: Camouflage
+        primaryTreatment.push(
+          'Dentoalveolar Camouflage using fixed appliances with Class II elastics',
+          'Finishing and detailing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Dental leveling and alignment prior to inter-arch mechanics';
+        phaseDetails.phase2 = 'Class II elastics and sequential interproximal reduction (IPR) to retract upper incisors';
+        
+        suggestions.push({
+          category: 'Orthodontic Camouflage',
+          justification: 'Indicated for mild adult skeletal discrepancies where dental camouflage achieves optimal functional occlusion without surgical intervention.',
+          items: ['Class II elastics', 'IPR sequence', '0.022" Pre-adjusted bracket system']
+        });
+
+        whySelected = `Patient is an adult with completed growth and a mild skeletal Class II relationship. Dentoalveolar camouflage using fixed appliances and Class II elastics is selected to correct the overjet and establish a stable occlusion.`;
+      } else if (oci.totalScore <= 60) {
+        // Moderate: Extraction
+        primaryTreatment.push(
+          'Dentoalveolar Camouflage with extraction of two maxillary first premolars (14, 24)',
+          'Comprehensive fixed appliance retraction',
+          'Finishing and detailing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Extraction of upper first premolars (14, 24) and anchorage consolidation';
+        phaseDetails.phase2 = 'Fixed bracket alignment and sliding mechanics to retract upper anterior segment';
+        
+        suggestions.push({
+          category: 'Therapeutic Extraction Camouflage',
+          justification: 'Premolar extractions provide the physical space needed to retract the upper incisors and reduce the moderate overjet.',
+          items: ['Upper first premolar extractions', 'Transpalatal arch (TPA) for anchorage', 'TADs (Temporary Anchorage Devices)']
+        });
+
+        whySelected = `Patient is an adult with a moderate skeletal Class II relationship. Upper premolar extractions are indicated to create space for incisor retraction, allowing camouflage correction of the overjet while keeping lower incisors stable.`;
+      } else {
+        // Severe: Surgery
+        primaryTreatment.push(
+          'Combined Orthognathic Surgery (BSSO mandibular advancement) and comprehensive orthodontics',
+          'Pre-surgical orthodontic decompensation',
+          'Surgical jaw repositioning',
+          'Post-surgical refinement and finishing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Pre-surgical orthodontic alignment and decompensation (retroclining lower incisors, proclining upper incisors)';
+        phaseDetails.phase2 = 'Orthognathic surgery: Bilateral Sagittal Split Osteotomy (BSSO) for mandibular advancement';
+        phaseDetails.phase3 = 'Post-surgical finishing and occlusal settling elastics';
+
+        suggestions.push({
+          category: 'Orthognathic Surgery',
+          justification: 'Severe skeletal Class II in a mature adult cannot be safely corrected with camouflage without periodontal breakdown or profile flattening.',
+          items: ['Bilateral Sagittal Split Osteotomy (BSSO)', 'Rigid internal fixation plates', 'Pre-surgical decompensation elastics']
+        });
+
+        whySelected = `Patient is an adult with a severe skeletal Class II discrepancy and completed growth. Dentoalveolar camouflage is contraindicated due to extreme overjet, lack of growth potential, and risk of profile flattening. Surgical mandibular advancement via BSSO is the primary treatment of choice.`;
+      }
+    }
   }
 
-  // 4. Growth Modification options
-  const isGrowing = options.ageGroup === 'growing';
-  let growthModificationTiming = '';
-  const growthGuidanceOptions: string[] = [];
-  
-  if (isGrowing) {
-    if (isClass2) {
-      growthModificationTiming = 'Peak skeletal growth velocity period (typically CS3 to CS4 stages on cervical vertebral maturation) is critical.';
-      growthGuidanceOptions.push(
-        'Mandibular promotion with functional appliances (e.g., Twin Block or Herbst appliance) to stimulate condylar modeling.',
-        'High-pull headgear to control vertical maxillary growth if hyperdivergent skeletal pattern exists.'
+  // CLASS II DIVISION 2 DECISION TREE
+  else if (skeletalClass === 'Class II' && isDiv2) {
+    if (isGrowing) {
+      primaryTreatment.push(
+        'Initial leveling and flaring of retroclined upper incisors (unlocking the bite)',
+        'Twin Block functional appliance for mandibular growth modification',
+        'Comprehensive fixed orthodontic refinement',
+        'Retention'
       );
-      applianceSuggestions.push({
-        category: 'Functional Orthopedics',
-        justification: 'Indicated for correcting skeletal Class II discrepancy via active mandibular growth stimulation during peak development.',
-        items: ['Twin Block Appliance', 'Herbst Appliance', 'Forsus Fatigue Resistant Device']
+      phaseDetails.phase1 = 'Unlock mandible by leveling and proclining upper incisors (utility arch / partial brackets)';
+      phaseDetails.phase2 = 'Twin Block functional appliance therapy for orthopedic mandibular promotion';
+
+      suggestions.push({
+        category: 'Incisor Unlocking & Orthopedics',
+        justification: 'Upper central incisors must be proclined first to remove the mechanical lock on the mandible before functional advancement.',
+        items: ['Utility intrusion arch', 'Twin Block functional appliance', 'Class II elastics']
       });
-    } else if (isClass3) {
-      growthModificationTiming = 'Early interceptive growth intervention is highly recommended before age 9 (CS1 to CS2 stages).';
-      growthGuidanceOptions.push(
-        'Maxillary protraction utilizing a reverse-pull facemask (Petit type) paired with a Rapid Palatal Expander (RPE).',
-        'Alternating Rapid Maxillary Expansion and Constriction (Alt-RAMEC) protocol to disrupt circummaxillary sutures.'
+
+      whySelected = `Patient is a growing individual with a Class II Division 2 pattern. Retroclined upper central incisors lock the mandible in a retruded position. Initial proclination to unlock the bite is required before active functional growth modification with a Twin Block.`;
+    } else {
+      // Adult Class II Div 2
+      primaryTreatment.push(
+        'Fixed appliances to level the curve of Spee and procline retroclined incisors',
+        'Inter-arch Class II elastics or selective camouflage extractions',
+        'Finishing and detailing',
+        'Retention'
       );
-      applianceSuggestions.push({
-        category: 'Orthopedic Protraction',
-        justification: 'Indicated for skeletal Class III growing patients to release maxillary entrapment and stimulate midface sutural growth.',
-        items: ['DeLaire/Petit Facemask', 'Rapid Palatal Expander (RPE) with hooks', 'Alt-RAMEC sutural expansion protocol']
+      phaseDetails.phase1 = 'Unlock dental arch, align, and level deep curve of Spee';
+      
+      suggestions.push({
+        category: 'Fixed Appliance Camouflage',
+        justification: 'Adult deep bite correction via intrusion of anterior segments and level curve of Spee.',
+        items: ['Intrusion utility arches', 'Bite turbos', 'Class II elastics']
+      });
+
+      whySelected = `Patient is a mature adult with a Class II Division 2 malocclusion. Fixed appliances are indicated to level the arches, correct retroclined incisor torque, and resolve the deep bite prior to finalizing occlusion.`;
+    }
+  }
+
+  // CLASS III DECISION TREE
+  else if (skeletalClass === 'Class III') {
+    if (isGrowing) {
+      if (skeletalEtiology.includes('maxillary deficiency')) {
+        const isSevereClass3 = anb <= -4;
+        if (isSevereClass3) {
+          primaryTreatment.push(
+            'Bone-Anchored Maxillary Protraction (BAMP) utilizing miniplates and Class III elastics',
+            'Comprehensive fixed orthodontic treatment',
+            'Retention'
+          );
+          phaseDetails.phase1 = 'Surgical placement of miniplates in maxilla and mandible followed by continuous Class III elastic traction';
+          
+          suggestions.push({
+            category: 'Skeletal Anchorage Protraction',
+            justification: 'Severe skeletal Class III in a growing patient requires bone-borne orthopedic forces to prevent dental flaring and optimize maxillary protraction.',
+            items: ['BAMP miniplates', 'Class III orthopedic elastics', 'Maxillary expansion']
+          });
+
+          whySelected = `Patient is a growing individual with a severe skeletal Class III due to maxillary deficiency. Bone-Anchored Maxillary Protraction (BAMP) is selected to utilize skeletal anchorage for orthopedic maxilla advancement, avoiding dental tipping.`;
+        } else {
+          primaryTreatment.push(
+            'Rapid Maxillary Expansion (RME) combined with a Reverse-Pull Facemask (Petit type)',
+            'Comprehensive fixed orthodontic treatment',
+            'Retention'
+          );
+          phaseDetails.phase1 = 'Hyrax expander activated daily + reverse-pull facemask orthopedic traction (6-9 months)';
+          
+          suggestions.push({
+            category: 'Orthopedic Protraction',
+            justification: 'Interceptive growth modification via RME and Facemask stimulations maxillary sutural growth before expansion sutures fuse.',
+            items: ['Rapid Palatal Expander (RPE) with traction hooks', 'Petit type reverse-pull facemask', 'Chinchair appliance']
+          });
+
+          whySelected = `Patient is a growing individual with a mild-to-moderate skeletal Class III maxillary deficiency. Rapid Palatal Expansion combined with a reverse-pull facemask is selected to orthopedicly protract the maxilla and correct the anterior crossbite.`;
+        }
+      } else {
+        // Mandibular excess growing
+        primaryTreatment.push(
+          'Interceptive growth monitoring with chincup therapy or Class III elastics',
+          'Delayed comprehensive fixed orthodontics or orthognathic surgery at growth completion',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Interceptive orthopedic monitoring and vertical control';
+
+        suggestions.push({
+          category: 'Interceptive Orthopedics',
+          justification: 'Mandibular excess growth is difficult to restrict. Early chincup or elastics may redirect growth, but delayed surgery is often indicated.',
+          items: ['Chincup therapy', 'Class III elastics', 'Lower lingual arch']
+        });
+
+        whySelected = `Patient is a growing individual with Class III due to mandibular excess. Growth modification has limited predictability; interceptive monitoring is indicated with delayed definitive surgery at maturity if discrepancy worsens.`;
+      }
+    } else {
+      // Adult Class III
+      if (oci.totalScore <= 40) {
+        // Mild: Camouflage
+        primaryTreatment.push(
+          'Dentoalveolar Camouflage (fixed appliances with Class III elastics and/or mandibular incisor extraction)',
+          'Finishing and detailing',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Dental alignment and coordination';
+        phaseDetails.phase2 = 'Class III elastics and mandibular incisor retroclination / distalization';
+
+        suggestions.push({
+          category: 'Class III Camouflage',
+          justification: 'Indicated for mild adult Class III cases to achieve positive overjet via incisor proclination/retroclination.',
+          items: ['Class III elastics', 'Mandibular first premolar extractions', 'Lower TADs for total arch distalization']
+        });
+
+        whySelected = `Patient is an adult with a mild skeletal Class III discrepancy. Dentoalveolar camouflage via lower arch distalization using elastics/TADs is selected to establish normal overjet and canine relations.`;
+      } else {
+        // Severe: Surgery
+        primaryTreatment.push(
+          'Combined Orthognathic Surgery (LeFort I maxillary advancement and/or BSSO mandibular setback)',
+          'Pre-surgical orthodontic decompensation',
+          'Surgical jaw repositioning',
+          'Post-surgical finishing and coordination',
+          'Retention'
+        );
+        phaseDetails.phase1 = 'Pre-surgical alignment and decompensation (proclining lower incisors, retroclining upper incisors)';
+        phaseDetails.phase2 = 'Bimaxillary orthognathic surgery: LeFort I advancement and BSSO mandibular setback';
+
+        suggestions.push({
+          category: 'Combined Surgical-Orthodontic',
+          justification: 'Severe adult Class III discrepancies cannot be camouflaged without resulting in unsafe lower incisor retroclination or profile compromise.',
+          items: ['LeFort I maxillary advancement osteotomy', 'BSSO mandibular setback osteotomy', 'Rigid internal fixation plates']
+        });
+
+        whySelected = `Patient is a mature adult with a severe skeletal Class III discrepancy. Combined orthognathic surgery (maxillary advancement/mandibular setback) is indicated to correct the skeletal base relationship and achieve profile harmony.`;
+      }
+    }
+  }
+
+  // CLASS I DECISION TREE
+  else {
+    if (options.crowdingSeverity === 'severe') {
+      primaryTreatment.push(
+        'Fixed orthodontic treatment with extraction of four first premolars (14, 24, 34, 44)',
+        'Leveling, alignment, and space closure',
+        'Finishing and detailing',
+        'Retention'
+      );
+      phaseDetails.phase1 = 'Extractions of 14, 24, 34, 44 premolars followed by canine distalization and incisor retraction';
+
+      suggestions.push({
+        category: 'Therapeutic Extractions',
+        justification: 'Extraction of first premolars is mandatory to resolve severe crowding exceeding 8mm, ensuring incisors remain within safe alveolar bone limits.',
+        items: ['Premolar extractions (14, 24, 34, 44)', 'Sliding mechanics', 'Transpalatal arch (TPA)']
+      });
+
+      whySelected = `Patient presents with a skeletal Class I relationship and severe dental crowding. Extraction of four first premolars is indicated to gain sufficient physical arch space for alignment without causing lip protrusion or alveolar dehiscence.`;
+    } else if (options.crowdingSeverity === 'moderate') {
+      primaryTreatment.push(
+        'Non-extraction alignment with interproximal reduction (IPR) and/or transverse expansion',
+        'Finishing and detailing',
+        'Retention'
+      );
+      phaseDetails.phase1 = 'Leveling and arch expansion followed by planned interproximal reduction (IPR)';
+
+      suggestions.push({
+        category: 'Space Gaining Mechanics',
+        justification: 'Moderate crowding can be resolved via non-extraction expansion and selective IPR, avoiding unnecessary extractions.',
+        items: ['Interproximal reduction (IPR)', 'Arch expansion wires', 'Bite openers']
+      });
+
+      whySelected = `Patient presents with a skeletal Class I relationship and moderate crowding. Space gaining mechanics via transverse arch expansion and selective IPR are selected as a conservative non-extraction approach.`;
+    } else {
+      // Mild crowding or spacing
+      primaryTreatment.push(
+        'Non-extraction alignment using fixed appliances or clear aligners',
+        'Finishing and detailing',
+        'Retention'
+      );
+      
+      suggestions.push({
+        category: 'Aesthetic Alignment',
+        justification: 'Mild crowding or spacing is best resolved with conservative non-extraction alignment (brackets or clear aligners).',
+        items: ['Clear aligners (Invisalign)', '0.022" Ceramic/Metal brackets', 'IPR if needed']
+      });
+
+      whySelected = `Patient presents with a skeletal Class I relationship and mild crowding/spacing. Conservative non-extraction alignment is indicated using fixed brackets or aesthetic clear aligners.`;
+    }
+  }
+
+  // ==========================================
+  // SPECIFIC MECHANICAL ADDITIONS
+  // ==========================================
+  
+  // Transverse crossbites
+  if (ceph.posteriorCrossbite && ceph.posteriorCrossbite !== 'None') {
+    if (isGrowing) {
+      primaryTreatment.unshift('Rapid Palatal Expansion (RPE) using a Hyrax appliance');
+      phaseDetails.phase1 = 'Rapid Palatal Expansion (RPE) to resolve transverse deficiency prior to sagittal mechanics';
+      
+      suggestions.unshift({
+        category: 'Transverse Expansion',
+        justification: 'RPE is indicated in growing patients to correct skeletal posterior crossbite via midpalatal suture separation.',
+        items: ['Hyrax Palatal Expander', 'Quad Helix (for dental expansion)']
       });
     } else {
-      growthModificationTiming = 'Preventative and interceptive space preservation.';
-      growthGuidanceOptions.push('Passive space maintenance to guide erupting dentition.');
-    }
-  } else {
-    growthModificationTiming = 'Patient is skeletally mature. Growth modification mechanics are no longer biologically viable.';
-  }
-
-  // 5. Orthodontic Camouflage (Extraction/Non-extraction & space management)
-  let extractionConsideration = '';
-  let spaceManagement = '';
-  let incisorCompStrats = '';
-  let anchorageConsiderations = '';
-
-  // Extraction rules
-  if (options.crowdingSeverity === 'severe') {
-    extractionConsideration = 'Bimaxillary or single arch extraction is highly indicated. Standard therapeutic extraction of four first premolars (14, 24, 34, 44) will yield required physical space to resolve severe crowding without pushing incisors out of labial alveolar bone.';
-    spaceManagement = 'Complete use of extraction spaces to relieve local imbrication and retract proclined anterior teeth.';
-  } else if (options.crowdingSeverity === 'moderate') {
-    extractionConsideration = 'Borderline extraction case. Treatment planning must weigh patient profile convexities, periodontal biotype, and lip competence. Consider non-extraction with interproximal reduction (IPR) or orthodontic arch distalization vs. premolar extraction.';
-    spaceManagement = 'Controlled arch development / expansion, selective interproximal reduction (IPR) up to 0.5mm per contact point, or molar distalization.';
-  } else {
-    extractionConsideration = 'Non-extraction approach is fully indicated. Arch integrity can be established safely without physical extractions.';
-    spaceManagement = 'Arch alignment achieved through gentle transversal expansion, alignment mechanics, and optional minimal IPR.';
-  }
-
-  // Incisor Camouflage mechanics
-  if (isClass2) {
-    incisorCompStrats = `Controlled retroclination of maxillary incisors (reducing torque) combined with monitored proclination of mandibular incisors. Mandibular incisors must not exceed an IMPA of 110° to prevent alveolar bone dehiscence.`;
-    anchorageConsiderations = 'Maximum anchorage in upper arch (TADs / Nance button) is indicated if extraction is used, to ensure extraction space is utilized solely for incisor retraction rather than molar mesialization.';
-    if (options.crowdingSeverity === 'moderate' || options.crowdingSeverity === 'severe') {
-      applianceSuggestions.push({
-        category: 'Fixed Appliances & Anchorage',
-        justification: 'Required for full leveling, alignment, and maximum anchorage control during Class II dental camouflage retraction.',
-        items: ['0.022-inch Slot Pre-adjusted Edgewise Brackets', 'Transpalatal Arch (TPA)', 'Temporary Anchorage Devices (TADs) / Palatal Screws']
+      primaryTreatment.unshift('Miniscrew-Assisted Rapid Palatal Expansion (MARPE) or SARPE');
+      phaseDetails.phase1 = 'MARPE suture expansion or Surgically-Assisted Palatal Expansion (SARPE)';
+      
+      suggestions.unshift({
+        category: 'Skeletal Transverse Expansion',
+        justification: 'Mature palatal sutures require cortical miniscrew anchorage or surgical assistance to achieve skeletal expansion.',
+        items: ['MARPE expander', 'Surgically-Assisted RPE (SARPE)']
       });
     }
-  } else if (isClass3) {
-    incisorCompStrats = `Proclination of maxillary anterior segment (U1-SN up to 120°) and retroclination/uprighting of mandibular anterior segment (IMPA reduced toward 80°). This achieves a stable positive overjet by masking the Class III skeletal base.`;
-    anchorageConsiderations = 'Lower molar anchorage preservation is required. Consider lower arch Class III elastics or lower TADs to assist in total mandibular arch distalization.';
-    applianceSuggestions.push({
-      category: 'Fixed Brackets & Inter-arch Mechanics',
-      justification: 'Necessary to coordinate dental arches and administer inter-arch force systems for skeletal Class III camouflage.',
-      items: ['Class III Orthodontic Elastics (from lower anterior to upper posterior)', 'Lower Lingual Arch (LLA) for anchor consolidation', 'Palatal TAD-supported Maxillary Distalizer']
-    });
+  }
+
+  // Deep bite mechanics
+  if (overbite > 4) {
+    if (isGrowing) {
+      primaryTreatment.push('Anterior bite plate or utility intrusion archwire');
+      suggestions.push({
+        category: 'Deep Bite Correction',
+        justification: 'Growing deep bites are corrected by preventing incisor eruption with an anterior bite plate while allowing posterior eruption.',
+        items: ['Anterior bite plate', 'Utility intrusion arch', 'Reverse curve of Spee wire']
+      });
+    } else {
+      primaryTreatment.push('Curve of Spee leveling and anterior intrusion using intrusion arches or TADs');
+      suggestions.push({
+        category: 'Deep Bite Intrusion',
+        justification: 'Adult deep bites require active incisor intrusion or posterior extrusion using intrusion arches or skeletal TADs.',
+        items: ['Intrusion utility arches', 'Bite turbos / Posterior composite pillars', 'Mini-screws (TADs) for anterior intrusion']
+      });
+    }
+  }
+
+  // Open bite mechanics
+  if (overbite < 0) {
+    const hasHabit = patient.habits && patient.habits.length > 0 && !patient.habits.includes('None') && !patient.habits.includes('');
+    if (hasHabit) {
+      primaryTreatment.unshift('Habit interception appliance (tongue crib)');
+      phaseDetails.phase1 = 'Habit breaker / tongue crib appliance to eliminate digit sucking or tongue thrusting';
+      
+      suggestions.push({
+        category: 'Habit Interception',
+        justification: 'Digit or tongue habits must be intercepted to allow spontaneous open bite closure.',
+        items: ['Tongue crib appliance', 'Palatal spur appliance', 'Myofunctional therapy']
+      });
+    } else if (fma > 28) {
+      // Vertical grower open bite
+      primaryTreatment.push('Posterior segment intrusion utilizing Temporary Anchorage Devices (TADs)');
+      suggestions.push({
+        category: 'Vertical Control Intrusion',
+        justification: 'Open bite in a high angle patient requires posterior intrusion using TADs to rotate the mandible counter-clockwise.',
+        items: ['Posterior palatal TADs', 'Intrusion arches', 'Vertical elastics']
+      });
+    }
+  }
+
+  // ==========================================
+  // STEP 6: Extraction Decision Explanation
+  // ==========================================
+  let extractionConsideration = '';
+  const isExtractionRecommended = primaryTreatment.some(t => t.toLowerCase().includes('extraction'));
+  if (isExtractionRecommended) {
+    extractionConsideration = 'Therapeutic extractions are recommended due to severe space deficiency and/or excessive incisor protrusion. This ensures alignment stability without compromising the labial cortical plate.';
   } else {
-    incisorCompStrats = 'Incisors should be maintained in their current biological sagittal zone with focus purely on alignment and minor torque correction.';
-    anchorageConsiderations = 'Standard anchorage mechanics. Minimal or reciprocal anchorage is sufficient.';
+    extractionConsideration = 'Non-extraction approach is recommended because the arch space deficiency is mild-to-moderate. Arch development, transverse expansion, and interproximal reduction (IPR) are sufficient for alignment.';
   }
 
-  // Transverse expansion appliance addition
-  if (ceph.posteriorCrossbite && ceph.posteriorCrossbite !== 'None') {
-    applianceSuggestions.unshift({
-      category: 'Maxillary Arch Development',
-      justification: `Directly indicated to correct ${ceph.posteriorCrossbite.toLowerCase()} posterior crossbite and resolve transverse skeletal/dental maxillary deficiency.`,
-      items: [
-        options.ageGroup === 'growing' ? 'Hyrax Rapid Palatal Expander (RPE)' : 'Miniscrew-Assisted Rapid Palatal Expander (MARPE)',
-        'Quad Helix appliance for slow dental expansion'
-      ]
-    });
+  // ==========================================
+  // STEP 8: Orthognathic Surgery indication
+  // ==========================================
+  let orthognathicReferralConsideration = 'Not indicated. The skeletal pattern is mild-to-moderate and dentoalveolar camouflage or growth modification is highly feasible.';
+  if (primaryTreatment.some(t => t.toLowerCase().includes('surgery') || t.toLowerCase().includes('orthognathic'))) {
+    orthognathicReferralConsideration = `Orthognathic surgery is indicated because skeletal jaw discrepancy is severe (ANB: ${anb}°), growth is completed, and dentoalveolar camouflage alone would cause severe aesthetic and periodontal compromise.`;
   }
 
-  // Clear aligners justification
-  if (complexity === 'Simple' || (complexity === 'Moderate' && options.spacingSeverity !== 'none')) {
-    applianceSuggestions.push({
-      category: 'Clear Aligner Systems',
-      justification: 'A highly aesthetic, premium treatment modality. Best suited for resolving minor to moderate dental spacing/crowding and performing minor dental camouflage without severe skeletal disharmonies.',
-      items: ['Sequential Thermoplastic Clear Aligners (Invisalign/equivalent)', 'Attachment templates for root torque expression', 'IPR sequencing kits']
-    });
-  } else {
-    applianceSuggestions.push({
-      category: 'Clear Aligner Systems (Alternative)',
-      justification: 'Can be utilized for complex camouflage cases, but requires advanced hybrid mechanics (TADs, elastics) and high patient compliance to address severe sagittal discrepancies.',
-      items: ['Clear Aligners with precision cuts for elastics', 'Pre-aligner segmental fixed mechanics']
-    });
-  }
-
-  // 6. Surgical Orthodontics
-  let surgicalConsideration = '';
-  const isSurgicalCandidate = complexity === 'Severe / Surgical';
-  if (isSurgicalCandidate) {
-    surgicalConsideration = `Critical skeletal discrepancy (ANB: ${anb}°, computed compensation index total score: ${oci.totalScore}/100) indicates that camouflage alone would carry substantial aesthetic, stability, and periodontal risks. Full orthognathic surgery referral is highly recommended for skeletal correction.`;
-    problemList.unshift('Severe jaw sagittal skeletal disharmony');
-  } else {
-    surgicalConsideration = 'Skeletal pattern is mild-to-moderate. Orthognathic surgery is not standardly indicated. Camouflage is highly feasible.';
-  }
-
-  // 7. Approaches Advantages & Disadvantages
+  // ==========================================
+  // STEP 9: Alternatives, Risks, Prognosis
+  // ==========================================
   const possibleApproaches: { name: string; description: string; advantages: string[]; disadvantages: string[] }[] = [];
   
-  if (isGrowing) {
-    possibleApproaches.push({
-      name: 'Interceptive Growth Modification (Phase 1)',
-      description: `Growth redirection and orthopedic orthopedic traction targeting the skeletal base (${isClass2 ? 'stimulating mandibular growth' : 'protracting the hypoplastic maxilla'}).`,
-      advantages: [
-        'Directly addresses the skeletal etiology of the malocclusion',
-        'Improves skeletal jaw harmony and facial profile aesthetics early',
-        'Reduces the complexity, duration, or necessity of a later Phase 2 orthodontic treatment or surgery'
-      ],
-      disadvantages: [
-        'Completely reliant on strict patient compliance with orthopedic appliances',
-        'Relies on favorable, active biological growth spurts',
-        'Requires two distinct phases of clinical treatment (Phase 1 Orthopedic & Phase 2 Fixed)'
-      ]
-    });
-  }
-
+  // Primary Approach
   possibleApproaches.push({
-    name: 'Dentoalveolar Camouflage (Fixed Orthodontics)',
-    description: 'Masking the skeletal discrepancy by strategically tipping, torqueing, and moving teeth without modifying the underlying skeletal jaw bases. May involve selective extractions.',
+    name: isGrowing && skeletalClass !== 'Class I' ? 'Primary Growth Modification & Orthodontics' : 'Primary Camouflage / Definitive Orthodontics',
+    description: `Sequence of phases focused on correcting the primary sagittal and transverse discrepancies: ${primaryTreatment[0]}.`,
     advantages: [
-      'Eliminates the risks, high costs, and downtime of orthognathic surgery',
-      'Provides excellent dental occlusion and healthy intercuspation',
-      'Can be performed with highly aesthetic clear aligners or low-friction bracket systems'
+      'Addresses the primary etiology of the malocclusion',
+      'Minimizes the need for later surgical interventions',
+      'Optimizes facial aesthetics, airway dimensions, and functional occlusion'
     ],
     disadvantages: [
-      'Facial skeletal profile discrepancy remains unchanged (only dental masking achieved)',
-      'Teeth are placed closer to their biological and periodontal boundary limits',
-      'Inherent risk of alveolar bone thinning or root resorption if teeth are excessively flared'
+      'Requires strict patient compliance',
+      'Longer overall treatment duration across multiple phases'
     ]
   });
 
-  if (isSurgicalCandidate || complexity === 'Complex') {
-    possibleApproaches.push({
-      name: 'Combined Orthognathic Surgery & Orthodontics',
-      description: 'Orthodontic preparation (decompensation) to move teeth into their true anatomical alignment within each jaw, followed by surgical repositioning (osteotomies) of the maxilla and/or mandible, finalized with post-surgical orthodontic finishing.',
-      advantages: [
-        'Directly corrects the underlying skeletal imbalance for premium facial aesthetics',
-        'Re-establishes ideal airway dimensions and improves joint (TMJ) relationships',
-        'Allows for unmatched long-term stability and optimal periodontal bone support'
-      ],
-      disadvantages: [
-        'Requires inpatient general anesthesia and a recovery window of several weeks',
-        'Substantially higher financial cost and surgical risks (temporary or permanent paresthesia)',
-        'Initial pre-surgical phase temporarily worsens dental appearance (unmasking of malocclusion)'
-      ]
-    });
-  }
+  // Alternative 1
+  possibleApproaches.push({
+    name: 'Alternative 1: Clear Aligner Therapy with Auxiliaries',
+    description: 'Sequenced thermoplastic aligners combined with Class II/III elastics, Temporary Anchorage Devices (TADs), or palatal expanders.',
+    advantages: [
+      'Superior aesthetics and comfortable daily wear',
+      'Facilitates excellent oral hygiene and decreases white spot lesions',
+      'Precise control of individual tooth movements'
+    ],
+    disadvantages: [
+      'Entirely reliant on patient compliance (22 hours/day)',
+      'Limited efficacy in major vertical or severe skeletal jaw corrections'
+    ]
+  });
 
-  // Summary prose
-  let severityAssessment = '';
-  if (oci.totalScore <= 20) {
-    severityAssessment = 'The patient presents with minimal dentoalveolar sagittal compensation. The skeletal base is relatively harmonious, meaning orthodontic correction can focus primarily on leveling, alignment, and finishing.';
-  } else if (oci.totalScore <= 40) {
-    severityAssessment = 'The patient presents with a mild degree of dentoalveolar sagittal compensation. Traditional orthodontic alignment is fully realistic with typical mechanics.';
-  } else if (oci.totalScore <= 60) {
-    severityAssessment = 'The patient presents with moderate, borderline dentoalveolar compensation. Extreme dental tipping is present to mask the skeletal discrepancy. Periodontal boundaries are stretched, requiring a highly controlled camouflage plan or surgery.';
+  // Alternative 2
+  possibleApproaches.push({
+    name: 'Alternative 2: Surgical Decompensation & Orthognathic Surgery',
+    description: 'Orthodontic setup followed by bilateral sagittal split osteotomy (BSSO) or LeFort I osteotomy after growth is completed.',
+    advantages: [
+      'Directly corrects severe skeletal discrepancies',
+      'Achieves dramatic improvement in facial profile and airway parameters'
+    ],
+    disadvantages: [
+      'Requires general anesthesia and hospitalization',
+      'Significantly higher financial cost and recovery period'
+    ]
+  });
+
+  // Alternative 3
+  possibleApproaches.push({
+    name: 'Alternative 3: Compromise Non-extraction / Alignment Only',
+    description: 'Minimal correction focusing solely on resolving anterior crowding/spacing without attempting to correct the underlying skeletal relationship.',
+    advantages: [
+      'Shorter treatment time and lower cost',
+      'Avoids surgical or extraction procedures'
+    ],
+    disadvantages: [
+      'Underlying skeletal Class II/III discrepancy and profile remain unchanged',
+      'Higher risk of post-treatment relapse'
+    ]
+  });
+
+  // Treatment objectives list
+  const treatmentObjectives = [
+    'Correct skeletal discrepancy',
+    'Correct dental relationship',
+    'Improve facial profile',
+    'Improve function',
+    'Improve smile',
+    'Correct overjet',
+    'Correct overbite',
+    'Correct crowding',
+    'Improve stability'
+  ];
+
+  // Risks list
+  const risks = [
+    'Transient root resorption (blunting of root apexes)',
+    'Post-treatment relapse if retention protocols are not strictly followed',
+    'Decalcification (white spot lesions) around brackets due to poor oral hygiene',
+    'Growth limitations (unfavorable growth patterns or early growth completion)',
+    'Compliance issues (failure to wear elastics or functional appliances)'
+  ];
+
+  // Determine Prognosis
+  let prognosis: 'Excellent' | 'Good' | 'Fair' | 'Poor' = 'Good';
+  if (isGrowing) {
+    prognosis = oci.totalScore <= 40 ? 'Excellent' : 'Good';
   } else {
-    severityAssessment = 'The patient presents with severe to extreme dentoalveolar compensation, representing critical clinical limits. Camouflage mechanics are highly compromised, pointing heavily toward surgical corrective treatment.';
+    prognosis = oci.totalScore > 60 ? 'Fair' : 'Good';
   }
 
-  const context = { patient, ceph, oci };
-  const rawPlan = {
-    severityAssessment,
-    skeletalPattern: skeletalPatternDesc,
-    dentalCompensation: dentalCompensationDesc,
-    occlusalSummary: `Molar relation: ${ceph.molarRelation || 'Unrecorded'}. Canine relation: ${ceph.canineRelation || 'Unrecorded'}. Overjet: ${overjet} mm. Overbite: ${overbite} mm.`,
-    treatmentComplexity: complexity,
+  // Formatting deterministic output text
+  const diagnosisText = `Skeletal ${skeletalClass} due to ${skeletalEtiology}. ${dentalPattern}. ${verticalPattern}. ${growthStatusText}.`;
+  const recommendedTreatmentText = primaryTreatment.map((t, idx) => `${idx + 1}. ${t}`).join('\n');
+
+  return {
+    severityAssessment: `OCI Index score: ${oci.totalScore}%. Skeletal ${skeletalClass} characterized by ${skeletalEtiology}.`,
+    skeletalPattern: `Skeletal Class ${skeletalClass} (${anb}° ANB) with ${verticalPattern}.`,
+    dentalCompensation: `Maxillary incisors (U1-SN: ${u1Sn}°), Mandibular incisors (IMPA: ${impa}°). Compensation Level: ${oci.compensationLevel}.`,
+    occlusalSummary: `Molar Relation: Class ${patient.molarRelationRight || 'I'}. Canine Relation: Class ${patient.canineRelationRight || 'I'}. Overjet: ${overjet} mm. Overbite: ${overbite} mm.`,
+    treatmentComplexity: oci.totalScore > 60 ? 'Severe / Surgical' : oci.totalScore > 40 ? 'Complex' : oci.totalScore > 20 ? 'Moderate' : 'Simple',
     
     growthModification: {
       applicable: isGrowing,
-      timingConsideration: growthModificationTiming,
-      growthGuidanceOptions: growthGuidanceOptions.map(s => ClinicalNarrativeQA.validateAndClean(s, context))
+      timingConsideration: isGrowing ? 'Optimal intervention during active pubertal growth spurt.' : 'Completed growth; modification is no longer viable.',
+      growthGuidanceOptions: isGrowing ? [primaryTreatment[0]] : []
     },
     
     orthodonticCamouflage: {
-      applicable: !isSurgicalCandidate,
+      applicable: oci.totalScore <= 60,
       extractionConsideration,
-      spaceManagement,
-      incisorCompensationStrategies: incisorCompStrats,
-      anchorageConsiderations
+      spaceManagement: options.crowdingSeverity === 'severe' ? 'Premolar extraction space closure' : 'Expansion and interproximal reduction (IPR)',
+      incisorCompensationStrategies: `Torque control: Maxillary incisors (U1-SN), Mandibular incisors (IMPA).`,
+      anchorageConsiderations: options.crowdingSeverity === 'severe' ? 'Maximum anchorage using Transpalatal Arch (TPA) or TADs' : 'Reciprocal anchorage'
     },
     
     surgicalOrthodontics: {
-      applicable: isSurgicalCandidate || anb < -1 || anb > 8,
-      severeSkeletalDiscrepancyFlag: isSurgicalCandidate,
-      orthognathicReferralConsideration: surgicalConsideration
+      applicable: oci.totalScore > 60 && !isGrowing,
+      severeSkeletalDiscrepancyFlag: oci.totalScore > 60,
+      orthognathicReferralConsideration
     },
     
-    applianceSuggestions: applianceSuggestions.map(app => ({
-      category: app.category,
-      justification: ClinicalNarrativeQA.validateAndClean(app.justification, context),
-      items: app.items
-    })),
-    problemList: problemList.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
-    treatmentObjectives: treatmentObjectives.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
-    retentionConsiderations: retentionConsiderations.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
-    possibleApproaches: possibleApproaches.map(app => ({
-      ...app,
-      description: ClinicalNarrativeQA.validateAndClean(app.description, context),
-      advantages: app.advantages.map(s => ClinicalNarrativeQA.validateAndClean(s, context)),
-      disadvantages: app.disadvantages.map(s => ClinicalNarrativeQA.validateAndClean(s, context))
-    }))
+    applianceSuggestions: suggestions,
+    problemList,
+    treatmentObjectives,
+    retentionConsiderations: [
+      'Dual Retention: Upper vacuum-formed Essix retainer + lower fixed canine-to-canine lingual wire',
+      'Active retention compliance monitoring during the first 12 months'
+    ],
+    possibleApproaches,
+
+    // V4.1 DETERMINISTIC OUTPUT
+    diagnosisText,
+    recommendedTreatmentText,
+    whySelectedText: whySelected,
+    alternativesText: possibleApproaches.map(a => `• **${a.name}**\n  *Advantage*: ${a.advantages.join(', ')}\n  *Disadvantage*: ${a.disadvantages.join(', ')}`).join('\n\n'),
+    risksText: risks.join('\n'),
+    prognosisText: `Prognosis is rated as **${prognosis}** assuming cooperative patient compliance with elastics and active retention appliances.`
   };
-
-  // Run deep QA validation on top-level strings
-  rawPlan.severityAssessment = ClinicalNarrativeQA.validateAndClean(rawPlan.severityAssessment, context);
-  rawPlan.skeletalPattern = ClinicalNarrativeQA.validateAndClean(rawPlan.skeletalPattern, context);
-  rawPlan.dentalCompensation = ClinicalNarrativeQA.validateAndClean(rawPlan.dentalCompensation, context);
-  rawPlan.occlusalSummary = ClinicalNarrativeQA.validateAndClean(rawPlan.occlusalSummary, context);
-  rawPlan.orthodonticCamouflage.extractionConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.extractionConsideration, context);
-  rawPlan.orthodonticCamouflage.spaceManagement = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.spaceManagement, context);
-  rawPlan.orthodonticCamouflage.incisorCompensationStrategies = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.incisorCompensationStrategies, context);
-  rawPlan.orthodonticCamouflage.anchorageConsiderations = ClinicalNarrativeQA.validateAndClean(rawPlan.orthodonticCamouflage.anchorageConsiderations, context);
-  rawPlan.surgicalOrthodontics.orthognathicReferralConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.surgicalOrthodontics.orthognathicReferralConsideration, context);
-  rawPlan.growthModification.timingConsideration = ClinicalNarrativeQA.validateAndClean(rawPlan.growthModification.timingConsideration, context);
-
-  return rawPlan;
 }

@@ -126,6 +126,20 @@ export default function App() {
   // Core Navigation
   const [screen, setScreen] = useState<'splash' | 'home' | 'patient-form' | 'results' | 'history' | 'settings' | 'about' | 'reports' | 'clinic-photo-upload' | 'ai-processing'>('splash');
   
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const style = document.createElement('style');
+      style.textContent = `
+        body {
+          background-color: #071B49 !important;
+          margin: 0;
+          padding: 0;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+  
   // Authentication states
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isGoogleUser, setIsGoogleUser] = useState<boolean>(false);
