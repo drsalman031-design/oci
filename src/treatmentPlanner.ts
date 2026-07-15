@@ -62,6 +62,18 @@ export interface TreatmentPlanResult {
   risksText?: string;
   prognosisText?: string;
 
+  // REDESIGNED EVIDENCE-BASED PLAN FIELDS
+  growthStatusOut?: string;
+  skeletalDiagnosisOut?: string;
+  dentalDiagnosisOut?: string;
+  softTissueAssessmentOut?: string;
+  primaryTreatmentStrategyOut?: string;
+  recommendedApplianceOut?: string;
+  treatmentMechanicsOut?: string;
+  treatmentDurationOut?: string;
+  retentionProtocolOut?: string;
+  evidenceSummaryOut?: string;
+
   // ORTHODONTIC TREATMENT KNOWLEDGE ENGINE
   rankingSystem?: {
     mostRecommended: {
@@ -105,17 +117,27 @@ export function generateTreatmentPlan(
   const age = Number(patient.age) || 12;
   const isFemale = patient.gender === 'Female';
   const isMale = patient.gender === 'Male';
+  const cvm = (patient.cvmStage || '').toUpperCase();
   
   let isGrowing = false;
-  if (patient.growthStatus === 'Growing') {
+  
+  const hasGrowingCvm = ['CS1', 'CS2', 'CS3', 'CS4', 'CVM 1', 'CVM 2', 'CVM 3', 'CVM 4', 'STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4'].some(stage => cvm.includes(stage));
+  const isGrowthPotentialPresent = (patient.growthStatus || '').toLowerCase().includes('growing') ||
+                                    (patient.growthStatus || '').toLowerCase().includes('peak') ||
+                                    (patient.growthStatus || '').toLowerCase().includes('decelerating') ||
+                                    (patient.growthStatus || '').toLowerCase().includes('present') ||
+                                    (patient.growthStatus || '').toLowerCase().includes('active');
+
+  if (isFemale && age <= 16) {
     isGrowing = true;
-  } else if (patient.growthStatus === 'Growth Complete') {
-    isGrowing = false;
-  } else {
-    // Deterministic fallback based on age
-    if (isFemale && age <= 14) isGrowing = true;
-    else if (isMale && age <= 16) isGrowing = true;
-    else if (!isFemale && !isMale && age <= 15) isGrowing = true;
+  } else if (isMale && age <= 18) {
+    isGrowing = true;
+  } else if (hasGrowingCvm) {
+    isGrowing = true;
+  } else if (isGrowthPotentialPresent) {
+    isGrowing = true;
+  } else if (!isFemale && !isMale && age <= 16) {
+    isGrowing = true;
   }
 
   // Override by explicit options group
@@ -123,7 +145,7 @@ export function generateTreatmentPlan(
   if (options.ageGroup === 'adult') isGrowing = false;
 
   const growthStatusText = isGrowing 
-    ? 'Growing patient with active growth potential' 
+    ? 'GROWING PATIENT – GROWTH MODIFICATION SHOULD BE CONSIDERED' 
     : 'Skeletally mature (growth completed)';
 
   // ==========================================
@@ -847,6 +869,113 @@ export function generateTreatmentPlan(
     }
   };
 
+  // ==========================================
+  // EXTRACTION SAFETY RULE
+  // ==========================================
+  let extractionRecommendationText = 'Not indicated.';
+  if (isGrowing) {
+    extractionRecommendationText = 'Growth modification preferred before considering camouflage or extraction.';
+  } else {
+    const isSevereCrowding = options.crowdingSeverity === 'severe' || options.archDiscrepancy > 8;
+    const isProtruded = u1Sn > 110 || impa > 98;
+    if (isSevereCrowding && isProtruded && oci.totalScore > 40) {
+      extractionRecommendationText = `Extraction of premolars indicated to resolve severe crowding (${options.archDiscrepancy} mm) and reduce anterior dentoalveolar protrusion without worsening facial profile.`;
+    } else {
+      extractionRecommendationText = 'Non-extraction approach indicated. Crowding resolved via expansion or interproximal reduction (IPR).';
+    }
+  }
+
+  // ==========================================
+  // REDESIGNED EVIDENCE-BASED PLAN OUTPUT
+  // ==========================================
+  
+  // 1. Growth Status
+  const growthStatusOut = isGrowing ? 'Growing' : 'Skeletally mature (growth complete)';
+
+  // 2. Skeletal Diagnosis
+  let skeletalDiagnosisOutVal = `Class I (Harmonious bases)`;
+  if (skeletalClass === 'Class II') {
+    skeletalDiagnosisOutVal = `Class II due to Mandibular Retrognathia`;
+    if (sna > 84 && snb >= 78) {
+      skeletalDiagnosisOutVal = `Class II due to Maxillary Prognathism`;
+    }
+  } else if (skeletalClass === 'Class III') {
+    skeletalDiagnosisOutVal = `Class III due to Maxillary Deficiency`;
+  }
+  
+  // 3. Dental Diagnosis
+  let dentalDiagnosisOutVal = `Class I Malocclusion with ${options.crowdingSeverity} crowding`;
+  if (skeletalClass === 'Class II') {
+    dentalDiagnosisOutVal = `Class II Division ${isDiv2 ? '2' : '1'} with Increased Overjet (${overjet} mm) and ${options.crowdingSeverity} crowding`;
+  } else if (skeletalClass === 'Class III') {
+    dentalDiagnosisOutVal = `Class III Malocclusion with Anterior Crossbite and ${options.crowdingSeverity} crowding`;
+  }
+
+  // 4. Soft Tissue Assessment
+  const softTissueAssessmentOut = `${patient.facialProfile || 'Convex'} profile with ${patient.lips || 'lip incompetence'} at rest`;
+
+  // 5. Primary Treatment Strategy
+  let primaryTreatmentStrategyOut = 'Dentoalveolar Camouflage';
+  if (isGrowing) {
+    if (skeletalClass === 'Class II' && (snb < 78 || skeletalEtiology.includes('retrognathia') || skeletalEtiology.includes('retrusion'))) {
+      primaryTreatmentStrategyOut = 'Growth Modification';
+    } else if (skeletalClass === 'Class III') {
+      primaryTreatmentStrategyOut = 'Growth Modification (Maxillary Protraction)';
+    } else {
+      primaryTreatmentStrategyOut = 'Non-Extraction Corrective Alignment';
+    }
+  } else {
+    if (oci.totalScore > 75) {
+      primaryTreatmentStrategyOut = 'Combined Orthodontic-Orthognathic Surgical Correction';
+    } else if (oci.totalScore > 40) {
+      primaryTreatmentStrategyOut = 'Extraction-based Camouflage';
+    }
+  }
+
+  // 6. Recommended Appliance
+  let recommendedApplianceOut = 'Pre-adjusted Fixed Orthodontic Brackets';
+  if (isGrowing) {
+    if (skeletalClass === 'Class II' && (snb < 78 || skeletalEtiology.includes('retrognathia') || skeletalEtiology.includes('retrusion'))) {
+      recommendedApplianceOut = 'Twin Block Functional Appliance (First-Line), Herbst or MARA (Secondary Options)';
+    } else if (skeletalClass === 'Class III') {
+      recommendedApplianceOut = 'Reverse-pull Facemask combined with Hyrax Palatal Expander';
+    }
+  } else {
+    if (oci.totalScore > 75) {
+      recommendedApplianceOut = 'Pre-surgical decompensation fixed brackets + surgical fixation plates';
+    }
+  }
+
+  // 7. Treatment Mechanics
+  let treatmentMechanicsOut = 'Leveling & Alignment → Space Closure → Finishing';
+  if (isGrowing) {
+    if (skeletalClass === 'Class II' && (snb < 78 || skeletalEtiology.includes('retrognathia') || skeletalEtiology.includes('retrusion'))) {
+      treatmentMechanicsOut = 'Functional Phase (orthopedic mandibular advancement) → Fixed Appliance Phase (alignment and leveling)';
+    } else if (skeletalClass === 'Class III') {
+      treatmentMechanicsOut = 'Orthopedic Maxillary Protraction → Fixed Bracket Arch Coordination';
+    }
+  }
+
+  // 8. Treatment Duration
+  const treatmentDurationOut = '18–24 Months';
+
+  // 9. Retention Protocol
+  const retentionProtocolOut = 'Upper Hawley + Lower Fixed Retainer';
+
+  // 10. Evidence Summary
+  let evidenceSummaryOut = 'Conservative alignment is indicated to maintain soft-tissue profile and achieve functional occlusion (Proffit, AJODO).';
+  if (isGrowing) {
+    if (skeletalClass === 'Class II' && (snb < 78 || skeletalEtiology.includes('retrognathia') || skeletalEtiology.includes('retrusion'))) {
+      evidenceSummaryOut = 'Functional appliance therapy is indicated in growing Class II mandibular deficiency patients to improve skeletal correction and facial profile (Proffit, Graber, AJODO).';
+    } else if (skeletalClass === 'Class III') {
+      evidenceSummaryOut = 'Reverse pull facemask therapy combined with palatal expansion is indicated in growing skeletal Class III maxillary deficiency cases to promote maxillary forward growth.';
+    }
+  } else {
+    if (oci.totalScore > 75) {
+      evidenceSummaryOut = 'Severe adult skeletal discrepancy exceeds camouflage limits; combined orthognathic surgery is required for stable functional occlusion and facial harmony.';
+    }
+  }
+
   // Formatting deterministic output text
   const diagnosisText = `Skeletal ${skeletalClass} due to ${skeletalEtiology}. ${dentalPattern}. ${verticalPattern}. ${growthStatusText}.`;
   const recommendedTreatmentText = primaryTreatment.map((t, idx) => `${idx + 1}. ${t}`).join('\n');
@@ -866,7 +995,7 @@ export function generateTreatmentPlan(
     
     orthodonticCamouflage: {
       applicable: oci.totalScore <= 60,
-      extractionConsideration,
+      extractionConsideration: extractionRecommendationText,
       spaceManagement: options.crowdingSeverity === 'severe' ? 'Premolar extraction space closure' : 'Expansion and interproximal reduction (IPR)',
       incisorCompensationStrategies: `Torque control: Maxillary incisors (U1-SN), Mandibular incisors (IMPA).`,
       anchorageConsiderations: options.crowdingSeverity === 'severe' ? 'Maximum anchorage using Transpalatal Arch (TPA) or TADs' : 'Reciprocal anchorage'
@@ -894,6 +1023,18 @@ export function generateTreatmentPlan(
     alternativesText: possibleApproaches.map(a => `• **${a.name}**\n  *Advantage*: ${a.advantages.join(', ')}\n  *Disadvantage*: ${a.disadvantages.join(', ')}`).join('\n\n'),
     risksText: risks.join('\n'),
     prognosisText: `Prognosis is rated as **${prognosis}** assuming cooperative patient compliance with elastics and active retention appliances.`,
-    rankingSystem
+    rankingSystem,
+
+    // REDESIGNED EVIDENCE-BASED PLAN OUTPUT
+    growthStatusOut,
+    skeletalDiagnosisOut: skeletalDiagnosisOutVal,
+    dentalDiagnosisOut: dentalDiagnosisOutVal,
+    softTissueAssessmentOut,
+    primaryTreatmentStrategyOut,
+    recommendedApplianceOut,
+    treatmentMechanicsOut,
+    treatmentDurationOut,
+    retentionProtocolOut,
+    evidenceSummaryOut
   };
 }

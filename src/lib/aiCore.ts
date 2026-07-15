@@ -180,20 +180,31 @@ export class DecisionEngine {
     const age = Number(patient.age) || 12;
     const isFemale = patient.gender === 'Female';
     const isMale = patient.gender === 'Male';
+    const cvm = (patient.cvmStage || '').toUpperCase();
     
     let isGrowing = false;
-    if (patient.growthStatus === 'Growing' || patient.growthStatus === 'Peak Growth') {
+    
+    const hasGrowingCvm = ['CS1', 'CS2', 'CS3', 'CS4', 'CVM 1', 'CVM 2', 'CVM 3', 'CVM 4', 'STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4'].some(stage => cvm.includes(stage));
+    const isGrowthPotentialPresent = (patient.growthStatus || '').toLowerCase().includes('growing') ||
+                                      (patient.growthStatus || '').toLowerCase().includes('peak') ||
+                                      (patient.growthStatus || '').toLowerCase().includes('decelerating') ||
+                                      (patient.growthStatus || '').toLowerCase().includes('present') ||
+                                      (patient.growthStatus || '').toLowerCase().includes('active');
+
+    if (isFemale && age <= 16) {
       isGrowing = true;
-    } else if (patient.growthStatus === 'Growth Complete') {
-      isGrowing = false;
-    } else {
-      if (isFemale && age <= 14) isGrowing = true;
-      else if (isMale && age <= 16) isGrowing = true;
-      else if (!isFemale && !isMale && age <= 15) isGrowing = true;
+    } else if (isMale && age <= 18) {
+      isGrowing = true;
+    } else if (hasGrowingCvm) {
+      isGrowing = true;
+    } else if (isGrowthPotentialPresent) {
+      isGrowing = true;
+    } else if (!isFemale && !isMale && age <= 16) {
+      isGrowing = true;
     }
 
-    const isSurgical = oci.totalScore > 60;
-    const isExtraction = oci.totalScore > 50;
+    const isSurgical = oci.totalScore > 75 && !isGrowing;
+    const isExtraction = oci.totalScore > 40 && !isGrowing;
     
     let diag = '';
     if (mode === 'clinic') {
@@ -207,15 +218,15 @@ export class DecisionEngine {
     const diagUpper = diag.toUpperCase();
     const isClassII = diagUpper.includes('CLASS II') || (patient.diagnosis && patient.diagnosis === 'Class II');
     const isClassIII = diagUpper.includes('CLASS III') || (patient.diagnosis && patient.diagnosis === 'Class III');
-    const isRetrognathicMandible = diagUpper.includes('RETROGNATHIC') || diagUpper.includes('RETRUSION') || diagUpper.includes('RETROGNATHY') || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('retrognathic')) || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('mandibular retrusion'));
+    const isRetrognathicMandible = diagUpper.includes('RETROGNATHIC') || diagUpper.includes('RETRUSION') || diagUpper.includes('RETROGNATHY') || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('retrognathic')) || (patient.clinicalNotes && patient.clinicalNotes.toLowerCase().includes('mandibular retrusion')) || (ceph.snb && Number(ceph.snb) < 78);
 
     let plan = 'Dentoalveolar Camouflage Orthodontics';
     let explanation = 'Minor skeletal discrepancies within biological boundaries. Resolution via traditional leveling and space closure.';
     
     if (isGrowing) {
-      if (isClassII && (isRetrognathicMandible || Number(ceph.snb) < 78)) {
-        plan = 'Growth Modification Therapy (Twin Block Mandibular Advancement)';
-        explanation = `First-line orthopedic advancement using Twin Block functional appliance during active growth spurt to promote mandibular development.`;
+      if (isClassII && isRetrognathicMandible) {
+        plan = 'Growth Modification Therapy (Twin Block functional appliance)';
+        explanation = `First-line growth modification is indicated to stimulate mandibular growth during active pubertal growth spurt. Twin Block is the gold standard growth modification therapy for growing patients with Class II retrognathia.`;
       } else if (isClassIII) {
         plan = 'Interceptive Orthopedic Protraction (Facemask & RME)';
         explanation = `Orthopedic protraction using reverse-pull facemask combined with palatal expansion to correct skeletal Class III maxillary deficiency.`;
@@ -396,10 +407,18 @@ export class AISelfValidator {
     cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
     // 3. Extraction Validation
-    const isGrowingPatient = (patient.gender === 'Female' && Number(patient.age) <= 14) || 
-                             (patient.gender === 'Male' && Number(patient.age) <= 16) ||
-                             patient.growthStatus === 'Growing' || patient.growthStatus === 'Peak Growth';
-    const isExtractionRecommended = oci.totalScore > 50 && !isGrowingPatient;
+    const ageVal = Number(patient.age) || 12;
+    const isFem = patient.gender === 'Female';
+    const isM = patient.gender === 'Male';
+    const cvmVal = (patient.cvmStage || '').toUpperCase();
+    const hasGrowingCvmVal = ['CS1', 'CS2', 'CS3', 'CS4', 'CVM 1', 'CVM 2', 'CVM 3', 'CVM 4', 'STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4'].some(stage => cvmVal.includes(stage));
+    const isGrowingPatient = (isFem && ageVal <= 16) || 
+                             (isM && ageVal <= 18) ||
+                             hasGrowingCvmVal ||
+                             (patient.growthStatus || '').toLowerCase().includes('growing') ||
+                             (patient.growthStatus || '').toLowerCase().includes('peak') ||
+                             (patient.growthStatus || '').toLowerCase().includes('present');
+    const isExtractionRecommended = oci.totalScore > 40 && !isGrowingPatient;
     if (isExtractionRecommended && cleaned.toLowerCase().includes('non-extraction campaign as primary')) {
       errors.push('Extraction Inconsistency: OCI score indicates extraction, but text recommends non-extraction.');
       cleaned = cleaned.replace(/non-extraction campaign as primary/gi, 'extraction-based camouflage therapy');

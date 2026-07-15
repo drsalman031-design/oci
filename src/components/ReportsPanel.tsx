@@ -415,42 +415,34 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
             <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>5. OCI AI Treatment Plan</Text>
             {expandedSections.treatment ? <ChevronUp size={16} color="#00E5FF" /> : <ChevronDown size={16} color="#A8B3C7" />}
           </Pressable>
-          {expandedSections.treatment && generatedPlan.rankingSystem && (
+          {expandedSections.treatment && (
             <View style={tw`p-5 space-y-4`}>
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Most Recommended Option</Text>
-                <Text style={tw`text-xs text-white font-extrabold`}>{generatedPlan.rankingSystem.mostRecommended.name}</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal mt-1`}>{generatedPlan.rankingSystem.mostRecommended.description}</Text>
-              </View>
+              {/* Highlight GROWING PATIENT prominently if growing */}
+              {generatedPlan.growthStatusOut === 'Growing' && (
+                <View style={tw`p-4 bg-teal-500/10 border border-teal-500/30 rounded-xl items-center`}>
+                  <Text style={tw`text-xs font-black text-[#00E5FF] tracking-wider uppercase text-center`}>
+                    ★ GROWING PATIENT – GROWTH MODIFICATION SHOULD BE CONSIDERED ★
+                  </Text>
+                </View>
+              )}
 
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Clinical Reasoning & Why Recommended</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.whyRecommended}</Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Alternative Exclusions</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.alternativeNotFirst}</Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>OCI Impact & Influence</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{generatedPlan.rankingSystem.mostRecommended.ociInfluence}</Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Expected Benefits</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  {generatedPlan.rankingSystem.mostRecommended.benefits.map((b, i) => `• ${b}\n`).join('').trim()}
-                </Text>
-              </View>
-
-              <View style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-2`}>
-                <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase`}>Potential Limitations</Text>
-                <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>
-                  {generatedPlan.rankingSystem.mostRecommended.limitations.map((l, i) => `• ${l}\n`).join('').trim()}
-                </Text>
-              </View>
+              {[
+                { label: '1. Growth Status', value: generatedPlan.growthStatusOut },
+                { label: '2. Skeletal Diagnosis', value: generatedPlan.skeletalDiagnosisOut },
+                { label: '3. Dental Diagnosis', value: generatedPlan.dentalDiagnosisOut },
+                { label: '4. Soft Tissue Assessment', value: generatedPlan.softTissueAssessmentOut },
+                { label: '5. Primary Treatment Strategy', value: generatedPlan.primaryTreatmentStrategyOut },
+                { label: '6. Recommended Appliance', value: generatedPlan.recommendedApplianceOut },
+                { label: '7. Treatment Mechanics', value: generatedPlan.treatmentMechanicsOut },
+                { label: '8. Treatment Duration', value: generatedPlan.treatmentDurationOut },
+                { label: '9. Retention Protocol', value: generatedPlan.retentionProtocolOut },
+                { label: '10. Evidence Summary', value: generatedPlan.evidenceSummaryOut }
+              ].map((item, idx) => (
+                <View key={idx} style={tw`p-4 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] space-y-1`}>
+                  <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>{item.label}</Text>
+                  <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{item.value}</Text>
+                </View>
+              ))}
             </View>
           )}
         </View>
@@ -595,6 +587,20 @@ export default function ReportsPanel({ savedAssessments, onOpenPdf }: ReportsPan
                 <View style={tw`absolute inset-0 items-center justify-center`}>
                   <Text style={[tw`text-2xl font-black font-mono`, { color: scoreColor }]}>{ociResult.totalScore}</Text>
                   <Text style={tw`text-[9px] text-[#D9E2F2]/60 uppercase mt-0.5`}>OCI Score</Text>
+                </View>
+              </View>
+
+              {/* OCI Reserve & Severity Classification */}
+              <View style={tw`flex-row justify-around w-full mt-2 gap-4`}>
+                <View style={tw`flex-1 p-3 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] items-center`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase tracking-wider`}>OCI Reserve (Capacity)</Text>
+                  <Text style={tw`text-lg font-black text-[#00FF88] mt-1`}>{100 - ociResult.totalScore}%</Text>
+                  <Text style={tw`text-[8px] text-[#A8B3C7] text-center mt-0.5`}>Remaining bone threshold</Text>
+                </View>
+                <View style={tw`flex-1 p-3 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] items-center`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase tracking-wider`}>Severity Classification</Text>
+                  <Text style={[tw`text-lg font-black mt-1`, { color: scoreColor }]}>{ociResult.interpretation || 'Moderate'}</Text>
+                  <Text style={tw`text-[8px] text-[#A8B3C7] text-center mt-0.5`}>Complexity category</Text>
                 </View>
               </View>
 

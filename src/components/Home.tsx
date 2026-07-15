@@ -46,18 +46,6 @@ export default function Home({
   // Calculate High Complexity Cases (>60 OCI Score)
   const highComplexityCount = savedAssessments.filter(a => getActiveScore(a) > 60).length;
 
-  // Calculate distribution metrics
-  const mildCount = savedAssessments.filter(a => getActiveScore(a) <= 25).length;
-  const modCount = savedAssessments.filter(a => getActiveScore(a) > 25 && getActiveScore(a) <= 50).length;
-  const sevCount = savedAssessments.filter(a => getActiveScore(a) > 50 && getActiveScore(a) <= 75).length;
-  const extCount = savedAssessments.filter(a => getActiveScore(a) > 75).length;
-  
-  const maxVal = Math.max(1, mildCount, modCount, sevCount, extCount);
-  const mildHeight = Math.max(8, (mildCount / maxVal) * 100);
-  const modHeight = Math.max(8, (modCount / maxVal) * 100);
-  const sevHeight = Math.max(8, (sevCount / maxVal) * 100);
-  const extHeight = Math.max(8, (extCount / maxVal) * 100);
-
   // Filter recent patients
   const filteredPatients = savedAssessments.filter(item => 
     item.patientDetails.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -133,74 +121,6 @@ export default function Home({
             <View style={tw`flex-1 min-w-[45%] bg-[#161A20] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-5 shadow-sm space-y-2`}>
               <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider`}>High Complexity Cases</Text>
               <Text style={tw`text-2xl font-black text-white`}>{highComplexityCount}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* OCI DISTRIBUTION ANALYTICS */}
-        <View style={tw`bg-[#161A20] rounded-[24px] border border-[rgba(255,255,255,0.08)] p-6 shadow-sm space-y-6`}>
-          <View style={tw`space-y-1`}>
-            <Text style={tw`text-base font-black text-white tracking-widest uppercase font-mono`}>
-              OCI Distribution Analytics
-            </Text>
-            <Text style={tw`text-[9px] font-bold text-[#D9E2F2]/40 tracking-wider uppercase font-mono`}>
-              Historical Diagnostic Demographics
-            </Text>
-          </View>
-
-          {/* Bar Chart */}
-          <View style={tw`flex-row justify-around items-end h-28 border-b border-[rgba(255,255,255,0.08)] pb-4 px-2`}>
-            <View style={tw`items-center flex-1`}>
-              <View style={tw`w-full max-w-[54px] h-full justify-end`}>
-                <View style={[tw`w-full rounded-t-xl`, { height: `${mildHeight}%`, backgroundColor: '#00FF88', opacity: 0.85 }]} />
-              </View>
-              <Text style={tw`text-[9px] font-mono font-bold text-[#D9E2F2]/60 mt-2`}>MILD</Text>
-            </View>
-            <View style={tw`items-center flex-1`}>
-              <View style={tw`w-full max-w-[54px] h-full justify-end`}>
-                <View style={[tw`w-full rounded-t-xl`, { height: `${modHeight}%`, backgroundColor: '#00E5FF', opacity: 0.85 }]} />
-              </View>
-              <Text style={tw`text-[9px] font-mono font-bold text-[#D9E2F2]/60 mt-2`}>MOD</Text>
-            </View>
-            <View style={tw`items-center flex-1`}>
-              <View style={tw`w-full max-w-[54px] h-full justify-end`}>
-                <View style={[tw`w-full rounded-t-xl`, { height: `${sevHeight}%`, backgroundColor: '#8B5CF6', opacity: 0.85 }]} />
-              </View>
-              <Text style={tw`text-[9px] font-mono font-bold text-[#D9E2F2]/60 mt-2`}>SEV</Text>
-            </View>
-            <View style={tw`items-center flex-1`}>
-              <View style={tw`w-full max-w-[54px] h-full justify-end`}>
-                <View style={[tw`w-full rounded-t-xl`, { height: `${extHeight}%`, backgroundColor: '#FF4D4D', opacity: 0.85 }]} />
-              </View>
-              <Text style={tw`text-[9px] font-mono font-bold text-[#D9E2F2]/60 mt-2`}>EXT</Text>
-            </View>
-          </View>
-
-          {/* Details Grid */}
-          <View style={tw`space-y-3.5 pt-1`}>
-            <View style={tw`flex-row justify-between gap-4`}>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-[10px] text-[#D9E2F2]/60 font-bold leading-normal`}>
-                  <Text style={tw`text-white font-black`}>MILD (0-25):</Text> Alveolar housing is healthy. Simple alignment.
-                </Text>
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-[10px] text-[#D9E2F2]/60 font-bold leading-normal`}>
-                  <Text style={tw`text-white font-black`}>MOD (26-50):</Text> Dentoalveolar adaptations high. Camouflage ready.
-                </Text>
-              </View>
-            </View>
-            <View style={tw`flex-row justify-between gap-4`}>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-[10px] text-[#D9E2F2]/60 font-bold leading-normal`}>
-                  <Text style={tw`text-white font-black`}>SEV (51-75):</Text> Borderline limits. Orthopedic / Extraction focus.
-                </Text>
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-[10px] text-[#D9E2F2]/60 font-bold leading-normal`}>
-                  <Text style={tw`text-white font-black`}>EXT (76-100):</Text> Basal skeletal discrepancy. Surgery preferred.
-                </Text>
-              </View>
             </View>
           </View>
         </View>

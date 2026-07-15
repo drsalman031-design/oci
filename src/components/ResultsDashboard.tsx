@@ -455,6 +455,20 @@ export default function ResultsDashboard({
                 </View>
               </View>
 
+              {/* OCI Reserve & Severity Classification */}
+              <View style={tw`flex-row justify-around w-full mt-2 gap-4`}>
+                <View style={tw`flex-1 p-3 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] items-center`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase tracking-wider`}>OCI Reserve (Capacity)</Text>
+                  <Text style={tw`text-lg font-black text-[#00FF88] mt-1`}>{100 - ociResult.totalScore}%</Text>
+                  <Text style={tw`text-[8px] text-[#A8B3C7] text-center mt-0.5`}>Remaining bone threshold</Text>
+                </View>
+                <View style={tw`flex-1 p-3 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)] items-center`}>
+                  <Text style={tw`text-[9px] text-[#D9E2F2]/60 font-bold uppercase tracking-wider`}>Severity Classification</Text>
+                  <Text style={[tw`text-lg font-black mt-1`, { color: scoreColor }]}>{ociResult.interpretation || 'Moderate'}</Text>
+                  <Text style={tw`text-[8px] text-[#A8B3C7] text-center mt-0.5`}>Complexity category</Text>
+                </View>
+              </View>
+
               {/* OCI number-based inference explanation */}
               <View style={tw`w-full px-4 py-2 bg-black/20 rounded-xl border border-[rgba(255,255,255,0.04)]`}>
                 <Text style={tw`text-[10px] text-[#D9E2F2] leading-normal text-center`}>
@@ -642,64 +656,39 @@ export default function ResultsDashboard({
               </View>
 
               {/* Dynamic OrthoKnowledgeBase Suggested Mechanics */}
-              <View style={tw`space-y-3.5`}>
+              <View style={tw`space-y-4`}>
                 <View style={tw`flex-row items-center space-x-1.5`}>
                   <Sparkles size={14} color="#00E5FF" />
                   <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>Expert System CDSS Mechanics</Text>
                 </View>
 
-                <View style={tw`space-y-3`}>
-                  <View style={tw`space-y-1`}>
-                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Primary Strategy</Text>
-                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
-                      {generatedPlan.treatmentComplexity === 'Severe / Surgical' ? 'Orthognathic Surgical Correction & Decompensation' : 'Orthodontic Camouflage Camouflage Alignment'}
+                {/* Highlight GROWING PATIENT prominently if growing */}
+                {generatedPlan.growthStatusOut === 'Growing' && (
+                  <View style={tw`p-4 bg-teal-500/10 border border-teal-500/30 rounded-xl items-center`}>
+                    <Text style={tw`text-xs font-black text-[#00E5FF] tracking-wider uppercase text-center`}>
+                      ★ GROWING PATIENT – GROWTH MODIFICATION SHOULD BE CONSIDERED ★
                     </Text>
                   </View>
+                )}
 
-                  <View style={tw`space-y-1`}>
-                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Extraction / Non-Extraction Rationale</Text>
-                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>{generatedPlan.orthodonticCamouflage.extractionConsideration}</Text>
+                {[
+                  { label: '1. Growth Status', value: generatedPlan.growthStatusOut },
+                  { label: '2. Skeletal Diagnosis', value: generatedPlan.skeletalDiagnosisOut },
+                  { label: '3. Dental Diagnosis', value: generatedPlan.dentalDiagnosisOut },
+                  { label: '4. Soft Tissue Assessment', value: generatedPlan.softTissueAssessmentOut },
+                  { label: '5. Primary Treatment Strategy', value: generatedPlan.primaryTreatmentStrategyOut },
+                  { label: '6. Recommended Appliance', value: generatedPlan.recommendedApplianceOut },
+                  { label: '7. Treatment Mechanics', value: generatedPlan.treatmentMechanicsOut },
+                  { label: '8. Treatment Duration', value: generatedPlan.treatmentDurationOut },
+                  { label: '9. Retention Protocol', value: generatedPlan.retentionProtocolOut },
+                  { label: '10. Evidence Summary', value: generatedPlan.evidenceSummaryOut }
+                ].map((item, idx) => (
+                  <View key={idx} style={tw`p-4 bg-[#0A0C10] rounded-xl border border-[rgba(255,255,255,0.04)] space-y-1`}>
+                    <Text style={tw`text-[10px] font-bold text-[#00E5FF] uppercase tracking-wider`}>{item.label}</Text>
+                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal`}>{item.value}</Text>
                   </View>
-
-                  <View style={tw`space-y-1`}>
-                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Appliance Recommendation</Text>
-                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
-                      Pre-adjusted brackets (0.022" MBT slot) + absolute anchorage TADS (Miniscrews).
-                    </Text>
-                  </View>
-
-                  <View style={tw`space-y-1`}>
-                    <Text style={tw`text-[9px] font-black text-white uppercase`}>Estimated Treatment Duration</Text>
-                    <Text style={tw`text-xs text-[#D9E2F2] leading-normal pl-2`}>
-                      {ageGroup === 'growing' ? '14 - 18 Months (Growth guided)' : '18 - 24 Months active appliance phase.'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Timeline visualizer */}
-                <View style={tw`pt-4 border-t border-[rgba(255,255,255,0.05)]`}>
-                  <Text style={tw`text-[10px] font-bold text-[#D9E2F2]/60 uppercase tracking-wider mb-3`}>Mechanics Timeline Stages</Text>
-                  <View style={tw`flex-row justify-between items-center px-2`}>
-                    {[
-                      { step: '01', title: 'Aligning' },
-                      { step: '02', title: 'Sagittal' },
-                      { step: '03', title: 'Finishing' },
-                      { step: '04', title: 'Retainers' }
-                    ].map((t, idx) => (
-                      <React.Fragment key={idx}>
-                        <View style={tw`items-center`}>
-                          <View style={tw`w-6 h-6 rounded-full bg-[#00E5FF] items-center justify-center`}>
-                            <Text style={tw`text-white text-[9px] font-black`}>{t.step}</Text>
-                          </View>
-                          <Text style={tw`text-[8px] text-[#D9E2F2] font-bold mt-1`}>{t.title}</Text>
-                        </View>
-                        {idx < 3 && <View style={tw`flex-1 h-0.5 bg-[#161A20]`} />}
-                      </React.Fragment>
-                    ))}
-                  </View>
-                </View>
+                ))}
               </View>
-
             </View>
           )}
         </View>
