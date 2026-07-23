@@ -29,6 +29,9 @@ jobs:
         run: |
           npm install --legacy-peer-deps
 
+      - name: Generate native Android directory
+        run: npx expo prebuild --platform android --no-install
+
       - name: Set executable permission for Gradlew
         run: chmod +x android/gradlew
 
