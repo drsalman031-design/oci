@@ -30,11 +30,25 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.9.25"
+            "kotlinVersion": "1.9.25",
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libreactnative.so",
+                "**/libc++_shared.so",
+                "**/libfbjni.so"
+              ]
+            }
           }
         }
       ],
-      "./plugins/withKotlinVersion"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OCI Analyzer needs access to your photos so you can select a cephalogram X-ray to trace."
+        }
+      ],
+      "./plugins/withKotlinVersion",
+      "onnxruntime-react-native"
     ],
     "sdkVersion": "52.0.0",
     "extra": {
