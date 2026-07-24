@@ -12,10 +12,12 @@ import {
   BookmarkCheck,
   CheckCircle2,
   Trash2,
-  Zap
+  Zap,
+  MapPin
 } from 'lucide-react-native';
 import tw from 'twrnc';
 import CephAnalyzer from './CephAnalyzer';
+import CephTracing from './CephTracing';
 
 interface CephInputProps {
   initialInput?: CephalometricInput;
@@ -63,6 +65,7 @@ const PRESETS = {
 
 export default function CephInput({ initialInput, patientDetails, diagnosis, onCalculate, onBack }: CephInputProps) {
   const [showAiAnalyzer, setShowAiAnalyzer] = useState<boolean>(false);
+  const [showTracing, setShowTracing] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'skeletal' | 'dental' | 'soft' | 'clinical'>('skeletal');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [form, setForm] = useState<CephalometricInput>(initialInput || {
@@ -79,6 +82,20 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
   const handleApplyAiAnalysis = (computedMeasurements: CephalometricInput) => {
     setForm(computedMeasurements);
     setShowAiAnalyzer(false);
+  };
+
+  const handleApplyTracing = (computedMeasurements: CephalometricInput) => {
+    setForm((prev) => {
+      const merged = { ...prev };
+      (Object.keys(computedMeasurements) as (keyof CephalometricInput)[]).forEach((k) => {
+        const val = computedMeasurements[k];
+        if (val !== '' && val !== undefined) {
+          (merged as any)[k] = val;
+        }
+      });
+      return merged;
+    });
+    setShowTracing(false);
   };
 
   const handleFieldChange = (key: keyof CephalometricInput, val: any) => {
@@ -215,6 +232,16 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
     );
   }
 
+  if (showTracing) {
+    return (
+      <CephTracing
+        patientDetails={patientDetails}
+        onApplyAnalysis={handleApplyTracing}
+        onCancel={() => setShowTracing(false)}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={tw`pb-28 px-4 bg-[#050814]`} style={tw`flex-1`}>
       <View style={tw`space-y-6 mt-4`}>
@@ -260,17 +287,31 @@ export default function CephInput({ initialInput, patientDetails, diagnosis, onC
           </View>
 
           <Pressable
-            onPress={() => setShowAiAnalyzer(true)}
+            onPress={() => setShowTracing(true)}
             style={tw`px-4 py-3 bg-gradient-to-r from-teal-500/15 to-cyan-500/15 rounded-xl border border-teal-500/25 flex-row items-center justify-between mt-1`}
           >
             <View style={tw`flex-row items-center space-x-2.5`}>
-              <Cpu size={14} color="#14B8A6" />
+              <MapPin size={14} color="#14B8A6" />
               <View>
-                <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider`}>AI Cephalometric Radiograph Scan</Text>
-                <Text style={tw`text-[8px] text-teal-400 font-bold uppercase`}>Zero manual tracing required • Step 1-10 Automatic</Text>
+                <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider`}>Trace Cephalogram (Manual)</Text>
+                <Text style={tw`text-[8px] text-teal-400 font-bold uppercase`}>Upload X-ray • Place landmarks • Auto-measure</Text>
               </View>
             </View>
-            <Sparkles size={12} color="#22D3EE" />
+            <ChevronRight size={12} color="#22D3EE" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => setShowAiAnalyzer(true)}
+            style={tw`px-4 py-3 bg-white/5 rounded-xl border border-white/10 flex-row items-center justify-between`}
+          >
+            <View style={tw`flex-row items-center space-x-2.5`}>
+              <Cpu size={14} color="#64748B" />
+              <View>
+                <Text style={tw`text-[11px] font-black text-slate-300 uppercase tracking-wider`}>Sample AI Analyzer (Demo)</Text>
+                <Text style={tw`text-[8px] text-slate-500 font-bold uppercase`}>Preset index cases • Not from your image</Text>
+              </View>
+            </View>
+            <Sparkles size={12} color="#64748B" />
           </Pressable>
         </View>
 

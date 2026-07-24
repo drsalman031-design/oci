@@ -9,3 +9,10 @@ coverage/
 !.env.example
 android/
 ios/
+
+# ML model conversion workspace (large; see ml/README.md to reproduce)
+ml_env/
+ml_repo/
+ml_mmpose/
+*.pt
+*.pth
